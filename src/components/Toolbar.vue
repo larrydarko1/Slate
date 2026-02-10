@@ -1,7 +1,15 @@
 <template>
   <div class="toolbar">
     <div class="toolbar-left">
-        <span class="app-name">Slate</span>
+      <button class="toolbar-btn" @click="$emit('newFile')" title="New (⌘N / Ctrl+N)">
+        <span class="btn-label">New</span>
+      </button>
+      <button class="toolbar-btn" @click="$emit('openFile')" title="Open (⌘O / Ctrl+O)">
+        <span class="btn-label">Open</span>
+      </button>
+      <button class="toolbar-btn" @click="$emit('saveFile')" title="Save (⌘S / Ctrl+S)">
+        <span class="btn-label">Save</span>
+      </button>
     </div>
     <div class="toolbar-center">
       <button class="toolbar-btn" @click="$emit('addTable')" title="Add Table">
@@ -20,7 +28,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
-defineEmits<{ addTable: [] }>()
+defineEmits<{ 
+  addTable: []
+  newFile: []
+  openFile: []
+  saveFile: []
+}>()
 
 const isDark = ref(false)
 

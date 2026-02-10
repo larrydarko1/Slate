@@ -128,7 +128,7 @@ const props = defineProps({
   table: { type: Object as PropType<SpreadsheetTable>, required: true },
 })
 
-const emit = defineEmits<{
+defineEmits<{
   remove: []
 }>()
 

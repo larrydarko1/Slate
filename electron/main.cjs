@@ -98,6 +98,54 @@ app.on('window-all-closed', () => {
     }
 });
 
+// ── IPC Handlers for File Operations ──
+
+// Save file dialog
+ipcMain.handle('dialog:save', async (event, defaultPath) => {
+    const result = await dialog.showSaveDialog(mainWindow, {
+        title: 'Save Spreadsheet',
+        defaultPath: defaultPath || 'Untitled.slate',
+        filters: [
+            { name: 'Slate Spreadsheet', extensions: ['slate'] },
+            { name: 'All Files', extensions: ['*'] }
+        ]
+    });
+    return result;
+});
+
+// Open file dialog
+ipcMain.handle('dialog:open', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+        title: 'Open Spreadsheet',
+        filters: [
+            { name: 'Slate Spreadsheet', extensions: ['slate'] },
+            { name: 'All Files', extensions: ['*'] }
+        ],
+        properties: ['openFile']
+    });
+    return result;
+});
+
+// Write file
+ipcMain.handle('file:write', async (event, filePath, content) => {
+    try {
+        await fs.writeFile(filePath, content, 'utf8');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+// Read file
+ipcMain.handle('file:read', async (event, filePath) => {
+    try {
+        const content = await fs.readFile(filePath, 'utf8');
+        return { success: true, content };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
 // Handle errors
 process.on('uncaughtException', (error) => {
     console.error('Uncaught exception:', error);

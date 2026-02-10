@@ -250,6 +250,105 @@ export function useSpreadsheet() {
         return tables.value.find(t => t.id === id)
     }
 
+    // ── File Operations ──
+
+    const currentFilePath = ref<string | null>(null)
+
+    function serializeState() {
+        return JSON.stringify({
+            version: '1.0',
+            tables: tables.value,
+            canvasOffset: canvasOffset.value
+        }, null, 2)
+    }
+
+    function deserializeState(jsonContent: string) {
+        try {
+            const data = JSON.parse(jsonContent)
+            if (data.tables) {
+                tables.value = data.tables
+                maxZ = Math.max(0, ...tables.value.map(t => t.zIndex))
+                tableCount = tables.value.length
+            }
+            if (data.canvasOffset) {
+                canvasOffset.value = data.canvasOffset
+            }
+            activeCell.value = null
+            isEditing.value = false
+            recalculate()
+            return true
+        } catch (error) {
+            console.error('Failed to load file:', error)
+            return false
+        }
+    }
+
+    async function saveFile(filePath?: string) {
+        if (!window.electronAPI) {
+            alert('File operations require Electron')
+            return false
+        }
+
+        let targetPath = filePath || currentFilePath.value
+
+        if (!targetPath) {
+            const result = await window.electronAPI.showSaveDialog()
+            if (result.canceled || !result.filePath) return false
+            targetPath = result.filePath
+        }
+
+        const content = serializeState()
+        const result = await window.electronAPI.writeFile(targetPath, content)
+
+        if (result.success) {
+            currentFilePath.value = targetPath
+            return true
+        } else {
+            alert(`Failed to save file: ${result.error}`)
+            return false
+        }
+    }
+
+    async function saveAsFile() {
+        return await saveFile(undefined)
+    }
+
+    async function openFile() {
+        if (!window.electronAPI) {
+            alert('File operations require Electron')
+            return false
+        }
+
+        const result = await window.electronAPI.showOpenDialog()
+        if (result.canceled || result.filePaths.length === 0) return false
+
+        const filePath = result.filePaths[0]
+        const readResult = await window.electronAPI.readFile(filePath)
+
+        if (readResult.success && readResult.content) {
+            if (deserializeState(readResult.content)) {
+                currentFilePath.value = filePath
+                return true
+            } else {
+                alert('Failed to parse file')
+                return false
+            }
+        } else {
+            alert(`Failed to open file: ${readResult.error}`)
+            return false
+        }
+    }
+
+    function newFile() {
+        tables.value = []
+        activeCell.value = null
+        isEditing.value = false
+        canvasOffset.value = { x: 0, y: 0 }
+        currentFilePath.value = null
+        maxZ = 0
+        tableCount = 0
+    }
+
     return {
         // State
         tables,
@@ -257,6 +356,7 @@ export function useSpreadsheet() {
         isEditing,
         editValue,
         canvasOffset,
+        currentFilePath,
 
         // Tables
         addTable,
@@ -289,6 +389,12 @@ export function useSpreadsheet() {
 
         recalculate,
         findTable,
+
+        // File operations
+        saveFile,
+        saveAsFile,
+        openFile,
+        newFile,
     }
 }
 
