@@ -10,16 +10,32 @@
  *  - Functions: SUM, AVERAGE, MIN, MAX, COUNT, COUNTA, ROUND, ABS, SQRT,
  *               POWER, MOD, INT, IF, AND, OR, NOT, CONCAT, UPPER, LOWER,
  *               LEN, TRIM, LEFT, RIGHT, MID, PI, NOW, TODAY
+ *
+ * Type-aware evaluation:
+ *  - Tracks CellDataType through operations
+ *  - First operand sets target type for arithmetic
+ *  - Text in arithmetic → #N/A
+ *  - Mixed currency → first cell's currency wins
  */
 
 import type { CellValue } from '../types/spreadsheet'
 import { columnLetterToIndex } from '../types/spreadsheet'
+import type { CellDataType } from './cellTypes'
+import { resolveType, resolveTypeList, isNumericType } from './cellTypes'
 
 // ── Public context the evaluator needs ──
 
 export interface FormulaContext {
     getCellValue: (col: number, row: number) => CellValue
+    getCellType: (col: number, row: number) => CellDataType
     getCellRange: (startCol: number, startRow: number, endCol: number, endRow: number) => CellValue[]
+    getCellRangeTypes: (startCol: number, startRow: number, endCol: number, endRow: number) => CellDataType[]
+}
+
+/** Result of a type-aware formula evaluation */
+export interface TypedResult {
+    value: CellValue
+    type: CellDataType
 }
 
 // ── Tokens ──
@@ -285,13 +301,35 @@ function toNumber(v: CellValue): number {
     return isNaN(n) ? 0 : n
 }
 
+interface TypedCellValue {
+    value: CellValue
+    type: CellDataType
+}
+
 function flattenArgs(args: ASTNode[], ctx: FormulaContext): CellValue[] {
     const out: CellValue[] = []
     for (const a of args) {
         if (a.type === 'range') {
             out.push(...ctx.getCellRange(a.sc, a.sr, a.ec, a.er))
         } else {
-            out.push(evaluate(a, ctx))
+            out.push(evaluateVal(a, ctx))
+        }
+    }
+    return out
+}
+
+function flattenTypedArgs(args: ASTNode[], ctx: FormulaContext): TypedCellValue[] {
+    const out: TypedCellValue[] = []
+    for (const a of args) {
+        if (a.type === 'range') {
+            const vals = ctx.getCellRange(a.sc, a.sr, a.ec, a.er)
+            const types = ctx.getCellRangeTypes(a.sc, a.sr, a.ec, a.er)
+            for (let i = 0; i < vals.length; i++) {
+                out.push({ value: vals[i], type: types[i] ?? 'empty' })
+            }
+        } else {
+            const r = evaluate(a, ctx)
+            out.push(r)
         }
     }
     return out
@@ -301,157 +339,246 @@ function numericValues(vals: CellValue[]): number[] {
     return vals.filter(v => v !== null && v !== '' && typeof v !== 'string').map(toNumber)
 }
 
+function numericTypedValues(vals: TypedCellValue[]): { nums: number[]; types: CellDataType[] } {
+    const nums: number[] = []
+    const types: CellDataType[] = []
+    for (const v of vals) {
+        if (v.value === null || v.value === '' || v.type === 'text') continue
+        const n = toNumber(v.value)
+        nums.push(n)
+        types.push(v.type)
+    }
+    return { nums, types }
+}
+
 // ── Function dispatch ──
 
-function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): CellValue {
+function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): TypedCellValue {
     switch (name) {
         case 'SUM': {
-            const nums = numericValues(flattenArgs(args, ctx))
-            return nums.reduce((a, b) => a + b, 0)
+            const typed = flattenTypedArgs(args, ctx)
+            const { nums, types } = numericTypedValues(typed)
+            // Check for text values in input that are non-empty
+            const hasText = typed.some(v => v.type === 'text' && v.value !== null && v.value !== '')
+            if (hasText) return { value: '#N/A', type: 'text' }
+            const resultType = resolveTypeList(types) ?? 'float'
+            return { value: nums.reduce((a, b) => a + b, 0), type: resultType }
         }
         case 'AVERAGE': {
-            const nums = numericValues(flattenArgs(args, ctx))
-            if (nums.length === 0) return '#DIV/0!'
-            return nums.reduce((a, b) => a + b, 0) / nums.length
+            const typed = flattenTypedArgs(args, ctx)
+            const { nums, types } = numericTypedValues(typed)
+            const hasText = typed.some(v => v.type === 'text' && v.value !== null && v.value !== '')
+            if (hasText) return { value: '#N/A', type: 'text' }
+            if (nums.length === 0) return { value: '#DIV/0!', type: 'text' }
+            const resultType = resolveTypeList(types) ?? 'float'
+            // AVERAGE always returns at least float
+            const finalType = resultType === 'integer' ? 'float' : resultType
+            return { value: nums.reduce((a, b) => a + b, 0) / nums.length, type: finalType }
         }
         case 'MIN': {
-            const nums = numericValues(flattenArgs(args, ctx))
-            return nums.length ? Math.min(...nums) : 0
+            const typed = flattenTypedArgs(args, ctx)
+            const { nums, types } = numericTypedValues(typed)
+            const resultType = resolveTypeList(types) ?? 'integer'
+            return { value: nums.length ? Math.min(...nums) : 0, type: resultType }
         }
         case 'MAX': {
-            const nums = numericValues(flattenArgs(args, ctx))
-            return nums.length ? Math.max(...nums) : 0
+            const typed = flattenTypedArgs(args, ctx)
+            const { nums, types } = numericTypedValues(typed)
+            const resultType = resolveTypeList(types) ?? 'integer'
+            return { value: nums.length ? Math.max(...nums) : 0, type: resultType }
         }
         case 'COUNT': {
-            return numericValues(flattenArgs(args, ctx)).length
+            return { value: numericValues(flattenArgs(args, ctx)).length, type: 'integer' }
         }
         case 'COUNTA': {
-            return flattenArgs(args, ctx).filter(v => v !== null && v !== '').length
+            return { value: flattenArgs(args, ctx).filter(v => v !== null && v !== '').length, type: 'integer' }
         }
         case 'ROUND': {
-            const val = toNumber(evaluate(args[0], ctx))
-            const digits = args.length > 1 ? toNumber(evaluate(args[1], ctx)) : 0
+            const valR = evaluate(args[0], ctx)
+            const val = toNumber(valR.value)
+            const digits = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 0
             const f = Math.pow(10, digits)
-            return Math.round(val * f) / f
+            const rounded = Math.round(val * f) / f
+            // If rounding to 0 digits and input is numeric, could be integer
+            const resultType = digits === 0 ? (isNumericType(valR.type) ? valR.type : 'integer') : (isNumericType(valR.type) ? valR.type : 'float')
+            return { value: rounded, type: resultType === 'integer' && digits > 0 ? 'float' : resultType }
         }
-        case 'ABS':
-            return Math.abs(toNumber(evaluate(args[0], ctx)))
+        case 'ABS': {
+            const valA = evaluate(args[0], ctx)
+            return { value: Math.abs(toNumber(valA.value)), type: isNumericType(valA.type) ? valA.type : 'float' }
+        }
         case 'SQRT': {
-            const v = toNumber(evaluate(args[0], ctx))
-            return v < 0 ? '#NUM!' : Math.sqrt(v)
+            const valS = evaluate(args[0], ctx)
+            const v = toNumber(valS.value)
+            return { value: v < 0 ? '#NUM!' : Math.sqrt(v), type: v < 0 ? 'text' : 'float' }
         }
-        case 'POWER':
-            return Math.pow(toNumber(evaluate(args[0], ctx)), toNumber(evaluate(args[1], ctx)))
+        case 'POWER': {
+            const base = evaluate(args[0], ctx)
+            return { value: Math.pow(toNumber(base.value), toNumber(evaluateVal(args[1], ctx))), type: 'float' }
+        }
         case 'MOD': {
-            const a = toNumber(evaluate(args[0], ctx))
-            const b = toNumber(evaluate(args[1], ctx))
-            return b === 0 ? '#DIV/0!' : a % b
+            const a = toNumber(evaluateVal(args[0], ctx))
+            const b = toNumber(evaluateVal(args[1], ctx))
+            return { value: b === 0 ? '#DIV/0!' : a % b, type: b === 0 ? 'text' : 'integer' }
         }
-        case 'INT':
-            return Math.floor(toNumber(evaluate(args[0], ctx)))
+        case 'INT': {
+            const valI = evaluate(args[0], ctx)
+            return { value: Math.floor(toNumber(valI.value)), type: 'integer' }
+        }
         case 'CEILING': {
-            const val = toNumber(evaluate(args[0], ctx))
-            const sig = args.length > 1 ? toNumber(evaluate(args[1], ctx)) : 1
-            return sig === 0 ? 0 : Math.ceil(val / sig) * sig
+            const val = toNumber(evaluateVal(args[0], ctx))
+            const sig = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 1
+            return { value: sig === 0 ? 0 : Math.ceil(val / sig) * sig, type: 'float' }
         }
         case 'FLOOR': {
-            const val = toNumber(evaluate(args[0], ctx))
-            const sig = args.length > 1 ? toNumber(evaluate(args[1], ctx)) : 1
-            return sig === 0 ? 0 : Math.floor(val / sig) * sig
+            const val = toNumber(evaluateVal(args[0], ctx))
+            const sig = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 1
+            return { value: sig === 0 ? 0 : Math.floor(val / sig) * sig, type: 'float' }
         }
 
         // Logic
         case 'IF': {
-            const cond = evaluate(args[0], ctx)
+            const cond = evaluateVal(args[0], ctx)
             const truthy = cond && cond !== 0 && cond !== '#ERROR!'
             return evaluate(truthy ? args[1] : (args[2] ?? { type: 'boolean', value: false }), ctx)
         }
         case 'AND': {
             const vals = flattenArgs(args, ctx)
-            return vals.every(v => v && v !== 0) ? true : false
+            return { value: vals.every(v => v && v !== 0) ? true : false, type: 'boolean' }
         }
         case 'OR': {
             const vals = flattenArgs(args, ctx)
-            return vals.some(v => v && v !== 0) ? true : false
+            return { value: vals.some(v => v && v !== 0) ? true : false, type: 'boolean' }
         }
         case 'NOT':
-            return !evaluate(args[0], ctx) ? true : false
+            return { value: !evaluateVal(args[0], ctx) ? true : false, type: 'boolean' }
 
         // Text
         case 'CONCAT': {
-            return flattenArgs(args, ctx).map(v => v ?? '').join('')
+            return { value: flattenArgs(args, ctx).map(v => v ?? '').join(''), type: 'text' }
         }
         case 'UPPER':
-            return String(evaluate(args[0], ctx) ?? '').toUpperCase()
+            return { value: String(evaluateVal(args[0], ctx) ?? '').toUpperCase(), type: 'text' }
         case 'LOWER':
-            return String(evaluate(args[0], ctx) ?? '').toLowerCase()
+            return { value: String(evaluateVal(args[0], ctx) ?? '').toLowerCase(), type: 'text' }
         case 'LEN':
-            return String(evaluate(args[0], ctx) ?? '').length
+            return { value: String(evaluateVal(args[0], ctx) ?? '').length, type: 'integer' }
         case 'TRIM':
-            return String(evaluate(args[0], ctx) ?? '').trim()
+            return { value: String(evaluateVal(args[0], ctx) ?? '').trim(), type: 'text' }
         case 'LEFT': {
-            const s = String(evaluate(args[0], ctx) ?? '')
-            const n = args.length > 1 ? toNumber(evaluate(args[1], ctx)) : 1
-            return s.substring(0, n)
+            const s = String(evaluateVal(args[0], ctx) ?? '')
+            const n = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 1
+            return { value: s.substring(0, n), type: 'text' }
         }
         case 'RIGHT': {
-            const s = String(evaluate(args[0], ctx) ?? '')
-            const n = args.length > 1 ? toNumber(evaluate(args[1], ctx)) : 1
-            return s.substring(s.length - n)
+            const s = String(evaluateVal(args[0], ctx) ?? '')
+            const n = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 1
+            return { value: s.substring(s.length - n), type: 'text' }
         }
         case 'MID': {
-            const s = String(evaluate(args[0], ctx) ?? '')
-            const start = toNumber(evaluate(args[1], ctx)) - 1
-            const len = toNumber(evaluate(args[2], ctx))
-            return s.substring(start, start + len)
+            const s = String(evaluateVal(args[0], ctx) ?? '')
+            const start = toNumber(evaluateVal(args[1], ctx)) - 1
+            const len = toNumber(evaluateVal(args[2], ctx))
+            return { value: s.substring(start, start + len), type: 'text' }
         }
 
         // Constants / Date
         case 'PI':
-            return Math.PI
+            return { value: Math.PI, type: 'float' }
         case 'NOW':
-            return new Date().toLocaleString()
+            return { value: new Date().toLocaleString(), type: 'text' }
         case 'TODAY':
-            return new Date().toLocaleDateString()
+            return { value: new Date().toLocaleDateString(), type: 'text' }
 
         default:
-            return `#NAME? (${name})`
+            return { value: `#NAME? (${name})`, type: 'text' }
     }
 }
 
-// ── Main evaluator ──
+// ── Main evaluator (type-aware) ──
 
-function evaluate(node: ASTNode, ctx: FormulaContext): CellValue {
+function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
     switch (node.type) {
-        case 'number': return node.value
-        case 'string': return node.value
-        case 'boolean': return node.value
-        case 'cell_ref': return ctx.getCellValue(node.col, node.row)
-        case 'range': throw new Error('Range can only be used as a function argument')
+        case 'number':
+            return { value: node.value, type: Number.isInteger(node.value) ? 'integer' : 'float' }
+        case 'string':
+            return { value: node.value, type: 'text' }
+        case 'boolean':
+            return { value: node.value, type: 'boolean' }
+        case 'cell_ref':
+            return { value: ctx.getCellValue(node.col, node.row), type: ctx.getCellType(node.col, node.row) }
+        case 'range':
+            throw new Error('Range can only be used as a function argument')
 
         case 'unary':
-            if (node.op === '-') return -toNumber(evaluate(node.operand, ctx))
+            if (node.op === '-') {
+                const operand = evaluate(node.operand, ctx)
+                return { value: -toNumber(operand.value), type: operand.type }
+            }
             return evaluate(node.operand, ctx)
 
         case 'binary': {
             if (node.op === '&') {
-                return String(evaluate(node.left, ctx) ?? '') + String(evaluate(node.right, ctx) ?? '')
+                return {
+                    value: String(evaluateVal(node.left, ctx) ?? '') + String(evaluateVal(node.right, ctx) ?? ''),
+                    type: 'text'
+                }
             }
             const l = evaluate(node.left, ctx)
             const r = evaluate(node.right, ctx)
+
+            // Comparison operators
+            if (['=', '<>', '<', '>', '<=', '>='].includes(node.op)) {
+                switch (node.op) {
+                    case '=': return { value: l.value === r.value, type: 'boolean' }
+                    case '<>': return { value: l.value !== r.value, type: 'boolean' }
+                    case '<': return { value: toNumber(l.value) < toNumber(r.value), type: 'boolean' }
+                    case '>': return { value: toNumber(l.value) > toNumber(r.value), type: 'boolean' }
+                    case '<=': return { value: toNumber(l.value) <= toNumber(r.value), type: 'boolean' }
+                    case '>=': return { value: toNumber(l.value) >= toNumber(r.value), type: 'boolean' }
+                }
+            }
+
+            // Arithmetic: check type compatibility
+            const resolvedType = resolveType(l.type, r.type)
+
+            // Text in arithmetic → #N/A
+            if (resolvedType === null) {
+                // One is text and the other is numeric
+                if ((l.type === 'text' && l.value !== null && l.value !== '') ||
+                    (r.type === 'text' && r.value !== null && r.value !== '')) {
+                    return { value: '#N/A', type: 'text' }
+                }
+                // Both empty or compatible, fall through
+            }
+
+            const lNum = toNumber(l.value)
+            const rNum = toNumber(r.value)
+
             switch (node.op) {
-                case '+': return toNumber(l) + toNumber(r)
-                case '-': return toNumber(l) - toNumber(r)
-                case '*': return toNumber(l) * toNumber(r)
-                case '/': return toNumber(r) === 0 ? '#DIV/0!' : toNumber(l) / toNumber(r)
-                case '^': return Math.pow(toNumber(l), toNumber(r))
-                case '=': return l === r
-                case '<>': return l !== r
-                case '<': return toNumber(l) < toNumber(r)
-                case '>': return toNumber(l) > toNumber(r)
-                case '<=': return toNumber(l) <= toNumber(r)
-                case '>=': return toNumber(l) >= toNumber(r)
-                default: return '#OP!'
+                case '+': return { value: lNum + rNum, type: resolvedType ?? 'float' }
+                case '-': return { value: lNum - rNum, type: resolvedType ?? 'float' }
+                case '*': {
+                    // Multiplying currency by integer/float keeps currency
+                    const multType = isNumericType(l.type) && (r.type === 'integer' || r.type === 'float')
+                        ? l.type
+                        : (isNumericType(r.type) && (l.type === 'integer' || l.type === 'float')
+                            ? r.type
+                            : resolvedType ?? 'float')
+                    return { value: lNum * rNum, type: multType }
+                }
+                case '/': {
+                    if (rNum === 0) return { value: '#DIV/0!', type: 'text' }
+                    // Dividing currency by number keeps currency; currency / currency → float
+                    let divType = resolvedType ?? 'float'
+                    if ((l.type === 'currency_eur' || l.type === 'currency_usd') &&
+                        (r.type === 'currency_eur' || r.type === 'currency_usd')) {
+                        divType = 'float' // currency / currency = ratio
+                    }
+                    return { value: lNum / rNum, type: divType }
+                }
+                case '^': return { value: Math.pow(lNum, rNum), type: 'float' }
+                default: return { value: '#OP!', type: 'text' }
             }
         }
 
@@ -460,15 +587,33 @@ function evaluate(node: ASTNode, ctx: FormulaContext): CellValue {
     }
 }
 
+/** Convenience: evaluate and return just the value (for backward compat) */
+function evaluateVal(node: ASTNode, ctx: FormulaContext): CellValue {
+    return evaluate(node, ctx).value
+}
+
 // ── Public API ──
 
 export function evaluateFormula(formulaBody: string, ctx: FormulaContext): CellValue {
     try {
         const tokens = tokenize(formulaBody)
         const ast = new Parser(tokens).parse()
-        return evaluate(ast, ctx)
+        return evaluate(ast, ctx).value
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e)
         return `#ERROR! ${msg}`
+    }
+}
+
+/** Type-aware formula evaluation — returns both value and resolved type */
+export function evaluateFormulaTyped(formulaBody: string, ctx: FormulaContext): TypedResult {
+    try {
+        const tokens = tokenize(formulaBody)
+        const ast = new Parser(tokens).parse()
+        const result = evaluate(ast, ctx)
+        return { value: result.value, type: result.type }
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e)
+        return { value: `#ERROR! ${msg}`, type: 'text' }
     }
 }

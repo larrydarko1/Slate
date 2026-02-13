@@ -87,7 +87,7 @@
                   />
                 </template>
                 <template v-else>
-                  <span class="cell-text" :class="cellTextClass(ci, ri)">
+                  <span class="cell-text" :class="cellTextClass(ci, ri)" :style="cellTextStyle(ci, ri)">
                     {{ ss.getDisplayValue(table.id, ci, ri) }}
                   </span>
                 </template>
@@ -192,11 +192,27 @@ function cellClasses(ci: number, ri: number) {
 function cellTextClass(ci: number, ri: number) {
   const cell = props.table.rows[ri]?.[ci]
   if (!cell) return {}
+  const cellType = ss.getCellType(props.table.id, ci, ri)
   return {
     'formula-result': cell.formula != null,
     'error-value': typeof cell.computed === 'string' && cell.computed.startsWith('#'),
     bold: cell.format?.bold,
     italic: cell.format?.italic,
+    'type-integer': cellType === 'integer',
+    'type-float': cellType === 'float',
+    'type-currency': cellType === 'currency_eur' || cellType === 'currency_usd',
+    'type-text': cellType === 'text',
+    'type-boolean': cellType === 'boolean',
+  }
+}
+
+function cellTextStyle(ci: number, ri: number) {
+  const align = ss.getCellAlignment(props.table.id, ci, ri)
+  const cell = props.table.rows[ri]?.[ci]
+  return {
+    textAlign: align,
+    color: cell?.format?.textColor ?? undefined,
+    backgroundColor: cell?.format?.bgColor ?? undefined,
   }
 }
 
@@ -669,6 +685,16 @@ watch(
 
   &.bold { font-weight: 700; }
   &.italic { font-style: italic; }
+
+  &.type-currency {
+    font-feature-settings: 'tnum' 1;
+    letter-spacing: 0.01em;
+  }
+
+  &.type-integer,
+  &.type-float {
+    font-feature-settings: 'tnum' 1;
+  }
 }
 
 .cell-edit-input {

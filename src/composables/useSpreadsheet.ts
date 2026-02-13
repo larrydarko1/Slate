@@ -1,7 +1,9 @@
 import { ref, type InjectionKey } from 'vue'
 import type { SpreadsheetTable, Cell, CellValue, CellReference, MergedRegion, SelectionRange } from '../types/spreadsheet'
 import { generateId, createDefaultTable, createEmptyCell } from '../types/spreadsheet'
-import { evaluateFormula } from '../engine/formula'
+import { evaluateFormulaTyped } from '../engine/formula'
+import type { CellDataType } from '../engine/cellTypes'
+import { detectType, formatCellDisplay, getTypeAlignment } from '../engine/cellTypes'
 
 export function useSpreadsheet() {
     const tables = ref<SpreadsheetTable[]>([])
@@ -152,17 +154,28 @@ export function useSpreadsheet() {
         if (raw.startsWith('=')) {
             cell.formula = raw.substring(1)
             cell.value = null
+            cell.cellType = 'empty'  // will be resolved during recalculate
         } else {
             cell.formula = undefined
             cell.computed = undefined
+            cell.computedType = undefined
+
             if (raw === '') {
                 cell.value = null
+                cell.cellType = 'empty'
             } else {
-                const n = Number(raw)
-                if (!isNaN(n) && raw.trim() !== '') cell.value = n
-                else if (raw.toLowerCase() === 'true') cell.value = true
-                else if (raw.toLowerCase() === 'false') cell.value = false
-                else cell.value = raw
+                const detected = detectType(raw)
+                cell.cellType = detected.type
+
+                if (detected.numericValue !== null && detected.type !== 'text') {
+                    cell.value = detected.numericValue
+                } else if (detected.type === 'boolean') {
+                    cell.value = detected.rawInput.toLowerCase() === 'true'
+                } else if (detected.type === 'text') {
+                    cell.value = detected.rawInput
+                } else {
+                    cell.value = raw
+                }
             }
         }
 
@@ -172,14 +185,61 @@ export function useSpreadsheet() {
     function getDisplayValue(tableId: string, col: number, row: number): string {
         const cell = getCell(tableId, col, row)
         if (!cell) return ''
+
         const v = cell.formula != null ? cell.computed : cell.value
+        const t = cell.formula != null ? (cell.computedType ?? cell.cellType) : cell.cellType
+
         if (v === null || v === undefined) return ''
-        if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE'
-        if (typeof v === 'number') {
-            if (Number.isInteger(v)) return v.toString()
-            return parseFloat(v.toFixed(10)).toString()
+
+        // Error strings pass through
+        if (typeof v === 'string' && v.startsWith('#')) return v
+
+        return formatCellDisplay(v, t)
+    }
+
+    /** Get the effective type of a cell (considering formula results) */
+    function getCellType(tableId: string, col: number, row: number): CellDataType {
+        const cell = getCell(tableId, col, row)
+        if (!cell) return 'empty'
+        if (cell.formula != null) return cell.computedType ?? cell.cellType ?? 'empty'
+        return cell.cellType ?? 'empty'
+    }
+
+    /** Get type-based alignment for a cell */
+    function getCellAlignment(tableId: string, col: number, row: number): 'left' | 'right' | 'center' {
+        const cell = getCell(tableId, col, row)
+        if (!cell) return 'left'
+        // Explicit format alignment takes priority
+        if (cell.format?.align) return cell.format.align
+        const t = cell.formula != null ? (cell.computedType ?? cell.cellType) : cell.cellType
+        return getTypeAlignment(t)
+    }
+
+    /** Set cell type manually (e.g. from toolbar dropdown) */
+    function setCellType(tableId: string, col: number, row: number, newType: CellDataType) {
+        const cell = getCell(tableId, col, row)
+        if (!cell) return
+
+        cell.cellType = newType
+
+        // Try to re-interpret the value under the new type
+        if (cell.value !== null && cell.value !== undefined && !cell.formula) {
+            if (typeof cell.value === 'number') {
+                // Number to integer: round
+                if (newType === 'integer') {
+                    cell.value = Math.round(cell.value)
+                }
+                // Other numeric types: keep underlying number, display changes
+            } else if (typeof cell.value === 'string' && newType !== 'text') {
+                // Try parsing text as the new type
+                const detected = detectType(cell.value)
+                if (detected.numericValue !== null) {
+                    cell.value = detected.numericValue
+                }
+            }
         }
-        return String(v)
+
+        recalculate()
     }
 
     function getRawValue(tableId: string, col: number, row: number): string {
@@ -375,8 +435,18 @@ export function useSpreadsheet() {
             if (cell.formula != null) {
                 evaluating.add(key)
                 try {
-                    cell.computed = evaluateFormula(cell.formula, {
+                    const result = evaluateFormulaTyped(cell.formula, {
                         getCellValue: (c, r) => resolveCellValue(tableId, c, r),
+                        getCellType: (c, r) => {
+                            const refCell = getCell(tableId, c, r)
+                            if (!refCell) return 'empty'
+                            if (refCell.formula != null) {
+                                // Ensure the referred cell is evaluated first
+                                resolveCellValue(tableId, c, r)
+                                return refCell.computedType ?? refCell.cellType ?? 'empty'
+                            }
+                            return refCell.cellType ?? 'empty'
+                        },
                         getCellRange: (sc, sr, ec, er) => {
                             const vals: CellValue[] = []
                             for (let r = sr; r <= er; r++)
@@ -384,9 +454,27 @@ export function useSpreadsheet() {
                                     vals.push(resolveCellValue(tableId, c, r))
                             return vals
                         },
+                        getCellRangeTypes: (sc, sr, ec, er) => {
+                            const types: CellDataType[] = []
+                            for (let r = sr; r <= er; r++)
+                                for (let c = sc; c <= ec; c++) {
+                                    const refCell = getCell(tableId, c, r)
+                                    if (!refCell) { types.push('empty'); continue }
+                                    if (refCell.formula != null) {
+                                        resolveCellValue(tableId, c, r)
+                                        types.push(refCell.computedType ?? refCell.cellType ?? 'empty')
+                                    } else {
+                                        types.push(refCell.cellType ?? 'empty')
+                                    }
+                                }
+                            return types
+                        },
                     })
+                    cell.computed = result.value
+                    cell.computedType = result.type
                 } catch {
                     cell.computed = '#ERROR!'
+                    cell.computedType = 'text'
                 }
                 evaluating.delete(key)
                 return cell.computed!
@@ -428,6 +516,27 @@ export function useSpreadsheet() {
                 tables.value = data.tables.map((t: any) => ({
                     ...t,
                     mergedRegions: t.mergedRegions ?? [],
+                    rows: (t.rows ?? []).map((row: any[]) =>
+                        row.map((cell: any) => {
+                            // Ensure cellType exists (migration from older files)
+                            if (!cell.cellType) {
+                                if (cell.value === null || cell.value === undefined) {
+                                    cell.cellType = 'empty'
+                                } else if (typeof cell.value === 'boolean') {
+                                    cell.cellType = 'boolean'
+                                } else if (typeof cell.value === 'number') {
+                                    cell.cellType = Number.isInteger(cell.value) ? 'integer' : 'float'
+                                } else if (typeof cell.value === 'string') {
+                                    // Try to detect the type from string value
+                                    const detected = detectType(cell.value)
+                                    cell.cellType = detected.type
+                                } else {
+                                    cell.cellType = 'text'
+                                }
+                            }
+                            return cell
+                        })
+                    ),
                 }))
                 maxZ = Math.max(0, ...tables.value.map(t => t.zIndex))
                 tableCount = tables.value.length
@@ -541,6 +650,9 @@ export function useSpreadsheet() {
         setCellValue,
         getDisplayValue,
         getRawValue,
+        getCellType,
+        getCellAlignment,
+        setCellType,
 
         // Selection
         selectCell,

@@ -1,9 +1,13 @@
+import type { CellDataType } from '../engine/cellTypes'
+
 export type CellValue = string | number | boolean | null
 
 export interface Cell {
     value: CellValue
     formula?: string        // Formula body (without leading '=')
     computed?: CellValue     // Cached result of formula evaluation
+    cellType: CellDataType   // Detected / assigned data type
+    computedType?: CellDataType  // Resolved type after formula evaluation
     format?: CellFormat
 }
 
@@ -86,7 +90,7 @@ export function columnLetterToIndex(letter: string): number {
 }
 
 export function createEmptyCell(): Cell {
-    return { value: null }
+    return { value: null, cellType: 'empty' }
 }
 
 export function createDefaultTable(x: number, y: number, name: string): SpreadsheetTable {
