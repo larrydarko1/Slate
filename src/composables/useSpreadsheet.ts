@@ -250,6 +250,31 @@ export function useSpreadsheet() {
         return String(cell.value)
     }
 
+    /** Set format properties on a single cell */
+    function setCellFormat(tableId: string, col: number, row: number, fmt: Partial<import('../types/spreadsheet').CellFormat>) {
+        const cell = getCell(tableId, col, row)
+        if (!cell) return
+        cell.format = { ...cell.format, ...fmt }
+    }
+
+    /** Apply format to all cells in the current selection */
+    function setSelectionFormat(fmt: Partial<import('../types/spreadsheet').CellFormat>) {
+        const sr = getNormalizedSelection()
+        if (!sr) return
+        for (let r = sr.startRow; r <= sr.endRow; r++) {
+            for (let c = sr.startCol; c <= sr.endCol; c++) {
+                setCellFormat(sr.tableId, c, r, fmt)
+            }
+        }
+    }
+
+    /** Get format of the active cell */
+    function getActiveCellFormat(): import('../types/spreadsheet').CellFormat | undefined {
+        if (!activeCell.value) return undefined
+        const cell = getCell(activeCell.value.tableId, activeCell.value.col, activeCell.value.row)
+        return cell?.format
+    }
+
     // ── Editing state ──
 
     function selectCell(tableId: string, col: number, row: number) {
@@ -653,6 +678,9 @@ export function useSpreadsheet() {
         getCellType,
         getCellAlignment,
         setCellType,
+        setCellFormat,
+        setSelectionFormat,
+        getActiveCellFormat,
 
         // Selection
         selectCell,

@@ -65,6 +65,83 @@
       </div>
     </div>
 
+    <div class="toolbar-sep" aria-hidden="true"></div>
+
+    <!-- Cell coloring -->
+    <div class="toolbar-group">
+      <!-- Text color -->
+      <div class="color-btn-wrapper" ref="textColorRef">
+        <button class="tb color-btn" :disabled="!hasActiveCell" title="Text color" @click="applyTextColor(lastTextColor)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M4.5 12L8 3l3.5 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5.75 9h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <span class="color-indicator" :style="{ backgroundColor: lastTextColor }"></span>
+        </button>
+        <button class="tb color-chevron" :disabled="!hasActiveCell" @click.stop="toggleColorMenu('text')">
+          <svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+        <div v-if="colorMenuType === 'text'" class="color-dropdown" @click.stop>
+          <div class="color-dropdown-header">Text Color</div>
+          <div class="color-grid">
+            <button
+              v-for="c in colorPalette"
+              :key="c"
+              class="color-swatch"
+              :class="{ active: c === currentTextColor, 'is-light': isLightColor(c) }"
+              :style="{ backgroundColor: c }"
+              :title="c"
+              @click="applyTextColor(c)"
+            ></button>
+          </div>
+          <button class="color-clear-btn" @click="clearTextColor">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            <span>No color</span>
+          </button>
+          <div class="color-custom-row">
+            <label class="color-custom-label">Custom:</label>
+            <input type="color" class="color-custom-input" :value="lastTextColor" @input="onCustomTextColor($event)" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Fill color -->
+      <div class="color-btn-wrapper" ref="fillColorRef">
+        <button class="tb color-btn" :disabled="!hasActiveCell" title="Fill color" @click="applyFillColor(lastFillColor)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="2.5" y="2.5" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.3"/>
+            <rect x="4" y="4" width="8" height="8" rx="1" :fill="lastFillColor" opacity="0.5"/>
+          </svg>
+          <span class="color-indicator" :style="{ backgroundColor: lastFillColor }"></span>
+        </button>
+        <button class="tb color-chevron" :disabled="!hasActiveCell" @click.stop="toggleColorMenu('fill')">
+          <svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+        <div v-if="colorMenuType === 'fill'" class="color-dropdown" @click.stop>
+          <div class="color-dropdown-header">Fill Color</div>
+          <div class="color-grid">
+            <button
+              v-for="c in colorPalette"
+              :key="c"
+              class="color-swatch"
+              :class="{ active: c === currentFillColor, 'is-light': isLightColor(c) }"
+              :style="{ backgroundColor: c }"
+              :title="c"
+              @click="applyFillColor(c)"
+            ></button>
+          </div>
+          <button class="color-clear-btn" @click="clearFillColor">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            <span>No fill</span>
+          </button>
+          <div class="color-custom-row">
+            <label class="color-custom-label">Custom:</label>
+            <input type="color" class="color-custom-input" :value="lastFillColor" @input="onCustomFillColor($event)" />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="toolbar-spacer"></div>
 
     <div class="toolbar-group">
@@ -139,6 +216,82 @@ function onClickOutside(e: MouseEvent) {
   if (typeMenuOpen.value && typeSelectorRef.value && !typeSelectorRef.value.contains(e.target as Node)) {
     typeMenuOpen.value = false
   }
+  if (colorMenuType.value && textColorRef.value && fillColorRef.value
+    && !textColorRef.value.contains(e.target as Node)
+    && !fillColorRef.value.contains(e.target as Node)) {
+    colorMenuType.value = null
+  }
+}
+
+// ── Cell coloring ──
+
+const textColorRef = ref<HTMLElement | null>(null)
+const fillColorRef = ref<HTMLElement | null>(null)
+const colorMenuType = ref<'text' | 'fill' | null>(null)
+const lastTextColor = ref('#000000')
+const lastFillColor = ref('#FFEB3B')
+
+const colorPalette = [
+  '#000000', '#434343', '#666666', '#999999', '#B7B7B7', '#CCCCCC', '#D9D9D9', '#EFEFEF', '#F3F3F3', '#FFFFFF',
+  '#980000', '#FF0000', '#FF9900', '#FFFF00', '#00FF00', '#00FFFF', '#4A86E8', '#0000FF', '#9900FF', '#FF00FF',
+  '#E6B8AF', '#F4CCCC', '#FCE5CD', '#FFF2CC', '#D9EAD3', '#D0E0E3', '#C9DAF8', '#CFE2F3', '#D9D2E9', '#EAD1DC',
+  '#DD7E6B', '#EA9999', '#F9CB9C', '#FFE599', '#B6D7A8', '#A2C4C9', '#A4C2F4', '#9FC5E8', '#B4A7D6', '#D5A6BD',
+  '#CC4125', '#E06666', '#F6B26B', '#FFD966', '#93C47D', '#76A5AF', '#6D9EEB', '#6FA8DC', '#8E7CC3', '#C27BA0',
+  '#A61C00', '#CC0000', '#E69138', '#F1C232', '#6AA84F', '#45818E', '#3C78D8', '#3D85C6', '#674EA7', '#A64D79',
+  '#85200C', '#990000', '#B45F06', '#BF9000', '#38761D', '#134F5C', '#1155CC', '#0B5394', '#351C75', '#741B47',
+]
+
+const currentTextColor = computed(() => {
+  const fmt = ss.getActiveCellFormat()
+  return fmt?.textColor ?? null
+})
+
+const currentFillColor = computed(() => {
+  const fmt = ss.getActiveCellFormat()
+  return fmt?.bgColor ?? null
+})
+
+function toggleColorMenu(type: 'text' | 'fill') {
+  colorMenuType.value = colorMenuType.value === type ? null : type
+}
+
+function applyTextColor(color: string) {
+  ss.setSelectionFormat({ textColor: color })
+  lastTextColor.value = color
+  colorMenuType.value = null
+}
+
+function applyFillColor(color: string) {
+  ss.setSelectionFormat({ bgColor: color })
+  lastFillColor.value = color
+  colorMenuType.value = null
+}
+
+function clearTextColor() {
+  ss.setSelectionFormat({ textColor: undefined })
+  colorMenuType.value = null
+}
+
+function clearFillColor() {
+  ss.setSelectionFormat({ bgColor: undefined })
+  colorMenuType.value = null
+}
+
+function onCustomTextColor(e: Event) {
+  const color = (e.target as HTMLInputElement).value
+  applyTextColor(color)
+}
+
+function onCustomFillColor(e: Event) {
+  const color = (e.target as HTMLInputElement).value
+  applyFillColor(color)
+}
+
+function isLightColor(hex: string): boolean {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return (r * 299 + g * 587 + b * 114) / 1000 > 200
 }
 
 // ── Theme ──
@@ -338,5 +491,143 @@ function applyTheme() {
 .type-option-label {
   flex: 1;
   text-align: left;
+}
+
+/* ── Color picker buttons ── */
+
+.color-btn-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.color-btn {
+  padding-right: 2px !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  position: relative;
+}
+
+.color-indicator {
+  position: absolute;
+  bottom: 3px;
+  left: 6px;
+  right: 6px;
+  height: 2.5px;
+  border-radius: 1px;
+}
+
+.color-chevron {
+  padding: 0 3px !important;
+  min-width: 14px !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+.color-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  padding: 10px;
+  z-index: 200;
+  width: 240px;
+}
+
+.color-dropdown-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  padding: 0;
+
+  &:hover {
+    transform: scale(1.2);
+    z-index: 1;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  }
+
+  &.active {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 1px;
+  }
+
+  &.is-light {
+    border-color: rgba(0, 0, 0, 0.15);
+  }
+}
+
+.color-clear-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 6px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.1s;
+
+  &:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+}
+
+.color-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-color);
+}
+
+.color-custom-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.color-custom-input {
+  width: 28px;
+  height: 22px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 1px;
+  cursor: pointer;
+  background: transparent;
+
+  &::-webkit-color-swatch-wrapper {
+    padding: 1px;
+  }
+  &::-webkit-color-swatch {
+    border: none;
+    border-radius: 2px;
+  }
 }
 </style>

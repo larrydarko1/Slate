@@ -65,7 +65,7 @@
                 v-if="!ss.isCellHiddenByMerge(table.id, ci, ri)"
                 class="cell"
                 :class="cellClasses(ci, ri)"
-                :style="mergedCellStyle(ci, ri)"
+                :style="cellTdStyle(ci, ri)"
                 :colspan="mergedColspan(ci, ri)"
                 :rowspan="mergedRowspan(ci, ri)"
                 @mousedown.stop="onCellMouseDown(ci, ri, $event)"
@@ -87,7 +87,7 @@
                   />
                 </template>
                 <template v-else>
-                  <span class="cell-text" :class="cellTextClass(ci, ri)" :style="cellTextStyle(ci, ri)">
+                  <span class="cell-text" :class="cellTextClass(ci, ri)" :style="cellTextStyle(ci, ri)" :title="ss.getDisplayValue(table.id, ci, ri)">
                     {{ ss.getDisplayValue(table.id, ci, ri) }}
                   </span>
                 </template>
@@ -206,13 +206,32 @@ function cellTextClass(ci: number, ri: number) {
   }
 }
 
+function cellTdStyle(ci: number, ri: number) {
+  const m = ss.isMergedOrigin(props.table.id, ci, ri)
+  const cell = props.table.rows[ri]?.[ci]
+  const base: Record<string, string | undefined> = {}
+  if (m) {
+    let totalWidth = 0
+    for (let c = m.startCol; c <= m.endCol; c++) {
+      totalWidth += props.table.columns[c]?.width ?? 120
+    }
+    base.width = totalWidth + 'px'
+    base.minWidth = totalWidth + 'px'
+  } else {
+    base.width = props.table.columns[ci]?.width + 'px'
+  }
+  if (cell?.format?.bgColor) {
+    base.backgroundColor = cell.format.bgColor
+  }
+  return base
+}
+
 function cellTextStyle(ci: number, ri: number) {
   const align = ss.getCellAlignment(props.table.id, ci, ri)
   const cell = props.table.rows[ri]?.[ci]
   return {
     textAlign: align,
     color: cell?.format?.textColor ?? undefined,
-    backgroundColor: cell?.format?.bgColor ?? undefined,
   }
 }
 
@@ -237,19 +256,6 @@ function mergedRowspan(ci: number, ri: number): number | undefined {
   const m = ss.isMergedOrigin(props.table.id, ci, ri)
   if (!m) return undefined
   return m.endRow - m.startRow + 1
-}
-
-function mergedCellStyle(ci: number, ri: number) {
-  const m = ss.isMergedOrigin(props.table.id, ci, ri)
-  if (m) {
-    // Sum widths of all merged columns
-    let totalWidth = 0
-    for (let c = m.startCol; c <= m.endCol; c++) {
-      totalWidth += props.table.columns[c]?.width ?? 120
-    }
-    return { width: totalWidth + 'px', minWidth: totalWidth + 'px' }
-  }
-  return { width: props.table.columns[ci]?.width + 'px' }
 }
 
 // ── Cell interaction ──
