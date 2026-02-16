@@ -26,6 +26,10 @@
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 6v4M5.5 6h5M8 6v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         <span>Text</span>
       </button>
+      <button class="tb has-label" @click="$emit('addChart')" title="Add Chart">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="4" y="8" width="2" height="4" rx="0.5" fill="currentColor"/><rect x="7" y="5" width="2" height="7" rx="0.5" fill="currentColor"/><rect x="10" y="6.5" width="2" height="5.5" rx="0.5" fill="currentColor"/></svg>
+        <span>Chart</span>
+      </button>
     </div>
 
     <div class="toolbar-sep" aria-hidden="true"></div>
@@ -354,6 +358,7 @@ import { getTypeLabel } from '../engine/cellTypes'
 defineEmits<{ 
   addTable: []
   addTextBox: []
+  addChart: []
   newFile: []
   openFile: []
   saveFile: []

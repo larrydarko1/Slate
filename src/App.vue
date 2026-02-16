@@ -4,6 +4,7 @@
     <Toolbar 
       @addTable="ss.addTable()" 
       @addTextBox="ss.addTextBox()"
+      @addChart="ss.addChart()"
       @newFile="handleNewFile"
       @openFile="ss.openFile"
       @saveFile="ss.saveFile"

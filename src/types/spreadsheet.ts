@@ -78,6 +78,34 @@ export interface TextBox {
     borderRadius: number
 }
 
+export type ChartType = 'bar' | 'line' | 'pie' | 'doughnut' | 'scatter' | 'area'
+
+export interface ChartDataSource {
+    tableId: string
+    /** Column index used for labels (X axis / slice names) */
+    labelCol: number
+    /** Column indices whose values are plotted as series */
+    valueCols: number[]
+    /** Whether the first data row is a header (used for series names) */
+    useHeader: boolean
+}
+
+export interface ChartObject {
+    id: string
+    x: number
+    y: number
+    width: number
+    height: number
+    zIndex: number
+    chartType: ChartType
+    title: string
+    dataSource: ChartDataSource | null
+    showLegend: boolean
+    showGrid: boolean
+    legendPosition: 'top' | 'bottom' | 'left' | 'right'
+    colorScheme: string[]
+}
+
 export interface Sheet {
     id: string
     name: string
@@ -89,6 +117,7 @@ export interface Canvas {
     name: string
     tables: SpreadsheetTable[]
     textBoxes: TextBox[]
+    charts: ChartObject[]
     canvasOffset: { x: number; y: number }
     canvasZoom: number
 }
@@ -108,6 +137,7 @@ export function createDefaultCanvas(name: string): Canvas {
         name,
         tables: [],
         textBoxes: [],
+        charts: [],
         canvasOffset: { x: 0, y: 0 },
         canvasZoom: 1.0,
     }
@@ -162,6 +192,30 @@ export function createDefaultTextBox(x: number, y: number): TextBox {
         borderColor: '',
         borderWidth: 0,
         borderRadius: 6,
+    }
+}
+
+const DEFAULT_CHART_COLORS = [
+    '#4e79a7', '#f28e2b', '#e15759', '#76b7b2',
+    '#59a14f', '#edc948', '#b07aa1', '#ff9da7',
+    '#9c755f', '#bab0ac',
+]
+
+export function createDefaultChart(x: number, y: number): ChartObject {
+    return {
+        id: generateId('chart'),
+        x,
+        y,
+        width: 420,
+        height: 300,
+        zIndex: 0,
+        chartType: 'bar',
+        title: 'Chart',
+        dataSource: null,
+        showLegend: true,
+        showGrid: true,
+        legendPosition: 'top',
+        colorScheme: [...DEFAULT_CHART_COLORS],
     }
 }
 

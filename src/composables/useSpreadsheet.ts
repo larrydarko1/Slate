@@ -1,6 +1,6 @@
 import { ref, computed, type InjectionKey } from 'vue'
-import type { SpreadsheetTable, Cell, CellValue, CellReference, MergedRegion, SelectionRange, Canvas, TextBox } from '../types/spreadsheet'
-import { generateId, createDefaultTable, createEmptyCell, createDefaultCanvas, createDefaultTextBox, MAX_CANVASES, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP } from '../types/spreadsheet'
+import type { SpreadsheetTable, Cell, CellValue, CellReference, MergedRegion, SelectionRange, Canvas, TextBox, ChartObject } from '../types/spreadsheet'
+import { generateId, createDefaultTable, createEmptyCell, createDefaultCanvas, createDefaultTextBox, createDefaultChart, MAX_CANVASES, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP } from '../types/spreadsheet'
 import { evaluateFormulaTyped } from '../engine/formula'
 import type { CellDataType } from '../engine/cellTypes'
 import { detectType, formatCellDisplay, getTypeAlignment } from '../engine/cellTypes'
@@ -15,6 +15,7 @@ export function useSpreadsheet() {
     )
     const tables = computed(() => activeCanvas.value.tables)
     const textBoxes = computed(() => activeCanvas.value.textBoxes)
+    const charts = computed(() => activeCanvas.value.charts)
     const canvasOffset = computed({
         get: () => activeCanvas.value.canvasOffset,
         set: (v) => { activeCanvas.value.canvasOffset = v },
@@ -26,6 +27,7 @@ export function useSpreadsheet() {
 
     const activeCell = ref<CellReference | null>(null)
     const activeTextBoxId = ref<string | null>(null)
+    const activeChartId = ref<string | null>(null)
     const selectionRange = ref<SelectionRange | null>(null)
     const isEditing = ref(false)
     const editValue = ref('')
@@ -65,12 +67,13 @@ export function useSpreadsheet() {
         if (isEditing.value) commitEdit()
         activeCell.value = null
         activeTextBoxId.value = null
+        activeChartId.value = null
         selectionRange.value = null
         isEditing.value = false
         activeCanvasId.value = canvasId
         // Recalculate maxZ for the new canvas
         const cv = activeCanvas.value
-        maxZ = Math.max(0, ...cv.tables.map(t => t.zIndex), ...cv.textBoxes.map(tb => tb.zIndex))
+        maxZ = Math.max(0, ...cv.tables.map(t => t.zIndex), ...cv.textBoxes.map(tb => tb.zIndex), ...cv.charts.map(ch => ch.zIndex))
     }
 
     // ── Zoom ──
@@ -139,11 +142,13 @@ export function useSpreadsheet() {
     }
 
     function bringToFrontById(id: string) {
-        // Works for any item (table or textbox)
+        // Works for any item (table, textbox, or chart)
         const t = findTable(id)
         if (t) { t.zIndex = ++maxZ; return }
         const tb = findTextBox(id)
-        if (tb) tb.zIndex = ++maxZ
+        if (tb) { tb.zIndex = ++maxZ; return }
+        const ch = findChart(id)
+        if (ch) ch.zIndex = ++maxZ
     }
 
     function renameTable(tableId: string, name: string) {
@@ -390,6 +395,7 @@ export function useSpreadsheet() {
         if (isEditing.value) commitEdit()
         activeCell.value = { tableId, col, row }
         activeTextBoxId.value = null
+        activeChartId.value = null
         selectionRange.value = { tableId, startCol: col, startRow: row, endCol: col, endRow: row }
         bringToFront(tableId)
     }
@@ -400,6 +406,7 @@ export function useSpreadsheet() {
         if (isEditing.value) commitEdit()
         activeCell.value = { tableId, col: 0, row }
         activeTextBoxId.value = null
+        activeChartId.value = null
         selectionRange.value = { tableId, startCol: 0, startRow: row, endCol: t.columns.length - 1, endRow: row }
         bringToFront(tableId)
     }
@@ -410,6 +417,7 @@ export function useSpreadsheet() {
         if (isEditing.value) commitEdit()
         activeCell.value = { tableId, col, row: 0 }
         activeTextBoxId.value = null
+        activeChartId.value = null
         selectionRange.value = { tableId, startCol: col, startRow: 0, endCol: col, endRow: t.rows.length - 1 }
         bringToFront(tableId)
     }
@@ -763,8 +771,63 @@ export function useSpreadsheet() {
     function selectTextBox(id: string) {
         if (isEditing.value) commitEdit()
         activeCell.value = null
+        activeChartId.value = null
         selectionRange.value = null
         activeTextBoxId.value = id
+        bringToFrontById(id)
+    }
+
+    // ── Charts ──
+
+    function findChart(id: string): ChartObject | undefined {
+        return charts.value.find(ch => ch.id === id)
+    }
+
+    function addChart() {
+        const canvas = activeCanvas.value
+        const zoom = canvasZoom.value
+        const ox = canvasOffset.value.x
+        const oy = canvasOffset.value.y
+        const x = Math.round((200 - ox) / zoom)
+        const y = Math.round((200 - oy) / zoom)
+        const chart = createDefaultChart(x, y)
+        chart.zIndex = ++maxZ
+        canvas.charts.push(chart)
+        activeCell.value = null
+        activeTextBoxId.value = null
+        activeChartId.value = chart.id
+    }
+
+    function removeChart(chartId: string) {
+        const canvas = activeCanvas.value
+        canvas.charts = canvas.charts.filter(ch => ch.id !== chartId)
+        if (activeChartId.value === chartId) activeChartId.value = null
+    }
+
+    function moveChart(chartId: string, x: number, y: number) {
+        const ch = findChart(chartId)
+        if (ch) { ch.x = x; ch.y = y }
+    }
+
+    function resizeChart(chartId: string, width: number, height: number) {
+        const ch = findChart(chartId)
+        if (ch) {
+            ch.width = Math.max(200, width)
+            ch.height = Math.max(150, height)
+        }
+    }
+
+    function updateChart(id: string, updates: Partial<ChartObject>) {
+        const ch = findChart(id)
+        if (ch) Object.assign(ch, updates)
+    }
+
+    function selectChart(id: string) {
+        if (isEditing.value) commitEdit()
+        activeCell.value = null
+        activeTextBoxId.value = null
+        selectionRange.value = null
+        activeChartId.value = id
         bringToFrontById(id)
     }
 
@@ -823,11 +886,12 @@ export function useSpreadsheet() {
                     canvasZoom: cv.canvasZoom ?? 1.0,
                     tables: (cv.tables ?? []).map(migrateTable),
                     textBoxes: cv.textBoxes ?? [],
+                    charts: cv.charts ?? [],
                 }))
                 canvasCount = canvases.value.length
                 activeCanvasId.value = data.activeCanvasId ?? canvases.value[0].id
                 const acv = activeCanvas.value
-                maxZ = Math.max(0, ...acv.tables.map(t => t.zIndex), ...acv.textBoxes.map(tb => tb.zIndex))
+                maxZ = Math.max(0, ...acv.tables.map(t => t.zIndex), ...acv.textBoxes.map(tb => tb.zIndex), ...acv.charts.map(ch => ch.zIndex))
                 tableCount = canvases.value.reduce((sum, cv) => sum + cv.tables.length, 0)
             } else if (data.tables) {
                 // V1 format – single canvas, migrate
@@ -844,6 +908,7 @@ export function useSpreadsheet() {
 
             activeCell.value = null
             activeTextBoxId.value = null
+            activeChartId.value = null
             isEditing.value = false
             recalculate()
             return true
@@ -915,6 +980,7 @@ export function useSpreadsheet() {
         activeCanvasId.value = canvas.id
         activeCell.value = null
         activeTextBoxId.value = null
+        activeChartId.value = null
         isEditing.value = false
         currentFilePath.value = null
         maxZ = 0
@@ -929,8 +995,10 @@ export function useSpreadsheet() {
         activeCanvas,
         tables,
         textBoxes,
+        charts,
         activeCell,
         activeTextBoxId,
+        activeChartId,
         selectionRange,
         isEditing,
         editValue,
@@ -967,6 +1035,15 @@ export function useSpreadsheet() {
         updateTextBox,
         selectTextBox,
         findTextBox,
+
+        // Charts
+        addChart,
+        removeChart,
+        moveChart,
+        resizeChart,
+        updateChart,
+        selectChart,
+        findChart,
 
         // Rows & Columns
         addRow,

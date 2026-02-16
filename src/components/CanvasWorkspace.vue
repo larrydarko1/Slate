@@ -21,10 +21,15 @@
         :key="tb.id"
         :textBox="tb"
       />
+      <CanvasChart
+        v-for="ch in ss.charts.value"
+        :key="ch.id"
+        :chart="ch"
+      />
     </div>
 
     <!-- Empty state -->
-    <div v-if="ss.tables.value.length === 0 && ss.textBoxes.value.length === 0" class="canvas-empty">
+    <div v-if="ss.tables.value.length === 0 && ss.textBoxes.value.length === 0 && ss.charts.value.length === 0" class="canvas-empty">
       <p class="empty-title">No tables yet</p>
       <p class="empty-sub">Click <strong>+ Table</strong> in the toolbar to get started.</p>
     </div>
@@ -36,6 +41,7 @@ import { computed, inject, ref } from 'vue'
 import { SPREADSHEET_KEY } from '../composables/useSpreadsheet'
 import SpreadsheetTable from './SpreadsheetTable.vue'
 import CanvasTextBox from './CanvasTextBox.vue'
+import CanvasChart from './CanvasChart.vue'
 
 const ss = inject(SPREADSHEET_KEY)!
 const canvasRef = ref<HTMLElement | null>(null)
@@ -63,9 +69,10 @@ function onCanvasMouseDown(e: MouseEvent) {
   if (e.target !== canvasRef.value && !(e.target as HTMLElement)?.classList?.contains('canvas-bg')) return
   if (e.button !== 0) return
 
-  // Deselect any active cell or text box
+  // Deselect any active cell, text box, or chart
   ss.activeCell.value = null
   ss.activeTextBoxId.value = null
+  ss.activeChartId.value = null
   if (ss.isEditing.value) ss.commitEdit()
 
   panState = {
