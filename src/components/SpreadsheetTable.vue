@@ -33,12 +33,19 @@
       <table class="table-grid" cellpadding="0" cellspacing="0">
         <thead>
           <tr>
-            <th class="corner-cell"></th>
+            <th
+              class="corner-cell"
+              :class="{ 'all-selected': ss.isEntireTableSelected(table.id) }"
+              @mousedown.stop="onCornerClick"
+            ></th>
             <th
               v-for="(col, ci) in table.columns"
               :key="col.id"
               :style="{ width: col.width + 'px', minWidth: col.width + 'px' }"
               class="col-header"
+              :class="{ 'col-selected': ss.isColInSelection(table.id, ci) }"
+              @mousedown.stop="onColHeaderMouseDown(ci, $event)"
+              @mouseover="onColHeaderMouseOver(ci)"
               @contextmenu.prevent="onColumnContextMenu(ci, $event)"
             >
               <span>{{ columnLetter(ci) }}</span>
@@ -56,6 +63,9 @@
           <tr v-for="(row, ri) in table.rows" :key="ri">
             <td
               class="row-header"
+              :class="{ 'row-selected': ss.isRowInSelection(table.id, ri) }"
+              @mousedown.stop="onRowHeaderMouseDown(ri, $event)"
+              @mouseover="onRowHeaderMouseOver(ri)"
               @contextmenu.prevent="onRowContextMenu(ri, $event)"
             >
               {{ ri + 1 }}
@@ -282,7 +292,58 @@ function onCellMouseOver(ci: number, ri: number) {
 
 function onSelectionMouseUp() {
   isDragging = false
+  isDraggingRows = false
+  isDraggingCols = false
   document.removeEventListener('mouseup', onSelectionMouseUp)
+}
+
+// ── Row header selection ──
+
+let isDraggingRows = false
+
+function onRowHeaderMouseDown(ri: number, e: MouseEvent) {
+  if (e.shiftKey) {
+    ss.extendRowSelection(props.table.id, ri)
+  } else {
+    ss.selectRow(props.table.id, ri)
+    isDraggingRows = true
+    document.addEventListener('mouseup', onSelectionMouseUp)
+  }
+  nextTick(() => tableEl.value?.focus())
+}
+
+function onRowHeaderMouseOver(ri: number) {
+  if (isDraggingRows) {
+    ss.extendRowSelection(props.table.id, ri)
+  }
+}
+
+// ── Column header selection ──
+
+let isDraggingCols = false
+
+function onColHeaderMouseDown(ci: number, e: MouseEvent) {
+  if (e.shiftKey) {
+    ss.extendColumnSelection(props.table.id, ci)
+  } else {
+    ss.selectColumn(props.table.id, ci)
+    isDraggingCols = true
+    document.addEventListener('mouseup', onSelectionMouseUp)
+  }
+  nextTick(() => tableEl.value?.focus())
+}
+
+function onColHeaderMouseOver(ci: number) {
+  if (isDraggingCols) {
+    ss.extendColumnSelection(props.table.id, ci)
+  }
+}
+
+// ── Corner cell (select all) ──
+
+function onCornerClick() {
+  ss.selectAll(props.table.id)
+  nextTick(() => tableEl.value?.focus())
 }
 
 function onCellDblClick(ci: number, ri: number) {
@@ -580,6 +641,16 @@ watch(
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: var(--bg-hover);
+  }
+
+  &.all-selected {
+    background: var(--accent-color);
+  }
 }
 
 .col-header {
@@ -594,6 +665,16 @@ watch(
   text-align: center;
   user-select: none;
   padding: 0 4px;
+  cursor: pointer;
+
+  &:hover:not(.col-selected) {
+    background: var(--bg-hover);
+  }
+
+  &.col-selected {
+    background: var(--accent-color);
+    color: #fff;
+  }
 }
 
 .col-resize-handle {
@@ -636,6 +717,16 @@ watch(
   text-align: center;
   user-select: none;
   padding: 0 4px;
+  cursor: pointer;
+
+  &:hover:not(.row-selected) {
+    background: var(--bg-hover);
+  }
+
+  &.row-selected {
+    background: var(--accent-color);
+    color: #fff;
+  }
 }
 
 .cell {

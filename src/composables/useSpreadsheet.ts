@@ -381,6 +381,89 @@ export function useSpreadsheet() {
         bringToFront(tableId)
     }
 
+    function selectRow(tableId: string, row: number) {
+        const t = findTable(tableId)
+        if (!t) return
+        if (isEditing.value) commitEdit()
+        activeCell.value = { tableId, col: 0, row }
+        selectionRange.value = { tableId, startCol: 0, startRow: row, endCol: t.columns.length - 1, endRow: row }
+        bringToFront(tableId)
+    }
+
+    function selectColumn(tableId: string, col: number) {
+        const t = findTable(tableId)
+        if (!t) return
+        if (isEditing.value) commitEdit()
+        activeCell.value = { tableId, col, row: 0 }
+        selectionRange.value = { tableId, startCol: col, startRow: 0, endCol: col, endRow: t.rows.length - 1 }
+        bringToFront(tableId)
+    }
+
+    function extendRowSelection(tableId: string, row: number) {
+        if (!activeCell.value || activeCell.value.tableId !== tableId) return
+        const t = findTable(tableId)
+        if (!t) return
+        if (isEditing.value) commitEdit()
+        const sr = selectionRange.value!
+        selectionRange.value = {
+            tableId,
+            startCol: 0,
+            startRow: sr.startRow,
+            endCol: t.columns.length - 1,
+            endRow: row,
+        }
+    }
+
+    function extendColumnSelection(tableId: string, col: number) {
+        if (!activeCell.value || activeCell.value.tableId !== tableId) return
+        const t = findTable(tableId)
+        if (!t) return
+        if (isEditing.value) commitEdit()
+        const sr = selectionRange.value!
+        selectionRange.value = {
+            tableId,
+            startCol: sr.startCol,
+            startRow: 0,
+            endCol: col,
+            endRow: t.rows.length - 1,
+        }
+    }
+
+    function selectAll(tableId: string) {
+        const t = findTable(tableId)
+        if (!t) return
+        if (isEditing.value) commitEdit()
+        activeCell.value = { tableId, col: 0, row: 0 }
+        selectionRange.value = { tableId, startCol: 0, startRow: 0, endCol: t.columns.length - 1, endRow: t.rows.length - 1 }
+        bringToFront(tableId)
+    }
+
+    function isRowInSelection(tableId: string, row: number): boolean {
+        const sr = getNormalizedSelection()
+        if (!sr || sr.tableId !== tableId) return false
+        const t = findTable(tableId)
+        if (!t) return false
+        // Row is "in selection" if the selection spans all columns for this row
+        return row >= sr.startRow && row <= sr.endRow && sr.startCol === 0 && sr.endCol === t.columns.length - 1
+    }
+
+    function isColInSelection(tableId: string, col: number): boolean {
+        const sr = getNormalizedSelection()
+        if (!sr || sr.tableId !== tableId) return false
+        const t = findTable(tableId)
+        if (!t) return false
+        // Col is "in selection" if the selection spans all rows for this col
+        return col >= sr.startCol && col <= sr.endCol && sr.startRow === 0 && sr.endRow === t.rows.length - 1
+    }
+
+    function isEntireTableSelected(tableId: string): boolean {
+        const sr = getNormalizedSelection()
+        if (!sr || sr.tableId !== tableId) return false
+        const t = findTable(tableId)
+        if (!t) return false
+        return sr.startCol === 0 && sr.startRow === 0 && sr.endCol === t.columns.length - 1 && sr.endRow === t.rows.length - 1
+    }
+
     function extendSelection(tableId: string, col: number, row: number) {
         if (!activeCell.value || activeCell.value.tableId !== tableId) return
         if (isEditing.value) commitEdit()
@@ -825,9 +908,17 @@ export function useSpreadsheet() {
 
         // Selection
         selectCell,
+        selectRow,
+        selectColumn,
         extendSelection,
+        extendRowSelection,
+        extendColumnSelection,
+        selectAll,
         getNormalizedSelection,
         isInSelection,
+        isRowInSelection,
+        isColInSelection,
+        isEntireTableSelected,
         hasMultiCellSelection,
 
         // Merge
