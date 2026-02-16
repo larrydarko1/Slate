@@ -1,6 +1,6 @@
 import { ref, computed, type InjectionKey } from 'vue'
-import type { SpreadsheetTable, Cell, CellValue, CellReference, MergedRegion, SelectionRange, Canvas } from '../types/spreadsheet'
-import { generateId, createDefaultTable, createEmptyCell, createDefaultCanvas, MAX_CANVASES, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP } from '../types/spreadsheet'
+import type { SpreadsheetTable, Cell, CellValue, CellReference, MergedRegion, SelectionRange, Canvas, TextBox } from '../types/spreadsheet'
+import { generateId, createDefaultTable, createEmptyCell, createDefaultCanvas, createDefaultTextBox, MAX_CANVASES, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP } from '../types/spreadsheet'
 import { evaluateFormulaTyped } from '../engine/formula'
 import type { CellDataType } from '../engine/cellTypes'
 import { detectType, formatCellDisplay, getTypeAlignment } from '../engine/cellTypes'
@@ -14,6 +14,7 @@ export function useSpreadsheet() {
         canvases.value.find(c => c.id === activeCanvasId.value) ?? canvases.value[0]
     )
     const tables = computed(() => activeCanvas.value.tables)
+    const textBoxes = computed(() => activeCanvas.value.textBoxes)
     const canvasOffset = computed({
         get: () => activeCanvas.value.canvasOffset,
         set: (v) => { activeCanvas.value.canvasOffset = v },
@@ -24,6 +25,7 @@ export function useSpreadsheet() {
     })
 
     const activeCell = ref<CellReference | null>(null)
+    const activeTextBoxId = ref<string | null>(null)
     const selectionRange = ref<SelectionRange | null>(null)
     const isEditing = ref(false)
     const editValue = ref('')
@@ -62,11 +64,13 @@ export function useSpreadsheet() {
     function switchCanvas(canvasId: string) {
         if (isEditing.value) commitEdit()
         activeCell.value = null
+        activeTextBoxId.value = null
         selectionRange.value = null
         isEditing.value = false
         activeCanvasId.value = canvasId
         // Recalculate maxZ for the new canvas
-        maxZ = Math.max(0, ...activeCanvas.value.tables.map(t => t.zIndex))
+        const cv = activeCanvas.value
+        maxZ = Math.max(0, ...cv.tables.map(t => t.zIndex), ...cv.textBoxes.map(tb => tb.zIndex))
     }
 
     // ── Zoom ──
@@ -132,6 +136,14 @@ export function useSpreadsheet() {
     function bringToFront(tableId: string) {
         const t = findTable(tableId)
         if (t) t.zIndex = ++maxZ
+    }
+
+    function bringToFrontById(id: string) {
+        // Works for any item (table or textbox)
+        const t = findTable(id)
+        if (t) { t.zIndex = ++maxZ; return }
+        const tb = findTextBox(id)
+        if (tb) tb.zIndex = ++maxZ
     }
 
     function renameTable(tableId: string, name: string) {
@@ -377,6 +389,7 @@ export function useSpreadsheet() {
     function selectCell(tableId: string, col: number, row: number) {
         if (isEditing.value) commitEdit()
         activeCell.value = { tableId, col, row }
+        activeTextBoxId.value = null
         selectionRange.value = { tableId, startCol: col, startRow: row, endCol: col, endRow: row }
         bringToFront(tableId)
     }
@@ -386,6 +399,7 @@ export function useSpreadsheet() {
         if (!t) return
         if (isEditing.value) commitEdit()
         activeCell.value = { tableId, col: 0, row }
+        activeTextBoxId.value = null
         selectionRange.value = { tableId, startCol: 0, startRow: row, endCol: t.columns.length - 1, endRow: row }
         bringToFront(tableId)
     }
@@ -395,6 +409,7 @@ export function useSpreadsheet() {
         if (!t) return
         if (isEditing.value) commitEdit()
         activeCell.value = { tableId, col, row: 0 }
+        activeTextBoxId.value = null
         selectionRange.value = { tableId, startCol: col, startRow: 0, endCol: col, endRow: t.rows.length - 1 }
         bringToFront(tableId)
     }
@@ -702,6 +717,57 @@ export function useSpreadsheet() {
         return activeCanvas.value.tables.find(t => t.id === id)
     }
 
+    function findTextBox(id: string): TextBox | undefined {
+        return activeCanvas.value.textBoxes.find(tb => tb.id === id)
+    }
+
+    // ── TextBox CRUD ──
+
+    function addTextBox() {
+        const canvas = activeCanvas.value
+        const zoom = canvasZoom.value
+        const offsetIdx = canvas.textBoxes.length
+        const x = (-canvasOffset.value.x + 120 + offsetIdx * 30) / zoom
+        const y = (-canvasOffset.value.y + 100 + offsetIdx * 30) / zoom
+        const tb = createDefaultTextBox(x, y)
+        tb.zIndex = ++maxZ
+        canvas.textBoxes.push(tb)
+        activeTextBoxId.value = tb.id
+        activeCell.value = null
+    }
+
+    function removeTextBox(id: string) {
+        const canvas = activeCanvas.value
+        canvas.textBoxes = canvas.textBoxes.filter(tb => tb.id !== id)
+        if (activeTextBoxId.value === id) activeTextBoxId.value = null
+    }
+
+    function moveTextBox(id: string, x: number, y: number) {
+        const tb = findTextBox(id)
+        if (tb) { tb.x = x; tb.y = y }
+    }
+
+    function resizeTextBox(id: string, width: number, height: number) {
+        const tb = findTextBox(id)
+        if (tb) {
+            tb.width = Math.max(60, width)
+            tb.height = Math.max(30, height)
+        }
+    }
+
+    function updateTextBox(id: string, updates: Partial<TextBox>) {
+        const tb = findTextBox(id)
+        if (tb) Object.assign(tb, updates)
+    }
+
+    function selectTextBox(id: string) {
+        if (isEditing.value) commitEdit()
+        activeCell.value = null
+        selectionRange.value = null
+        activeTextBoxId.value = id
+        bringToFrontById(id)
+    }
+
     // ── File Operations ──
 
     const currentFilePath = ref<string | null>(null)
@@ -756,10 +822,12 @@ export function useSpreadsheet() {
                     canvasOffset: cv.canvasOffset ?? { x: 0, y: 0 },
                     canvasZoom: cv.canvasZoom ?? 1.0,
                     tables: (cv.tables ?? []).map(migrateTable),
+                    textBoxes: cv.textBoxes ?? [],
                 }))
                 canvasCount = canvases.value.length
                 activeCanvasId.value = data.activeCanvasId ?? canvases.value[0].id
-                maxZ = Math.max(0, ...activeCanvas.value.tables.map(t => t.zIndex))
+                const acv = activeCanvas.value
+                maxZ = Math.max(0, ...acv.tables.map(t => t.zIndex), ...acv.textBoxes.map(tb => tb.zIndex))
                 tableCount = canvases.value.reduce((sum, cv) => sum + cv.tables.length, 0)
             } else if (data.tables) {
                 // V1 format – single canvas, migrate
@@ -775,6 +843,7 @@ export function useSpreadsheet() {
             }
 
             activeCell.value = null
+            activeTextBoxId.value = null
             isEditing.value = false
             recalculate()
             return true
@@ -845,6 +914,7 @@ export function useSpreadsheet() {
         canvases.value = [canvas]
         activeCanvasId.value = canvas.id
         activeCell.value = null
+        activeTextBoxId.value = null
         isEditing.value = false
         currentFilePath.value = null
         maxZ = 0
@@ -858,7 +928,9 @@ export function useSpreadsheet() {
         activeCanvasId,
         activeCanvas,
         tables,
+        textBoxes,
         activeCell,
+        activeTextBoxId,
         selectionRange,
         isEditing,
         editValue,
@@ -883,8 +955,18 @@ export function useSpreadsheet() {
         addTable,
         removeTable,
         bringToFront,
+        bringToFrontById,
         renameTable,
         moveTable,
+
+        // Text boxes
+        addTextBox,
+        removeTextBox,
+        moveTextBox,
+        resizeTextBox,
+        updateTextBox,
+        selectTextBox,
+        findTextBox,
 
         // Rows & Columns
         addRow,

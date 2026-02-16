@@ -22,6 +22,10 @@
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 5.5h12M2 9.5h12M6 5.5v6.5" stroke="currentColor" stroke-width="1.3"/></svg>
         <span>Table</span>
       </button>
+      <button class="tb has-label" @click="$emit('addTextBox')" title="Add Text Box">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 6v4M5.5 6h5M8 6v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span>Text</span>
+      </button>
     </div>
 
     <div class="toolbar-sep" aria-hidden="true"></div>
@@ -81,7 +85,7 @@
         <button class="tb color-chevron" :disabled="!hasActiveCell" @click.stop="toggleColorMenu('text')">
           <svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
         </button>
-        <div v-if="colorMenuType === 'text'" class="color-dropdown" @click.stop>
+        <div v-if="colorMenuType === 'text'" class="color-dropdown dropdown-anchor-right" @click.stop>
           <div class="color-dropdown-header">Text Color</div>
           <div class="color-grid">
             <button
@@ -117,7 +121,7 @@
         <button class="tb color-chevron" :disabled="!hasActiveCell" @click.stop="toggleColorMenu('fill')">
           <svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
         </button>
-        <div v-if="colorMenuType === 'fill'" class="color-dropdown" @click.stop>
+        <div v-if="colorMenuType === 'fill'" class="color-dropdown dropdown-anchor-right" @click.stop>
           <div class="color-dropdown-header">Fill Color</div>
           <div class="color-grid">
             <button
@@ -141,6 +145,167 @@
         </div>
       </div>
     </div>
+
+    <!-- ═══ Formatting controls (shown for active cell OR text box) ═══ -->
+    <template v-if="hasActiveCell || hasActiveTextBox">
+      <div class="toolbar-sep" aria-hidden="true"></div>
+
+      <!-- Font size (text box only) -->
+      <template v-if="hasActiveTextBox">
+        <div class="toolbar-group">
+          <button class="tb" title="Decrease font size" @click="tbDecreaseFontSize">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+          <span class="tb-font-size">{{ activeTextBoxData?.fontSize ?? 14 }}</span>
+          <button class="tb" title="Increase font size" @click="tbIncreaseFontSize">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="toolbar-sep" aria-hidden="true"></div>
+      </template>
+
+      <!-- Bold / Italic -->
+      <div class="toolbar-group">
+        <button class="tb" :class="{ 'tb-active': fmtIsBold }" title="Bold" @click="fmtToggleBold">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 2.5h4a2.5 2.5 0 0 1 0 5H4V2.5ZM4 7.5h4.5a2.5 2.5 0 0 1 0 5H4V7.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="tb" :class="{ 'tb-active': fmtIsItalic }" title="Italic" @click="fmtToggleItalic">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2.5H6M8 11.5H5M8 2.5L6 11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <div class="toolbar-sep" aria-hidden="true"></div>
+
+      <!-- Alignment -->
+      <div class="toolbar-group">
+        <button class="tb" :class="{ 'tb-active': fmtAlign === 'left' }" title="Align Left" @click="fmtSetAlign('left')">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3h10M2 6h6M2 9h8M2 12h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+        <button class="tb" :class="{ 'tb-active': fmtAlign === 'center' }" title="Align Center" @click="fmtSetAlign('center')">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3h10M4 6h6M3 9h8M4.5 12h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+        <button class="tb" :class="{ 'tb-active': fmtAlign === 'right' }" title="Align Right" @click="fmtSetAlign('right')">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3h10M8 6h4M6 9h6M9 12h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <!-- TextBox-specific: colors & border -->
+      <template v-if="hasActiveTextBox">
+        <div class="toolbar-sep" aria-hidden="true"></div>
+
+        <!-- TextBox text color -->
+        <div class="toolbar-group">
+          <div class="color-btn-wrapper" ref="tbTextColorRef">
+            <button class="tb color-btn" title="Text color" @click="tbApplyTextColor(tbLastTextColor)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M4.5 12L8 3l3.5 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M5.75 9h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              <span class="color-indicator" :style="{ backgroundColor: tbLastTextColor }"></span>
+            </button>
+            <button class="tb color-chevron" @click.stop="toggleTbColorMenu('tbText')">
+              <svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </button>
+            <div v-if="tbColorMenuType === 'tbText'" class="color-dropdown dropdown-anchor-right" @click.stop>
+              <div class="color-dropdown-header">Text Color</div>
+              <div class="color-grid">
+                <button v-for="c in colorPalette" :key="c" class="color-swatch"
+                  :class="{ active: c === activeTextBoxData?.textColor, 'is-light': isLightColor(c) }"
+                  :style="{ backgroundColor: c }" :title="c" @click="tbApplyTextColor(c)"></button>
+              </div>
+              <button class="color-clear-btn" @click="tbApplyTextColor('')">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                <span>No color</span>
+              </button>
+              <div class="color-custom-row">
+                <label class="color-custom-label">Custom:</label>
+                <input type="color" class="color-custom-input" :value="tbLastTextColor" @input="tbApplyTextColor(($event.target as HTMLInputElement).value)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- TextBox fill color -->
+          <div class="color-btn-wrapper" ref="tbFillColorRef">
+            <button class="tb color-btn" title="Fill color" @click="tbApplyFillColor(tbLastFillColor)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2.5" y="2.5" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.3"/>
+                <rect x="4" y="4" width="8" height="8" rx="1" :fill="tbLastFillColor" opacity="0.5"/>
+              </svg>
+              <span class="color-indicator" :style="{ backgroundColor: tbLastFillColor }"></span>
+            </button>
+            <button class="tb color-chevron" @click.stop="toggleTbColorMenu('tbFill')">
+              <svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </button>
+            <div v-if="tbColorMenuType === 'tbFill'" class="color-dropdown dropdown-anchor-right" @click.stop>
+              <div class="color-dropdown-header">Fill Color</div>
+              <div class="color-grid">
+                <button v-for="c in colorPalette" :key="c" class="color-swatch"
+                  :class="{ active: c === activeTextBoxData?.bgColor, 'is-light': isLightColor(c) }"
+                  :style="{ backgroundColor: c }" :title="c" @click="tbApplyFillColor(c)"></button>
+              </div>
+              <button class="color-clear-btn" @click="tbApplyFillColor('')">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                <span>No fill</span>
+              </button>
+              <div class="color-custom-row">
+                <label class="color-custom-label">Custom:</label>
+                <input type="color" class="color-custom-input" :value="tbLastFillColor" @input="tbApplyFillColor(($event.target as HTMLInputElement).value)" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="toolbar-sep" aria-hidden="true"></div>
+
+        <!-- TextBox border -->
+        <div class="toolbar-group">
+          <div class="color-btn-wrapper" ref="tbBorderColorRef">
+            <button class="tb color-btn" title="Border color" @click="tbApplyBorderColor(tbLastBorderColor)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2.5" y="2.5" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2.5 1.5"/>
+              </svg>
+              <span class="color-indicator" :style="{ backgroundColor: tbLastBorderColor }"></span>
+            </button>
+            <button class="tb color-chevron" @click.stop="toggleTbColorMenu('tbBorder')">
+              <svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </button>
+            <div v-if="tbColorMenuType === 'tbBorder'" class="color-dropdown dropdown-anchor-right" @click.stop>
+              <div class="color-dropdown-header">Border</div>
+              <div class="color-grid">
+                <button v-for="c in colorPalette" :key="c" class="color-swatch"
+                  :class="{ active: c === activeTextBoxData?.borderColor, 'is-light': isLightColor(c) }"
+                  :style="{ backgroundColor: c }" :title="c" @click="tbApplyBorderColor(c)"></button>
+              </div>
+              <button class="color-clear-btn" @click="tbApplyBorderColor(''); tbUpdateProp('borderWidth', 0)">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                <span>No border</span>
+              </button>
+              <div class="color-custom-row">
+                <label class="color-custom-label">Width:</label>
+                <select class="tb-border-select" :value="activeTextBoxData?.borderWidth ?? 0" @change="tbUpdateProp('borderWidth', Number(($event.target as HTMLSelectElement).value))">
+                  <option value="0">None</option>
+                  <option value="1">1px</option>
+                  <option value="2">2px</option>
+                  <option value="3">3px</option>
+                  <option value="4">4px</option>
+                </select>
+              </div>
+              <div class="color-custom-row">
+                <label class="color-custom-label">Radius:</label>
+                <select class="tb-border-select" :value="activeTextBoxData?.borderRadius ?? 0" @change="tbUpdateProp('borderRadius', Number(($event.target as HTMLSelectElement).value))">
+                  <option value="0">0</option>
+                  <option value="4">4px</option>
+                  <option value="8">8px</option>
+                  <option value="12">12px</option>
+                  <option value="16">16px</option>
+                  <option value="24">24px</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </template>
 
     <div class="toolbar-spacer"></div>
 
@@ -168,6 +333,7 @@ import { getTypeLabel } from '../engine/cellTypes'
 
 defineEmits<{ 
   addTable: []
+  addTextBox: []
   newFile: []
   openFile: []
   saveFile: []
@@ -176,6 +342,125 @@ defineEmits<{
 }>()
 
 const ss = inject(SPREADSHEET_KEY)!
+
+// ── TextBox formatting ──
+
+const hasActiveTextBox = computed(() => !!ss.activeTextBoxId.value)
+
+const activeTextBoxData = computed(() => {
+  if (!ss.activeTextBoxId.value) return null
+  return ss.findTextBox(ss.activeTextBoxId.value) ?? null
+})
+
+const tbTextColorRef = ref<HTMLElement | null>(null)
+const tbFillColorRef = ref<HTMLElement | null>(null)
+const tbBorderColorRef = ref<HTMLElement | null>(null)
+const tbColorMenuType = ref<'tbText' | 'tbFill' | 'tbBorder' | null>(null)
+const tbLastTextColor = ref('#000000')
+const tbLastFillColor = ref('#FFFFFF')
+const tbLastBorderColor = ref('#CCCCCC')
+
+function toggleTbColorMenu(type: 'tbText' | 'tbFill' | 'tbBorder') {
+  tbColorMenuType.value = tbColorMenuType.value === type ? null : type
+}
+
+function tbUpdateProp(prop: string, value: any) {
+  const id = ss.activeTextBoxId.value
+  if (!id) return
+  ss.updateTextBox(id, { [prop]: value })
+}
+
+function tbToggleBold() {
+  const current = activeTextBoxData.value?.fontWeight ?? 'normal'
+  tbUpdateProp('fontWeight', current === 'bold' ? 'normal' : 'bold')
+}
+
+function tbToggleItalic() {
+  const current = activeTextBoxData.value?.fontStyle ?? 'normal'
+  tbUpdateProp('fontStyle', current === 'italic' ? 'normal' : 'italic')
+}
+
+function tbSetAlign(a: 'left' | 'center' | 'right') {
+  tbUpdateProp('align', a)
+}
+
+function tbIncreaseFontSize() {
+  const size = activeTextBoxData.value?.fontSize ?? 14
+  tbUpdateProp('fontSize', Math.min(size + 2, 120))
+}
+
+function tbDecreaseFontSize() {
+  const size = activeTextBoxData.value?.fontSize ?? 14
+  tbUpdateProp('fontSize', Math.max(size - 2, 8))
+}
+
+function tbApplyTextColor(color: string) {
+  tbUpdateProp('textColor', color)
+  if (color) tbLastTextColor.value = color
+  tbColorMenuType.value = null
+}
+
+function tbApplyFillColor(color: string) {
+  tbUpdateProp('bgColor', color)
+  if (color) tbLastFillColor.value = color
+  tbColorMenuType.value = null
+}
+
+function tbApplyBorderColor(color: string) {
+  tbUpdateProp('borderColor', color)
+  if (color) {
+    tbLastBorderColor.value = color
+    // auto-set borderWidth to 1 if not set
+    if (!activeTextBoxData.value?.borderWidth) tbUpdateProp('borderWidth', 1)
+  }
+  tbColorMenuType.value = null
+}
+
+// ── Unified formatting (works for both cells and text boxes) ──
+
+const fmtIsBold = computed(() => {
+  if (hasActiveTextBox.value) return activeTextBoxData.value?.fontWeight === 'bold'
+  const fmt = ss.getActiveCellFormat()
+  return fmt?.bold ?? false
+})
+
+const fmtIsItalic = computed(() => {
+  if (hasActiveTextBox.value) return activeTextBoxData.value?.fontStyle === 'italic'
+  const fmt = ss.getActiveCellFormat()
+  return fmt?.italic ?? false
+})
+
+const fmtAlign = computed<'left' | 'center' | 'right'>(() => {
+  if (hasActiveTextBox.value) return activeTextBoxData.value?.align ?? 'left'
+  const fmt = ss.getActiveCellFormat()
+  return fmt?.align ?? 'left'
+})
+
+function fmtToggleBold() {
+  if (hasActiveTextBox.value) {
+    tbToggleBold()
+  } else if (hasActiveCell.value) {
+    const current = ss.getActiveCellFormat()?.bold ?? false
+    ss.setSelectionFormat({ bold: !current })
+  }
+}
+
+function fmtToggleItalic() {
+  if (hasActiveTextBox.value) {
+    tbToggleItalic()
+  } else if (hasActiveCell.value) {
+    const current = ss.getActiveCellFormat()?.italic ?? false
+    ss.setSelectionFormat({ italic: !current })
+  }
+}
+
+function fmtSetAlign(a: 'left' | 'center' | 'right') {
+  if (hasActiveTextBox.value) {
+    tbSetAlign(a)
+  } else if (hasActiveCell.value) {
+    ss.setSelectionFormat({ align: a })
+  }
+}
 
 // ── Type selector ──
 
@@ -220,6 +505,13 @@ function onClickOutside(e: MouseEvent) {
     && !textColorRef.value.contains(e.target as Node)
     && !fillColorRef.value.contains(e.target as Node)) {
     colorMenuType.value = null
+  }
+  // Close text box color menus
+  if (tbColorMenuType.value
+    && (!tbTextColorRef.value || !tbTextColorRef.value.contains(e.target as Node))
+    && (!tbFillColorRef.value || !tbFillColorRef.value.contains(e.target as Node))
+    && (!tbBorderColorRef.value || !tbBorderColorRef.value.contains(e.target as Node))) {
+    tbColorMenuType.value = null
   }
 }
 
@@ -335,6 +627,9 @@ function applyTheme() {
   user-select: none;
   flex-shrink: 0;
   gap: 2px;
+  overflow: visible;
+  position: relative;
+  z-index: 50;
 }
 
 .toolbar-group {
@@ -536,6 +831,11 @@ function applyTheme() {
   padding: 10px;
   z-index: 200;
   width: 240px;
+
+  &.dropdown-anchor-right {
+    left: auto;
+    right: 0;
+  }
 }
 
 .color-dropdown-header {
@@ -628,6 +928,45 @@ function applyTheme() {
   &::-webkit-color-swatch {
     border: none;
     border-radius: 2px;
+  }
+}
+
+/* ── TextBox toolbar extras ── */
+
+.tb-active {
+  background: var(--accent-color-alpha, rgba(66, 133, 244, 0.12)) !important;
+  color: var(--accent-color) !important;
+}
+
+.tb-font-size {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 26px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  padding: 0 4px;
+  user-select: none;
+}
+
+.tb-border-select {
+  flex: 1;
+  height: 22px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 11px;
+  padding: 0 4px;
+  cursor: pointer;
+  outline: none;
+
+  &:focus {
+    border-color: var(--accent-color);
   }
 }
 </style>

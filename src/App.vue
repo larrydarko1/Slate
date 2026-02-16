@@ -3,6 +3,7 @@
     <TitleBar />
     <Toolbar 
       @addTable="ss.addTable()" 
+      @addTextBox="ss.addTextBox()"
       @newFile="handleNewFile"
       @openFile="ss.openFile"
       @saveFile="ss.saveFile"

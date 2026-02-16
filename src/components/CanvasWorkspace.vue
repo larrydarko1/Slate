@@ -16,10 +16,15 @@
         :table="table"
         @remove="ss.removeTable(table.id)"
       />
+      <CanvasTextBox
+        v-for="tb in ss.textBoxes.value"
+        :key="tb.id"
+        :textBox="tb"
+      />
     </div>
 
     <!-- Empty state -->
-    <div v-if="ss.tables.value.length === 0" class="canvas-empty">
+    <div v-if="ss.tables.value.length === 0 && ss.textBoxes.value.length === 0" class="canvas-empty">
       <p class="empty-title">No tables yet</p>
       <p class="empty-sub">Click <strong>+ Table</strong> in the toolbar to get started.</p>
     </div>
@@ -30,6 +35,7 @@
 import { computed, inject, ref } from 'vue'
 import { SPREADSHEET_KEY } from '../composables/useSpreadsheet'
 import SpreadsheetTable from './SpreadsheetTable.vue'
+import CanvasTextBox from './CanvasTextBox.vue'
 
 const ss = inject(SPREADSHEET_KEY)!
 const canvasRef = ref<HTMLElement | null>(null)
@@ -57,8 +63,9 @@ function onCanvasMouseDown(e: MouseEvent) {
   if (e.target !== canvasRef.value && !(e.target as HTMLElement)?.classList?.contains('canvas-bg')) return
   if (e.button !== 0) return
 
-  // Deselect any active cell
+  // Deselect any active cell or text box
   ss.activeCell.value = null
+  ss.activeTextBoxId.value = null
   if (ss.isEditing.value) ss.commitEdit()
 
   panState = {

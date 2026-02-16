@@ -57,6 +57,25 @@ export interface CellReference {
     row: number
 }
 
+export interface TextBox {
+    id: string
+    x: number
+    y: number
+    width: number
+    height: number
+    zIndex: number
+    text: string
+    fontSize: number
+    fontWeight: 'normal' | 'bold'
+    fontStyle: 'normal' | 'italic'
+    textColor: string
+    bgColor: string
+    align: 'left' | 'center' | 'right'
+    borderColor: string
+    borderWidth: number
+    borderRadius: number
+}
+
 export interface Sheet {
     id: string
     name: string
@@ -67,6 +86,7 @@ export interface Canvas {
     id: string
     name: string
     tables: SpreadsheetTable[]
+    textBoxes: TextBox[]
     canvasOffset: { x: number; y: number }
     canvasZoom: number
 }
@@ -85,6 +105,7 @@ export function createDefaultCanvas(name: string): Canvas {
         id: generateId('canvas'),
         name,
         tables: [],
+        textBoxes: [],
         canvasOffset: { x: 0, y: 0 },
         canvasZoom: 1.0,
     }
@@ -118,6 +139,27 @@ export function columnLetterToIndex(letter: string): number {
 
 export function createEmptyCell(): Cell {
     return { value: null, cellType: 'empty' }
+}
+
+export function createDefaultTextBox(x: number, y: number): TextBox {
+    return {
+        id: generateId('txt'),
+        x,
+        y,
+        width: 200,
+        height: 80,
+        zIndex: 0,
+        text: '',
+        fontSize: 14,
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        textColor: '',
+        bgColor: '',
+        align: 'left',
+        borderColor: '',
+        borderWidth: 0,
+        borderRadius: 6,
+    }
 }
 
 export function createDefaultTable(x: number, y: number, name: string): SpreadsheetTable {
