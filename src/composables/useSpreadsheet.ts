@@ -560,6 +560,29 @@ export function useSpreadsheet() {
         }
     }
 
+    // ── Cell Notes ──
+
+    function setCellNote(tableId: string, col: number, row: number, note: string) {
+        const cell = getCell(tableId, col, row)
+        if (!cell) return
+        cell.note = note || undefined
+    }
+
+    function getCellNote(tableId: string, col: number, row: number): string {
+        const cell = getCell(tableId, col, row)
+        return cell?.note ?? ''
+    }
+
+    function removeCellNote(tableId: string, col: number, row: number) {
+        const cell = getCell(tableId, col, row)
+        if (cell) cell.note = undefined
+    }
+
+    function cellHasNote(tableId: string, col: number, row: number): boolean {
+        const cell = getCell(tableId, col, row)
+        return !!(cell?.note)
+    }
+
     // ── Clipboard (Copy / Cut / Paste) ──
 
     interface ClipboardCell {
@@ -1230,6 +1253,12 @@ export function useSpreadsheet() {
         mergeSelection,
         unmergeSelection,
         selectionHasMerge,
+
+        // Notes
+        setCellNote,
+        getCellNote,
+        removeCellNote,
+        cellHasNote,
 
         // Clipboard
         copyCells,

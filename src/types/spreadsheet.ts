@@ -9,6 +9,7 @@ export interface Cell {
     cellType: CellDataType   // Detected / assigned data type
     computedType?: CellDataType  // Resolved type after formula evaluation
     format?: CellFormat
+    note?: string            // User-added note / comment on the cell
 }
 
 export interface CellFormat {
