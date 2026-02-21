@@ -237,6 +237,24 @@ function cellClasses(ci: number, ri: number) {
     'in-selection': ss.isInSelection(props.table.id, ci, ri) && !isSelected(ci, ri),
     'header-row': ri < props.table.headerRows,
     'merged-cell': !!ss.isMergedOrigin(props.table.id, ci, ri),
+    'formula-ref-highlight': !!getRefHighlightColor(ci, ri),
+  }
+}
+
+/** Get the color assigned to a cell reference if this cell is referenced in the active formula */
+function getRefHighlightColor(ci: number, ri: number): string | null {
+  const highlights = ss.getFormulaHighlights()
+  const h = highlights.find(h => h.tableId === props.table.id && h.col === ci && h.row === ri)
+  return h ? h.color : null
+}
+
+/** Build inline style with colored outline for formula-referenced cells */
+function cellRefStyle(ci: number, ri: number): Record<string, string> | undefined {
+  const color = getRefHighlightColor(ci, ri)
+  if (!color) return undefined
+  return {
+    boxShadow: `inset 0 0 0 2px ${color}`,
+    background: `${color}12`,
   }
 }
 
@@ -273,6 +291,11 @@ function cellTdStyle(ci: number, ri: number) {
   }
   if (cell?.format?.bgColor) {
     base.backgroundColor = cell.format.bgColor
+  }
+  // Apply formula reference highlight
+  const refStyle = cellRefStyle(ci, ri)
+  if (refStyle) {
+    Object.assign(base, refStyle)
   }
   return base
 }
@@ -919,6 +942,11 @@ watch(
 
   &.merged-cell {
     vertical-align: top;
+  }
+
+  &.formula-ref-highlight {
+    z-index: 2;
+    position: relative;
   }
 
   &:hover:not(.selected):not(.in-selection) {

@@ -10,18 +10,32 @@
     <div class="formula-separator"></div>
     <div class="formula-input-wrapper">
       <span v-if="activeCell && hasFormula" class="fx-label">ƒx</span>
-      <input
-        ref="inputRef"
-        class="formula-input"
-        :value="displayText"
-        :disabled="!activeCell"
-        :placeholder="activeCell ? 'Enter value or formula…' : ''"
-        @focus="onFocus"
-        @input="onInput"
-        @keydown.enter.prevent="onEnter"
-        @keydown.escape.prevent="onEscape"
-        @keydown.tab.prevent="onTab"
-      />
+      <div class="formula-input-container">
+        <input
+          ref="inputRef"
+          class="formula-input"
+          :class="{ 'has-rich-overlay': showRichOverlay }"
+          :value="displayText"
+          :disabled="!activeCell"
+          :placeholder="activeCell ? 'Enter value or formula…' : ''"
+          @focus="onFocus"
+          @input="onInput"
+          @keydown.enter.prevent="onEnter"
+          @keydown.escape.prevent="onEscape"
+          @keydown.tab.prevent="onTab"
+        />
+        <div v-if="showRichOverlay" class="formula-rich-overlay" aria-hidden="true">
+          <span class="formula-eq">=</span>
+          <template v-for="(token, i) in formulaTokens" :key="i">
+            <span
+              v-if="token.isRef"
+              class="ref-badge"
+              :style="{ background: token.color + '1a', color: token.color, borderColor: token.color + '55' }"
+            >{{ token.text }}</span>
+            <span v-else class="formula-text">{{ token.text }}</span>
+          </template>
+        </div>
+      </div>
       <button
         class="formula-mode-btn"
         :class="{ active: ss.formulaMode.value }"
@@ -92,6 +106,12 @@ const displayText = computed(() => {
   if (ss.isEditing.value) return ss.editValue.value
   if (!activeCell.value) return ''
   return ss.getRawValue(activeCell.value.tableId, activeCell.value.col, activeCell.value.row)
+})
+
+const formulaTokens = computed(() => ss.getFormulaTokens())
+
+const showRichOverlay = computed(() => {
+  return ss.isEditing.value && ss.editValue.value.startsWith('=') && formulaTokens.value.some(t => t.isRef)
 })
 
 function onFocus() {
@@ -228,6 +248,13 @@ watch(() => ss.isEditing.value, (editing) => {
   opacity: 0.85;
 }
 
+.formula-input-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .formula-input {
   flex: 1;
   border: none;
@@ -237,6 +264,13 @@ watch(() => ss.isEditing.value, (editing) => {
   font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
   color: var(--text-primary);
   padding: 2px 0;
+  position: relative;
+  z-index: 1;
+
+  &.has-rich-overlay {
+    color: transparent;
+    caret-color: var(--text-primary);
+  }
 
   &::placeholder {
     color: var(--text3);
@@ -245,6 +279,43 @@ watch(() => ss.isEditing.value, (editing) => {
   &:disabled {
     cursor: default;
   }
+}
+
+.formula-rich-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+  padding: 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.formula-eq {
+  color: var(--text-muted);
+}
+
+.formula-text {
+  color: var(--text-primary);
+}
+
+.ref-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0px 4px;
+  border-radius: 3px;
+  border: 1px solid;
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 18px;
+  letter-spacing: 0.01em;
 }
 
 .formula-mode-btn {

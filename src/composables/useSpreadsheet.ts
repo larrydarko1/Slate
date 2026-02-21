@@ -1,6 +1,6 @@
 import { ref, computed, type InjectionKey } from 'vue'
 import type { SpreadsheetTable, Cell, CellValue, CellReference, MergedRegion, SelectionRange, Canvas, TextBox, ChartObject } from '../types/spreadsheet'
-import { generateId, createDefaultTable, createEmptyCell, createDefaultCanvas, createDefaultTextBox, createDefaultChart, MAX_CANVASES, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP, indexToColumnLetter } from '../types/spreadsheet'
+import { generateId, createDefaultTable, createEmptyCell, createDefaultCanvas, createDefaultTextBox, createDefaultChart, MAX_CANVASES, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP, indexToColumnLetter, columnLetterToIndex } from '../types/spreadsheet'
 import { evaluateFormulaTyped } from '../engine/formula'
 import type { CellDataType } from '../engine/cellTypes'
 import { detectType, formatCellDisplay, getTypeAlignment } from '../engine/cellTypes'
@@ -32,6 +32,29 @@ export function useSpreadsheet() {
     const isEditing = ref(false)
     const editValue = ref('')
     const formulaMode = ref(false)
+
+    // Color palette for formula references (Apple Numbers style)
+    const REF_COLORS = [
+        '#3b82f6', // blue
+        '#ef4444', // red
+        '#22c55e', // green
+        '#f59e0b', // amber
+        '#8b5cf6', // violet
+        '#ec4899', // pink
+        '#06b6d4', // cyan
+        '#f97316', // orange
+    ]
+
+    /** Tracked cell references inserted via formula mode */
+    interface FormulaRef {
+        tableId: string
+        col: number
+        row: number
+        refString: string
+        color: string
+    }
+    const formulaRefs = ref<FormulaRef[]>([])
+
     let maxZ = 0
     let tableCount = 0
     let canvasCount = 1
@@ -539,12 +562,14 @@ export function useSpreadsheet() {
         setCellValue(tableId, col, row, editValue.value)
         isEditing.value = false
         formulaMode.value = false
+        formulaRefs.value = []
     }
 
     function cancelEdit() {
         isEditing.value = false
         editValue.value = ''
         formulaMode.value = false
+        formulaRefs.value = []
     }
 
     function clearActiveCell() {
@@ -604,20 +629,121 @@ export function useSpreadsheet() {
     /**
      * Insert a cell reference at the end of the current edit value.
      * Called when clicking a cell while in formula mode.
+     * Automatically builds a SUM() wrapper when clicking multiple cells.
      */
     function insertCellReference(tableId: string, col: number, row: number) {
         if (!isEditing.value || !formulaMode.value) return
 
-        const ref = buildCellReferenceString(tableId, col, row)
-        if (!ref) return
+        const refStr = buildCellReferenceString(tableId, col, row)
+        if (!refStr) return
 
-        // If editValue is empty, start a formula
-        if (editValue.value === '' || editValue.value === '=') {
-            editValue.value = '=' + ref
+        // Assign a color to this reference
+        const color = REF_COLORS[formulaRefs.value.length % REF_COLORS.length]
+        formulaRefs.value.push({ tableId, col, row, refString: refStr, color })
+
+        // Rebuild the formula from the collected refs
+        const refs = formulaRefs.value.map(r => r.refString)
+        if (refs.length === 1) {
+            editValue.value = '=' + refs[0]
         } else {
-            // Append the reference (e.g. after an operator)
-            editValue.value += ref
+            editValue.value = '=SUM(' + refs.join(',') + ')'
         }
+    }
+
+    /**
+     * Parse the current editValue to extract cell references and assign colors.
+     * Returns an array of { refString, color, startIdx, endIdx } for display.
+     * This re-parses also when user edits manually so badges stay in sync.
+     */
+    function getFormulaTokens(): Array<{ text: string; isRef: boolean; color?: string; tableId?: string; col?: number; row?: number }> {
+        const val = editValue.value
+        if (!val.startsWith('=')) return [{ text: val, isRef: false }]
+
+        const body = val.substring(1) // strip '='
+        const tokens: Array<{ text: string; isRef: boolean; color?: string; tableId?: string; col?: number; row?: number }> = []
+        // Match cell references: optional 'Name':: prefix(es) and A1-style ref
+        // Pattern: (('...'|\w+)::)* [A-Z]+[0-9]+
+        const refRegex = /(?:(?:'[^']*'|\w+)::)*(?:(?:'[^']*'|\w+)::)?[A-Z]+\d+/g
+        let lastIndex = 0
+        let colorIdx = 0
+        let match: RegExpExecArray | null
+
+        while ((match = refRegex.exec(body)) !== null) {
+            // Text before this ref
+            if (match.index > lastIndex) {
+                tokens.push({ text: body.substring(lastIndex, match.index), isRef: false })
+            }
+            const refText = match[0]
+            // Try to resolve which cell this ref points to
+            const resolved = resolveRefString(refText)
+            const color = REF_COLORS[colorIdx % REF_COLORS.length]
+            tokens.push({
+                text: refText,
+                isRef: true,
+                color,
+                tableId: resolved?.tableId,
+                col: resolved?.col,
+                row: resolved?.row,
+            })
+            colorIdx++
+            lastIndex = match.index + match[0].length
+        }
+        if (lastIndex < body.length) {
+            tokens.push({ text: body.substring(lastIndex), isRef: false })
+        }
+        return tokens
+    }
+
+    /** Resolve a reference string like 'Table 1'::A1 or A1 to table/col/row */
+    function resolveRefString(refText: string): { tableId: string; col: number; row: number } | null {
+        if (!activeCell.value) return null
+
+        // Split on :: to separate qualifiers from the cell ref
+        const parts = refText.split('::')
+        const cellPart = parts[parts.length - 1]
+        const m = cellPart.match(/^([A-Z]+)(\d+)$/)
+        if (!m) return null
+
+        const col = columnLetterToIndex(m[1])
+        const row = parseInt(m[2]) - 1
+
+        if (parts.length === 1) {
+            // Same table
+            return { tableId: activeCell.value.tableId, col, row }
+        }
+
+        const unquote = (s: string) => s.startsWith("'") && s.endsWith("'") ? s.slice(1, -1) : s
+
+        if (parts.length === 2) {
+            // table::ref
+            const tableName = unquote(parts[0])
+            const t = findTableByName(tableName)
+            if (!t) return null
+            return { tableId: t.id, col, row }
+        }
+
+        if (parts.length === 3) {
+            // canvas::table::ref
+            const canvasName = unquote(parts[0])
+            const tableName = unquote(parts[1])
+            const t = findTableByName(tableName, canvasName)
+            if (!t) return null
+            return { tableId: t.id, col, row }
+        }
+
+        return null
+    }
+
+    /**
+     * Get all cells currently referenced in the formula, with their assigned colors.
+     * Used by the table component to draw colored outlines.
+     */
+    function getFormulaHighlights(): Array<{ tableId: string; col: number; row: number; color: string }> {
+        if (!isEditing.value || !editValue.value.startsWith('=')) return []
+        const tokens = getFormulaTokens()
+        return tokens
+            .filter(t => t.isRef && t.tableId != null && t.col != null && t.row != null)
+            .map(t => ({ tableId: t.tableId!, col: t.col!, row: t.row!, color: t.color! }))
     }
 
     /** Toggle formula mode on/off */
@@ -626,6 +752,9 @@ export function useSpreadsheet() {
         formulaMode.value = !formulaMode.value
         if (formulaMode.value && !isEditing.value) {
             startEditing('=')
+        }
+        if (!formulaMode.value) {
+            formulaRefs.value = []
         }
     }
 
@@ -1447,6 +1576,9 @@ export function useSpreadsheet() {
         toggleFormulaMode,
         insertCellReference,
         buildCellReferenceString,
+        formulaRefs,
+        getFormulaTokens,
+        getFormulaHighlights,
 
         recalculate,
         findTable,
