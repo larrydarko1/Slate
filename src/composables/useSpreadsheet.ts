@@ -301,6 +301,58 @@ export function useSpreadsheet() {
         recalculate()
     }
 
+    /**
+     * Delete all rows covered by the current selection.
+     * Rows are removed from bottom to top so indices stay valid.
+     */
+    function deleteSelectedRows() {
+        const sr = getNormalizedSelection()
+        if (!sr) return
+        const t = findTable(sr.tableId)
+        if (!t) return
+        // Only act when full rows are selected (startCol=0, endCol=last)
+        if (sr.startCol !== 0 || sr.endCol !== t.columns.length - 1) return
+        const count = sr.endRow - sr.startRow + 1
+        // Don't delete all rows
+        if (count >= t.rows.length) return
+        // Delete from bottom to top
+        for (let r = sr.endRow; r >= sr.startRow; r--) {
+            deleteRow(sr.tableId, r)
+        }
+        // Adjust active cell
+        if (activeCell.value && activeCell.value.tableId === sr.tableId) {
+            activeCell.value.row = Math.min(sr.startRow, t.rows.length - 1)
+            activeCell.value.col = 0
+        }
+        selectionRange.value = null
+    }
+
+    /**
+     * Delete all columns covered by the current selection.
+     * Columns are removed from right to left so indices stay valid.
+     */
+    function deleteSelectedColumns() {
+        const sr = getNormalizedSelection()
+        if (!sr) return
+        const t = findTable(sr.tableId)
+        if (!t) return
+        // Only act when full columns are selected (startRow=0, endRow=last)
+        if (sr.startRow !== 0 || sr.endRow !== t.rows.length - 1) return
+        const count = sr.endCol - sr.startCol + 1
+        // Don't delete all columns
+        if (count >= t.columns.length) return
+        // Delete from right to left
+        for (let c = sr.endCol; c >= sr.startCol; c--) {
+            deleteColumn(sr.tableId, c)
+        }
+        // Adjust active cell
+        if (activeCell.value && activeCell.value.tableId === sr.tableId) {
+            activeCell.value.col = Math.min(sr.startCol, t.columns.length - 1)
+            activeCell.value.row = 0
+        }
+        selectionRange.value = null
+    }
+
     // ── Cell access ──
 
     function getCell(tableId: string, col: number, row: number): Cell | null {
@@ -2018,6 +2070,8 @@ export function useSpreadsheet() {
         addColumn,
         deleteRow,
         deleteColumn,
+        deleteSelectedRows,
+        deleteSelectedColumns,
         insertRowAt,
         insertColumnAt,
 

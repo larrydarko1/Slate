@@ -54,8 +54,12 @@
                 @mousedown.stop.prevent="startColResize(ci, $event)"
               ></div>
             </th>
-            <th class="add-col-header" @click.stop="ss.addColumn(table.id)">
-              <span class="add-btn">+</span>
+            <th
+              class="add-col-header"
+              @mousedown.stop.prevent="startAddColDrag($event)"
+              title="Drag to add columns"
+            >
+              <span class="add-handle add-handle-col">≡</span>
             </th>
           </tr>
         </thead>
@@ -111,14 +115,15 @@
               </td>
             </template>
           </tr>
-          <!-- Add row -->
+          <!-- Add row drag handle -->
           <tr>
             <td
               class="add-row-cell"
               :colspan="table.columns.length + 2"
-              @click.stop="ss.addRow(table.id)"
+              @mousedown.stop.prevent="startAddRowDrag($event)"
+              title="Drag to add rows"
             >
-              <span class="add-btn">+</span>
+              <span class="add-handle add-handle-row">≡</span>
             </td>
           </tr>
         </tbody>
@@ -417,6 +422,8 @@ function onSelectionMouseUp() {
 let isDraggingRows = false
 
 function onRowHeaderMouseDown(ri: number, e: MouseEvent) {
+  // Right-click inside an existing multi-row selection: don't reset
+  if (e.button === 2 && ss.isRowInSelection(props.table.id, ri)) return
   if (e.shiftKey) {
     ss.extendRowSelection(props.table.id, ri)
   } else {
@@ -438,6 +445,8 @@ function onRowHeaderMouseOver(ri: number) {
 let isDraggingCols = false
 
 function onColHeaderMouseDown(ci: number, e: MouseEvent) {
+  // Right-click inside an existing multi-column selection: don't reset
+  if (e.button === 2 && ss.isColInSelection(props.table.id, ci)) return
   if (e.shiftKey) {
     ss.extendColumnSelection(props.table.id, ci)
   } else {
@@ -609,24 +618,102 @@ function onResizeEnd() {
   document.removeEventListener('mouseup', onResizeEnd)
 }
 
+// ── Drag to add rows / columns (Apple Numbers style) ──
+
+const ROW_HEIGHT = 26
+const COL_WIDTH = 120
+
+let addRowDragState: { startY: number; added: number } | null = null
+let addColDragState: { startX: number; added: number } | null = null
+
+function startAddRowDrag(e: MouseEvent) {
+  // Single click (no drag) adds one row
+  addRowDragState = { startY: e.clientY, added: 0 }
+  document.addEventListener('mousemove', onAddRowDragMove)
+  document.addEventListener('mouseup', onAddRowDragEnd)
+}
+
+function onAddRowDragMove(e: MouseEvent) {
+  if (!addRowDragState) return
+  const zoom = ss.canvasZoom.value
+  const dy = (e.clientY - addRowDragState.startY) / zoom
+  const target = Math.max(0, Math.round(dy / ROW_HEIGHT))
+  while (addRowDragState.added < target) {
+    ss.addRow(props.table.id)
+    addRowDragState.added++
+  }
+}
+
+function onAddRowDragEnd() {
+  if (addRowDragState && addRowDragState.added === 0) {
+    // No drag happened — treat as single click, add one row
+    ss.addRow(props.table.id)
+  }
+  addRowDragState = null
+  document.removeEventListener('mousemove', onAddRowDragMove)
+  document.removeEventListener('mouseup', onAddRowDragEnd)
+}
+
+function startAddColDrag(e: MouseEvent) {
+  addColDragState = { startX: e.clientX, added: 0 }
+  document.addEventListener('mousemove', onAddColDragMove)
+  document.addEventListener('mouseup', onAddColDragEnd)
+}
+
+function onAddColDragMove(e: MouseEvent) {
+  if (!addColDragState) return
+  const zoom = ss.canvasZoom.value
+  const dx = (e.clientX - addColDragState.startX) / zoom
+  const target = Math.max(0, Math.round(dx / COL_WIDTH))
+  while (addColDragState.added < target) {
+    ss.addColumn(props.table.id)
+    addColDragState.added++
+  }
+}
+
+function onAddColDragEnd() {
+  if (addColDragState && addColDragState.added === 0) {
+    ss.addColumn(props.table.id)
+  }
+  addColDragState = null
+  document.removeEventListener('mousemove', onAddColDragMove)
+  document.removeEventListener('mouseup', onAddColDragEnd)
+}
+
 // ── Context menus ──
 
 function onColumnContextMenu(ci: number, e: MouseEvent) {
+  const sr = ss.getNormalizedSelection()
+  const t = props.table
+  // Check if multiple columns are selected
+  const isMultiCol = sr && sr.tableId === t.id && sr.startRow === 0 && sr.endRow === t.rows.length - 1 && sr.endCol > sr.startCol && ci >= sr.startCol && ci <= sr.endCol
+  const colCount = isMultiCol ? sr!.endCol - sr!.startCol + 1 : 1
+
   const items: MenuItem[] = [
     { label: 'Insert Column Before', action: () => ss.insertColumnAt(props.table.id, ci) },
     { label: 'Insert Column After', action: () => ss.insertColumnAt(props.table.id, ci + 1) },
     { label: '', separator: true },
-    { label: 'Delete Column', danger: true, action: () => ss.deleteColumn(props.table.id, ci) },
+    isMultiCol
+      ? { label: `Delete ${colCount} Columns`, danger: true, action: () => ss.deleteSelectedColumns() }
+      : { label: 'Delete Column', danger: true, action: () => ss.deleteColumn(props.table.id, ci) },
   ]
   ctxMenu.value?.open(e.clientX, e.clientY, items)
 }
 
 function onRowContextMenu(ri: number, e: MouseEvent) {
+  const sr = ss.getNormalizedSelection()
+  const t = props.table
+  // Check if multiple rows are selected
+  const isMultiRow = sr && sr.tableId === t.id && sr.startCol === 0 && sr.endCol === t.columns.length - 1 && sr.endRow > sr.startRow && ri >= sr.startRow && ri <= sr.endRow
+  const rowCount = isMultiRow ? sr!.endRow - sr!.startRow + 1 : 1
+
   const items: MenuItem[] = [
     { label: 'Insert Row Above', action: () => ss.insertRowAt(props.table.id, ri) },
     { label: 'Insert Row Below', action: () => ss.insertRowAt(props.table.id, ri + 1) },
     { label: '', separator: true },
-    { label: 'Delete Row', danger: true, action: () => ss.deleteRow(props.table.id, ri) },
+    isMultiRow
+      ? { label: `Delete ${rowCount} Rows`, danger: true, action: () => ss.deleteSelectedRows() }
+      : { label: 'Delete Row', danger: true, action: () => ss.deleteRow(props.table.id, ri) },
   ]
   ctxMenu.value?.open(e.clientX, e.clientY, items)
 }
@@ -670,8 +757,14 @@ function onCellContextMenu(ci: number, ri: number, e: MouseEvent) {
     { label: 'Insert Column Before', action: () => ss.insertColumnAt(props.table.id, ci) },
     { label: 'Insert Column After', action: () => ss.insertColumnAt(props.table.id, ci + 1) },
     { label: '', separator: true },
-    { label: 'Delete Row', danger: true, action: () => ss.deleteRow(props.table.id, ri) },
-    { label: 'Delete Column', danger: true, action: () => ss.deleteColumn(props.table.id, ci) },
+    { label: 'Delete Row', danger: true, action: () => {
+      if (ss.isRowInSelection(props.table.id, ri)) ss.deleteSelectedRows()
+      else ss.deleteRow(props.table.id, ri)
+    }},
+    { label: 'Delete Column', danger: true, action: () => {
+      if (ss.isColInSelection(props.table.id, ci)) ss.deleteSelectedColumns()
+      else ss.deleteColumn(props.table.id, ci)
+    }},
   )
   ctxMenu.value?.open(e.clientX, e.clientY, items)
 }
@@ -927,7 +1020,8 @@ watch(
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-color);
   text-align: center;
-  cursor: pointer;
+  cursor: e-resize;
+  user-select: none;
 
   &:hover { background: var(--bg-hover); }
 }
@@ -1063,17 +1157,28 @@ watch(
   height: 24px;
   background: var(--bg-tertiary);
   text-align: center;
-  cursor: pointer;
+  cursor: s-resize;
   border-bottom: none;
+  user-select: none;
 
   &:hover { background: var(--bg-hover); }
 }
 
-.add-btn {
-  font-size: 14px;
-  font-weight: 600;
+.add-handle {
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text-muted);
   line-height: 24px;
+  letter-spacing: 1px;
+}
+
+.add-handle-row {
+  display: inline-block;
+  transform: rotate(90deg);
+}
+
+.add-handle-col {
+  display: inline-block;
 }
 </style>
 
