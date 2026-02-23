@@ -353,8 +353,8 @@ function onCellMouseDown(ci: number, ri: number, e: MouseEvent) {
     e.stopPropagation()
     isChartDragging = true
     chartDragStart = { ci, ri }
-    // Immediately commit single-cell selection (will be updated on drag)
-    ss.handleChartCellSelection(props.table.id, ci, ri, ci, ri)
+    // Commit single-cell selection as a new appended ref (isDragging=false)
+    ss.handleChartCellSelection(props.table.id, ci, ri, ci, ri, false)
     document.addEventListener('mousemove', onChartDragMove)
     document.addEventListener('mouseup', onChartDragEnd)
     return
@@ -381,12 +381,12 @@ function onCellMouseDown(ci: number, ri: number, e: MouseEvent) {
 
 function onCellMouseOver(ci: number, ri: number) {
   if (isChartDragging && chartDragStart) {
-    // Extend chart data range drag
+    // Extend chart data range drag — replace the last ref instead of appending
     const startCol = Math.min(chartDragStart.ci, ci)
     const startRow = Math.min(chartDragStart.ri, ri)
     const endCol = Math.max(chartDragStart.ci, ci)
     const endRow = Math.max(chartDragStart.ri, ri)
-    ss.handleChartCellSelection(props.table.id, startCol, startRow, endCol, endRow)
+    ss.handleChartCellSelection(props.table.id, startCol, startRow, endCol, endRow, true)
     return
   }
   if (isDragging) {

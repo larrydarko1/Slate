@@ -1434,9 +1434,12 @@ export function useSpreadsheet() {
 
     /**
      * Called when the user finishes selecting a range while in chart selection mode.
-     * Builds the reference string and writes it into the chart data source.
+     * Appends the new reference to the existing ref string (comma-separated)
+     * so that disconnected cells from different tables/canvases are supported.
+     * When isDragging=true, the last ref segment is replaced (drag extends the range)
+     * instead of appending a new one.
      */
-    function handleChartCellSelection(tableId: string, startCol: number, startRow: number, endCol: number, endRow: number) {
+    function handleChartCellSelection(tableId: string, startCol: number, startRow: number, endCol: number, endRow: number, isDragging = false) {
         if (!chartSelectionMode.value || !activeChartId.value) return
         const chart = findChart(activeChartId.value)
         if (!chart) return
@@ -1450,13 +1453,29 @@ export function useSpreadsheet() {
             : { labelRef: null, seriesRefs: [], useHeader: true }
 
         if (mode === 'labels') {
-            ds.labelRef = { refString: refStr }
+            const existing = ds.labelRef?.refString ?? ''
+            if (isDragging && existing) {
+                // Replace last ref segment with updated range
+                const parts = splitChartRefs(existing)
+                parts[parts.length - 1] = refStr
+                ds.labelRef = { refString: parts.join(',') }
+            } else {
+                ds.labelRef = { refString: existing ? `${existing},${refStr}` : refStr }
+            }
         } else if (mode.startsWith('series:')) {
             const idx = parseInt(mode.split(':')[1])
             while (ds.seriesRefs.length <= idx) {
                 ds.seriesRefs.push({ refString: '' })
             }
-            ds.seriesRefs[idx] = { refString: refStr }
+            const existing = ds.seriesRefs[idx].refString
+            if (isDragging && existing) {
+                // Replace last ref segment with updated range
+                const parts = splitChartRefs(existing)
+                parts[parts.length - 1] = refStr
+                ds.seriesRefs[idx] = { refString: parts.join(',') }
+            } else {
+                ds.seriesRefs[idx] = { refString: existing ? `${existing},${refStr}` : refStr }
+            }
         }
 
         updateChart(chart.id, { dataSource: ds })
@@ -1536,11 +1555,10 @@ export function useSpreadsheet() {
     }
 
     /**
-     * Get cell values from a chart data reference.
-     * Iterates row-by-row, column-by-column within the range.
+     * Resolve values from a single contiguous chart ref.
      */
-    function getChartRefValues(refString: string): CellValue[] {
-        const resolved = resolveChartRef(refString)
+    function getValuesFromSingleRef(ref: string): CellValue[] {
+        const resolved = resolveChartRef(ref.trim())
         if (!resolved) return []
 
         const info = findTableGlobal(resolved.tableId)
@@ -1548,9 +1566,6 @@ export function useSpreadsheet() {
         const table = info.table
 
         const values: CellValue[] = []
-        // Determine if range is a column (vertical) or row (horizontal)
-        // For vertical ranges (most common), iterate rows
-        // For horizontal ranges, iterate cols
         for (let r = resolved.startRow; r <= resolved.endRow; r++) {
             for (let c = resolved.startCol; c <= resolved.endCol; c++) {
                 const cell = table.rows[r]?.[c]
@@ -1566,9 +1581,63 @@ export function useSpreadsheet() {
     }
 
     /**
+     * Get cell values from a chart data reference.
+     * Supports comma-separated multi-refs (e.g. "'Table 1'::A1:A5,'Table 2'::B2:B4")
+     * for disconnected cells across different tables/canvases.
+     */
+    function getChartRefValues(refString: string): CellValue[] {
+        if (!refString) return []
+        // Split on commas that are NOT inside single quotes (to handle table names with commas)
+        const refs = splitChartRefs(refString)
+        const values: CellValue[] = []
+        for (const ref of refs) {
+            values.push(...getValuesFromSingleRef(ref))
+        }
+        return values
+    }
+
+    /**
+     * Split a comma-separated chart ref string, respecting quoted names.
+     * E.g. "'Table 1'::A1:A5,'My Table, v2'::B1" → ["'Table 1'::A1:A5", "'My Table, v2'::B1"]
+     */
+    function splitChartRefs(refString: string): string[] {
+        const refs: string[] = []
+        let current = ''
+        let inQuote = false
+        for (let i = 0; i < refString.length; i++) {
+            const ch = refString[i]
+            if (ch === "'") {
+                inQuote = !inQuote
+                current += ch
+            } else if (ch === ',' && !inQuote) {
+                if (current.trim()) refs.push(current.trim())
+                current = ''
+            } else {
+                current += ch
+            }
+        }
+        if (current.trim()) refs.push(current.trim())
+        return refs
+    }
+
+    /**
      * Get colored highlights for all data references of the active chart.
      * Used by SpreadsheetTable to draw colored outlines on referenced cells.
      */
+    /** Expand a single resolved chart ref into cell highlights */
+    function highlightsFromResolved(
+        resolved: { tableId: string; startCol: number; startRow: number; endCol: number; endRow: number },
+        color: string,
+    ): Array<{ tableId: string; col: number; row: number; color: string }> {
+        const out: Array<{ tableId: string; col: number; row: number; color: string }> = []
+        for (let r = resolved.startRow; r <= resolved.endRow; r++) {
+            for (let c = resolved.startCol; c <= resolved.endCol; c++) {
+                out.push({ tableId: resolved.tableId, col: c, row: r, color })
+            }
+        }
+        return out
+    }
+
     function getChartDataHighlights(): Array<{ tableId: string; col: number; row: number; color: string }> {
         if (!activeChartId.value) return []
         const chart = findChart(activeChartId.value)
@@ -1577,26 +1646,26 @@ export function useSpreadsheet() {
         const ds = chart.dataSource
         const highlights: Array<{ tableId: string; col: number; row: number; color: string }> = []
 
-        // Labels get a slate/gray color
-        if (ds.labelRef) {
-            const resolved = resolveChartRef(ds.labelRef.refString)
-            if (resolved) {
-                for (let r = resolved.startRow; r <= resolved.endRow; r++) {
-                    for (let c = resolved.startCol; c <= resolved.endCol; c++) {
-                        highlights.push({ tableId: resolved.tableId, col: c, row: r, color: '#94a3b8' })
-                    }
+        // Labels get a slate/gray color — supports comma-separated multi-refs
+        if (ds.labelRef && ds.labelRef.refString) {
+            const refs = splitChartRefs(ds.labelRef.refString)
+            for (const ref of refs) {
+                const resolved = resolveChartRef(ref)
+                if (resolved) {
+                    highlights.push(...highlightsFromResolved(resolved, '#94a3b8'))
                 }
             }
         }
 
-        // Each series gets a color from the chart ref palette
+        // Each series gets a color — supports comma-separated multi-refs
         ds.seriesRefs.forEach((sref, i) => {
-            const resolved = resolveChartRef(sref.refString)
-            if (!resolved) return
+            if (!sref.refString) return
+            const refs = splitChartRefs(sref.refString)
             const color = CHART_REF_COLORS[i % CHART_REF_COLORS.length]
-            for (let r = resolved.startRow; r <= resolved.endRow; r++) {
-                for (let c = resolved.startCol; c <= resolved.endCol; c++) {
-                    highlights.push({ tableId: resolved.tableId, col: c, row: r, color })
+            for (const ref of refs) {
+                const resolved = resolveChartRef(ref)
+                if (resolved) {
+                    highlights.push(...highlightsFromResolved(resolved, color))
                 }
             }
         })

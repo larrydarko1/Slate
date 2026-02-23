@@ -45,6 +45,7 @@
           <option value="doughnut">Doughnut</option>
           <option value="scatter">Scatter</option>
           <option value="area">Area</option>
+          <option value="radar">Radar</option>
         </select>
       </div>
 
@@ -155,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, type PropType } from 'vue'
+import { computed, inject, ref, onMounted, onBeforeUnmount, type PropType } from 'vue'
 import type { ChartObject } from '../types/spreadsheet'
 import { SPREADSHEET_KEY } from '../composables/useSpreadsheet'
 import {
@@ -169,14 +170,15 @@ import {
   ArcElement,
   CategoryScale,
   LinearScale,
+  RadialLinearScale,
   Filler,
 } from 'chart.js'
-import { Bar, Line, Pie, Doughnut, Scatter } from 'vue-chartjs'
+import { Bar, Line, Pie, Doughnut, Scatter, Radar } from 'vue-chartjs'
 
 ChartJS.register(
   Title, Tooltip, Legend,
   BarElement, LineElement, PointElement, ArcElement,
-  CategoryScale, LinearScale, Filler,
+  CategoryScale, LinearScale, RadialLinearScale, Filler,
 )
 
 const props = defineProps({
@@ -226,17 +228,60 @@ const chartComponent = computed(() => {
     case 'pie': return Pie
     case 'doughnut': return Doughnut
     case 'scatter': return Scatter
+    case 'radar': return Radar
     default: return Bar
   }
 })
+
+/**
+ * Robustly extract a numeric value from a CellValue.
+ * Handles: numbers, booleans, null, plain numeric strings,
+ * and formatted currency strings like "$1,234.56" or "€12,50".
+ */
+function toChartNumber(v: unknown): number {
+  if (v == null || v === '') return 0
+  if (typeof v === 'number') return v
+  if (typeof v === 'boolean') return v ? 1 : 0
+  if (typeof v === 'string') {
+    // Try plain number first
+    const plain = Number(v)
+    if (!isNaN(plain)) return plain
+    // Strip currency symbols + thousand separators
+    let cleaned = v.trim()
+    // USD: $1,234.56 → 1234.56
+    if (cleaned.includes('$')) {
+      cleaned = cleaned.replace(/[$,]/g, '')
+      const n = parseFloat(cleaned)
+      if (!isNaN(n)) return n
+    }
+    // EUR: €1.234,56 → 1234.56
+    if (cleaned.includes('€')) {
+      cleaned = cleaned.replace(/€/g, '').trim()
+      // European format: dots as thousands, comma as decimal
+      if (/^\d{1,3}(\.\d{3})*(,\d+)?$/.test(cleaned) || /^-?\d{1,3}(\.\d{3})*(,\d+)?$/.test(cleaned)) {
+        cleaned = cleaned.replace(/\./g, '').replace(',', '.')
+      } else if (cleaned.includes(',')) {
+        cleaned = cleaned.replace(',', '.')
+      }
+      const n = parseFloat(cleaned)
+      if (!isNaN(n)) return n
+    }
+    // General: strip any remaining commas and try again
+    const fallback = parseFloat(v.replace(/,/g, ''))
+    if (!isNaN(fallback)) return fallback
+  }
+  return 0
+}
 
 const chartData = computed(() => {
   const ds = props.chart.dataSource
   if (!ds || ds.seriesRefs.length === 0) return null
 
   const useHeader = ds.useHeader
+  const chartType = props.chart.chartType
+  const isPie = chartType === 'pie' || chartType === 'doughnut'
 
-  // Resolve labels
+  // ── Resolve labels ──
   let labels: string[] = []
   if (ds.labelRef && ds.labelRef.refString) {
     const vals = ss.getChartRefValues(ds.labelRef.refString)
@@ -247,94 +292,175 @@ const chartData = computed(() => {
     }
   }
 
-  // Resolve series
-  const datasets = ds.seriesRefs
+  // ── Resolve series values ──
+  const seriesEntries = ds.seriesRefs
     .filter(sref => sref.refString)
     .map((sref, seriesIdx) => {
       const vals = ss.getChartRefValues(sref.refString)
       let name = 'Series ' + (seriesIdx + 1)
-      let data: number[]
+      let dataVals: unknown[]
 
       if (useHeader && vals.length > 0) {
         name = vals[0] != null ? String(vals[0]) : name
-        data = vals.slice(1).map(v => {
-          if (v == null) return 0
-          if (typeof v === 'number') return v
-          return Number(v) || 0
-        })
+        dataVals = vals.slice(1)
       } else {
-        data = vals.map(v => {
-          if (v == null) return 0
-          if (typeof v === 'number') return v
-          return Number(v) || 0
-        })
+        dataVals = vals
       }
 
-      // Auto-generate labels if none provided
-      if (labels.length === 0) {
-        labels = data.map((_, i) => String(i + 1))
-      }
+      const data = dataVals.map(v => toChartNumber(v))
 
-      const color = props.chart.colorScheme[seriesIdx % props.chart.colorScheme.length]
-
-      if (props.chart.chartType === 'pie' || props.chart.chartType === 'doughnut') {
-        return {
-          label: name,
-          data,
-          backgroundColor: data.map((_, i) => props.chart.colorScheme[i % props.chart.colorScheme.length]),
-          borderWidth: 1,
-        }
-      }
-
-      return {
-        label: name,
-        data,
-        backgroundColor: color + '99',
-        borderColor: color,
-        borderWidth: 2,
-        fill: props.chart.chartType === 'area',
-        tension: props.chart.chartType === 'line' || props.chart.chartType === 'area' ? 0.3 : 0,
-      }
+      return { name, data, idx: seriesIdx }
     })
 
-  if (datasets.length === 0) return null
+  if (seriesEntries.length === 0) return null
 
-  if (props.chart.chartType === 'scatter') {
-    const scatterDatasets = ds.seriesRefs
-      .filter(sref => sref.refString)
-      .map((sref, seriesIdx) => {
-        const vals = ss.getChartRefValues(sref.refString)
-        let name = 'Series ' + (seriesIdx + 1)
-        let numVals: number[]
-
-        if (useHeader && vals.length > 0) {
-          name = vals[0] != null ? String(vals[0]) : name
-          numVals = vals.slice(1).map(v => typeof v === 'number' ? v : (Number(v) || 0))
-        } else {
-          numVals = vals.map(v => typeof v === 'number' ? v : (Number(v) || 0))
-        }
-
-        const data = numVals.map((v, i) => ({
-          x: labels.length > i ? (Number(labels[i]) || i) : i,
-          y: v,
-        }))
-        const color = props.chart.colorScheme[seriesIdx % props.chart.colorScheme.length]
-        return {
-          label: name,
-          data,
-          backgroundColor: color,
-          borderColor: color,
-          borderWidth: 1,
-        }
-      })
-    return { datasets: scatterDatasets }
+  // Auto-generate labels if none provided
+  if (labels.length === 0) {
+    const maxLen = Math.max(...seriesEntries.map(s => s.data.length))
+    labels = Array.from({ length: maxLen }, (_, i) => String(i + 1))
   }
+
+  // ── Scatter charts need {x,y} point format ──
+  if (chartType === 'scatter') {
+    const datasets = seriesEntries.map(entry => {
+      const data = entry.data.map((v, i) => ({
+        x: labels.length > i ? (Number(labels[i]) || i) : i,
+        y: v,
+      }))
+      const color = props.chart.colorScheme[entry.idx % props.chart.colorScheme.length]
+      return {
+        label: entry.name,
+        data,
+        backgroundColor: color,
+        borderColor: color,
+        borderWidth: 1,
+      }
+    })
+    return { datasets }
+  }
+
+  // ── Pie / Doughnut ──
+  // Universal approach: pool ALL values from every series into a single
+  // dataset so each value becomes one slice, regardless of whether the
+  // cells are contiguous or detached across tables/canvases.
+  if (isPie) {
+    const allData = seriesEntries.flatMap(entry => entry.data)
+    // Extend or trim labels to match the number of slices
+    while (labels.length < allData.length) {
+      labels.push(String(labels.length + 1))
+    }
+    labels = labels.slice(0, allData.length)
+    const datasets = [{
+      data: allData,
+      backgroundColor: allData.map((_, i) => props.chart.colorScheme[i % props.chart.colorScheme.length]),
+      borderWidth: 1,
+    }]
+    return { labels, datasets }
+  }
+
+  // ── Radar (Spider) ──
+  if (chartType === 'radar') {
+    const datasets = seriesEntries.map(entry => {
+      const color = props.chart.colorScheme[entry.idx % props.chart.colorScheme.length]
+      return {
+        label: entry.name,
+        data: entry.data,
+        backgroundColor: color + '40',
+        borderColor: color,
+        borderWidth: 2,
+        fill: true,
+        pointBackgroundColor: color,
+        pointBorderColor: '#fff',
+        pointRadius: 3,
+      }
+    })
+    return { labels, datasets }
+  }
+
+  // ── Bar / Line / Area ──
+  const datasets = seriesEntries.map(entry => {
+    const color = props.chart.colorScheme[entry.idx % props.chart.colorScheme.length]
+    return {
+      label: entry.name,
+      data: entry.data,
+      backgroundColor: color + '99',
+      borderColor: color,
+      borderWidth: 2,
+      fill: chartType === 'area',
+      tension: (chartType === 'line' || chartType === 'area') ? 0.3 : 0,
+    }
+  })
 
   return { labels, datasets }
 })
 
-const chartOptions = computed(() => {
-  const isPie = props.chart.chartType === 'pie' || props.chart.chartType === 'doughnut'
+// ── Reactive theme tracking ──
+// Chart.js renders to <canvas> and can't use CSS variables, so we resolve
+// them to actual color values.  A MutationObserver watches for data-theme
+// changes on <html> so the computed re-evaluates on theme switch.
+const themeKey = ref(0)
+let themeObserver: MutationObserver | null = null
+
+onMounted(() => {
+  themeObserver = new MutationObserver(() => { themeKey.value++ })
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+})
+onBeforeUnmount(() => {
+  themeObserver?.disconnect()
+})
+
+/** Resolve a CSS custom property to its computed value */
+function cssVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
+const chartOptions = computed((): any => {
+  // Touch themeKey so Vue re-evaluates when the theme changes
+  void themeKey.value
+  const chartType = props.chart.chartType
+  const isPie = chartType === 'pie' || chartType === 'doughnut'
+  const isScatter = chartType === 'scatter'
+  const isRadar = chartType === 'radar'
+
+  // Resolve CSS variables so Chart.js (canvas-based) gets actual color values
+  const textPrimary = cssVar('--text-primary')
+  const textMuted = cssVar('--text-muted')
+  const borderColor = cssVar('--border-color')
+
+  // Build scale config only for non-pie charts
+  let scales: Record<string, unknown> = {}
+  if (isRadar) {
+    // Radar uses a single radial scale
+    scales = {
+      r: {
+        display: props.chart.showGrid,
+        grid: { color: borderColor },
+        angleLines: { color: borderColor },
+        pointLabels: { color: textMuted, font: { size: 10 } },
+        ticks: { color: textMuted, font: { size: 10 }, backdropColor: 'transparent' },
+        beginAtZero: true,
+      },
+    }
+  } else if (!isPie) {
+    const xScale: Record<string, unknown> = {
+      display: props.chart.showGrid,
+      grid: { color: borderColor },
+      ticks: { color: textMuted, font: { size: 10 } },
+    }
+    const yScale: Record<string, unknown> = {
+      display: props.chart.showGrid,
+      grid: { color: borderColor },
+      ticks: { color: textMuted, font: { size: 10 } },
+      beginAtZero: true,
+    }
+    // For scatter, both axes are linear
+    if (isScatter) {
+      xScale.type = 'linear'
+      xScale.beginAtZero = true
+    }
+    scales = { x: xScale, y: yScale }
+  }
+
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -344,24 +470,25 @@ const chartOptions = computed(() => {
         display: props.chart.showLegend,
         position: props.chart.legendPosition,
         labels: {
-          color: 'var(--text-primary)',
+          color: textPrimary,
           font: { size: 11 },
         },
       },
       title: { display: false },
-    },
-    scales: isPie ? {} : {
-      x: {
-        display: props.chart.showGrid,
-        grid: { color: 'var(--border-color)' },
-        ticks: { color: 'var(--text-muted)', font: { size: 10 } },
+      tooltip: {
+        callbacks: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          label: (ctx: any) => {
+            const label = ctx.dataset?.label ?? ''
+            const val = isScatter
+              ? `(${ctx.parsed?.x}, ${ctx.parsed?.y})`
+              : ctx.formattedValue
+            return label ? `${label}: ${val}` : String(val)
+          },
+        },
       },
-      y: {
-        display: props.chart.showGrid,
-        grid: { color: 'var(--border-color)' },
-        ticks: { color: 'var(--text-muted)', font: { size: 10 } },
-      },
     },
+    scales,
   }
 })
 

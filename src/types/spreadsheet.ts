@@ -79,7 +79,7 @@ export interface TextBox {
     borderRadius: number
 }
 
-export type ChartType = 'bar' | 'line' | 'pie' | 'doughnut' | 'scatter' | 'area'
+export type ChartType = 'bar' | 'line' | 'pie' | 'doughnut' | 'scatter' | 'area' | 'radar'
 
 /** A single cell-range reference for chart data (formula-style ref string) */
 export interface ChartDataRef {
