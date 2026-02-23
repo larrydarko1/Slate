@@ -106,6 +106,20 @@ export function useSpreadsheet() {
     }
 
     function switchCanvas(canvasId: string) {
+        // During formula editing, preserve editing state for cross-canvas references
+        if (isEditing.value && formulaMode.value) {
+            activeCanvasId.value = canvasId
+            // Clear selection / non-formula state for the new canvas view
+            selectionRange.value = null
+            activeTextBoxId.value = null
+            activeChartId.value = null
+            chartSelectionMode.value = null
+            // Recalculate maxZ for the new canvas
+            const cv = activeCanvas.value
+            maxZ = Math.max(0, ...cv.tables.map(t => t.zIndex), ...cv.textBoxes.map(tb => tb.zIndex), ...cv.charts.map(ch => ch.zIndex))
+            return
+        }
+
         if (isEditing.value) commitEdit()
         activeCell.value = null
         activeTextBoxId.value = null
@@ -578,13 +592,34 @@ export function useSpreadsheet() {
     function commitEdit() {
         if (!activeCell.value || !isEditing.value) return
         const { tableId, col, row } = activeCell.value
+
+        // Determine if the formula cell lives on a different canvas
+        const formulaCellInfo = findTableGlobal(tableId)
+        const needSwitchBack = formulaCellInfo && formulaCellInfo.canvas.id !== activeCanvasId.value
+
         setCellValue(tableId, col, row, editValue.value)
         isEditing.value = false
         formulaMode.value = false
         formulaRefs.value = []
+
+        // Switch back to the formula cell's canvas so the user sees the result
+        if (needSwitchBack && formulaCellInfo) {
+            activeCanvasId.value = formulaCellInfo.canvas.id
+            const cv = activeCanvas.value
+            maxZ = Math.max(0, ...cv.tables.map(t => t.zIndex), ...cv.textBoxes.map(tb => tb.zIndex), ...cv.charts.map(ch => ch.zIndex))
+        }
     }
 
     function cancelEdit() {
+        // If canceling during cross-canvas formula editing, switch back
+        if (activeCell.value && formulaMode.value) {
+            const formulaCellInfo = findTableGlobal(activeCell.value.tableId)
+            if (formulaCellInfo && formulaCellInfo.canvas.id !== activeCanvasId.value) {
+                activeCanvasId.value = formulaCellInfo.canvas.id
+                const cv = activeCanvas.value
+                maxZ = Math.max(0, ...cv.tables.map(t => t.zIndex), ...cv.textBoxes.map(tb => tb.zIndex), ...cv.charts.map(ch => ch.zIndex))
+            }
+        }
         isEditing.value = false
         editValue.value = ''
         formulaMode.value = false
@@ -1168,7 +1203,12 @@ export function useSpreadsheet() {
     // ── Helpers ──
 
     function findTable(id: string): SpreadsheetTable | undefined {
-        return activeCanvas.value.tables.find(t => t.id === id)
+        // Fast path: check the active canvas first
+        const local = activeCanvas.value.tables.find(t => t.id === id)
+        if (local) return local
+        // Fall back to global search across all canvases
+        // (needed for cross-canvas formula editing, commit, display, etc.)
+        return findTableGlobal(id)?.table
     }
 
     /** Search for a table by ID across ALL canvases */
@@ -1915,6 +1955,7 @@ export function useSpreadsheet() {
 
         recalculate,
         findTable,
+        findTableGlobal,
 
         // File operations
         saveFile,

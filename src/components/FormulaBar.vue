@@ -66,10 +66,16 @@ const activeCell = computed(() => ss.activeCell.value)
 
 const cellRefLabel = computed(() => {
   if (!activeCell.value) return ''
-  const t = ss.findTable(activeCell.value.tableId)
+  const tableInfo = ss.findTableGlobal(activeCell.value.tableId)
   const colLetter = indexToColumnLetter(activeCell.value.col)
   const rowNum = activeCell.value.row + 1
-  return t ? `${t.name} · ${colLetter}${rowNum}` : `${colLetter}${rowNum}`
+  const cellAddr = `${colLetter}${rowNum}`
+  if (!tableInfo) return cellAddr
+  // If the formula cell is on a different canvas, show canvas name for clarity
+  if (tableInfo.canvas.id !== ss.activeCanvasId.value) {
+    return `${tableInfo.canvas.name} › ${tableInfo.table.name} · ${cellAddr}`
+  }
+  return `${tableInfo.table.name} · ${cellAddr}`
 })
 
 const currentCellType = computed(() => {

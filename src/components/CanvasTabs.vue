@@ -7,6 +7,7 @@
         class="canvas-tab"
         :class="{
           active: canvas.id === ss.activeCanvasId.value,
+          'formula-source': formulaSourceCanvasId != null && canvas.id === formulaSourceCanvasId,
           'drop-before': dropTarget === index && dropSide === 'before',
           'drop-after': dropTarget === index && dropSide === 'after',
           dragging: dragIndex === index,
@@ -118,6 +119,15 @@ const ss = inject(SPREADSHEET_KEY)!
 const maxCanvases = MAX_CANVASES
 
 const zoomLabel = computed(() => `${Math.round(ss.canvasZoom.value * 100)}%`)
+
+/** During cross-canvas formula editing, the canvas where the formula cell lives */
+const formulaSourceCanvasId = computed(() => {
+  if (!ss.isEditing.value || !ss.formulaMode.value || !ss.activeCell.value) return null
+  const info = ss.findTableGlobal(ss.activeCell.value.tableId)
+  if (!info) return null
+  // Only show indicator when the user is on a different canvas
+  return info.canvas.id !== ss.activeCanvasId.value ? info.canvas.id : null
+})
 
 // ── Drag & drop reorder ──
 const dragIndex = ref<number | null>(null)
@@ -297,6 +307,12 @@ function ctxDelete() {
     background: var(--bg-primary);
     color: var(--text-primary);
     box-shadow: var(--shadow-sm);
+  }
+
+  &.formula-source {
+    outline: 2px solid var(--accent-color);
+    outline-offset: -2px;
+    color: var(--accent-color);
   }
 
   &.dragging {
