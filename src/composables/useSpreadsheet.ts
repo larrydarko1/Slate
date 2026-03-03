@@ -181,7 +181,13 @@ export function useSpreadsheet() {
     function renameCanvas(canvasId: string, name: string) {
         pushUndo()
         const c = canvases.value.find(cv => cv.id === canvasId)
-        if (c) c.name = name
+        if (!c) return
+        const oldName = c.name
+        if (oldName === name) return
+        c.name = name
+        // Rewrite all references that used the old canvas name
+        rewriteCanvasNameReferences(oldName, name)
+        recalculate()
     }
 
     function switchCanvas(canvasId: string) {
@@ -292,7 +298,13 @@ export function useSpreadsheet() {
     function renameTable(tableId: string, name: string) {
         pushUndo()
         const t = findTable(tableId)
-        if (t) t.name = name
+        if (!t) return
+        const oldName = t.name
+        if (oldName === name) return
+        t.name = name
+        // Rewrite all references that used the old table name
+        rewriteTableNameReferences(oldName, name)
+        recalculate()
     }
 
     function moveTable(tableId: string, x: number, y: number) {
@@ -1434,6 +1446,108 @@ export function useSpreadsheet() {
                     for (let c = 0; c < table.columns.length; c++)
                         if (table.rows[r][c].formula != null)
                             resolveCellValue(table.id, c, r)
+            }
+        }
+    }
+
+    // ── Name-reference rewriting helpers ──
+
+    /**
+     * Quote a name for formula/ref strings if it contains spaces or special chars,
+     * otherwise return it bare.
+     */
+    function quoteRefName(n: string): string {
+        return /^[A-Za-z_]\w*$/.test(n) ? n : `'${n}'`
+    }
+
+    /**
+     * Build regex patterns that match a quoted or unquoted name in a formula/refString.
+     * Returns a RegExp that matches `'Name'` or `Name` (unquoted, word-bounded) as used
+     * before a `::` separator, capturing the name part.
+     */
+    function buildNamePattern(name: string): RegExp {
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        // Match either 'Name':: or Name:: (word-bounded for unquoted)
+        return new RegExp(`(?:'${escaped}'|\\b${escaped}\\b)(?=::)`, 'g')
+    }
+
+    /**
+     * Replace occurrences of an old name with a new name in a reference string
+     * (formula body or chart refString).
+     *
+     * Handles both quoted ('Table 1') and unquoted (Table1) forms.
+     */
+    function replaceNameInRef(ref: string, oldName: string, newName: string): string {
+        const pattern = buildNamePattern(oldName)
+        return ref.replace(pattern, quoteRefName(newName))
+    }
+
+    /**
+     * Rewrite all cell formulas and chart refStrings across all canvases
+     * when a table name changes.
+     */
+    function rewriteTableNameReferences(oldName: string, newName: string) {
+        for (const cv of canvases.value) {
+            // Rewrite cell formulas
+            for (const table of cv.tables) {
+                for (let r = 0; r < table.rows.length; r++) {
+                    for (let c = 0; c < table.columns.length; c++) {
+                        const cell = table.rows[r][c]
+                        if (cell.formula != null && cell.formula.length > 0) {
+                            const updated = replaceNameInRef(cell.formula, oldName, newName)
+                            if (updated !== cell.formula) {
+                                cell.formula = updated
+                            }
+                        }
+                    }
+                }
+            }
+            // Rewrite chart data source refs
+            for (const chart of cv.charts) {
+                if (!chart.dataSource) continue
+                if (chart.dataSource.labelRef) {
+                    chart.dataSource.labelRef.refString = replaceNameInRef(
+                        chart.dataSource.labelRef.refString, oldName, newName
+                    )
+                }
+                for (const sref of chart.dataSource.seriesRefs) {
+                    sref.refString = replaceNameInRef(sref.refString, oldName, newName)
+                }
+            }
+        }
+    }
+
+    /**
+     * Rewrite all cell formulas and chart refStrings across all canvases
+     * when a canvas name changes.
+     */
+    function rewriteCanvasNameReferences(oldName: string, newName: string) {
+        for (const cv of canvases.value) {
+            // Rewrite cell formulas
+            for (const table of cv.tables) {
+                for (let r = 0; r < table.rows.length; r++) {
+                    for (let c = 0; c < table.columns.length; c++) {
+                        const cell = table.rows[r][c]
+                        if (cell.formula != null && cell.formula.length > 0) {
+                            const updated = replaceNameInRef(cell.formula, oldName, newName)
+                            if (updated !== cell.formula) {
+                                cell.formula = updated
+                            }
+                        }
+                    }
+                }
+            }
+            // Rewrite chart data source refs
+            for (const chart of cv.charts) {
+                if (!chart.dataSource) continue
+                if (chart.dataSource.labelRef) {
+                    chart.dataSource.labelRef.refString = replaceNameInRef(
+                        chart.dataSource.labelRef.refString, oldName, newName
+                    )
+                }
+                for (const sref of chart.dataSource.seriesRefs) {
+                    sref.refString = replaceNameInRef(sref.refString, oldName, newName)
+                }
             }
         }
     }
