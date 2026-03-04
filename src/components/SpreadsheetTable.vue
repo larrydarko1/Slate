@@ -130,6 +130,12 @@
                     {{ ss.getDisplayValue(table.id, ci, ri) }}
                   </span>
                 </template>
+                <!-- Fill handle at bottom-right corner of selection -->
+                <div
+                  v-if="isSelectionCorner(ci, ri) && !ss.isEditing.value"
+                  class="fill-handle"
+                  @mousedown.stop.prevent="startFillDrag(ci, ri, $event)"
+                ></div>
               </td>
             </template>
           </tr>
@@ -258,6 +264,7 @@ function cellClasses(ci: number, ri: number) {
   return {
     selected: isSelected(ci, ri),
     'in-selection': ss.isInSelection(props.table.id, ci, ri) && !isSelected(ci, ri),
+    'in-fill': isCellInFillPreview(ci, ri),
     'header-row': ri < props.table.headerRows,
     'merged-cell': !!ss.isMergedOrigin(props.table.id, ci, ri),
     'formula-ref-highlight': !!(getRefHighlightColor(ci, ri) || getChartHighlightColor(ci, ri)),
@@ -614,6 +621,149 @@ function onColHeaderMouseOver(ci: number) {
   if (isDraggingCols && !reorderColState.value.active) {
     ss.extendColumnSelection(props.table.id, ci)
   }
+}
+
+// ── Fill handle (drag to fill / autofill) ──
+
+const fillDragState = ref<{
+  active: boolean
+  sourceRange: { startCol: number; startRow: number; endCol: number; endRow: number }
+  currentCol: number
+  currentRow: number
+} | null>(null)
+
+/** Check if this cell is at the bottom-right corner of the active selection */
+function isSelectionCorner(ci: number, ri: number): boolean {
+  if (!isActiveTable.value) return false
+  const sr = ss.getNormalizedSelection()
+  if (!sr || sr.tableId !== props.table.id) return false
+  return ci === sr.endCol && ri === sr.endRow
+}
+
+/** Check if this cell is in the fill preview area (being dragged over) */
+function isCellInFillPreview(ci: number, ri: number): boolean {
+  const st = fillDragState.value
+  if (!st || !st.active) return false
+  const fr = getFillRange()
+  if (!fr) return false
+  // Only highlight cells *outside* the source selection
+  const inSource = ci >= st.sourceRange.startCol && ci <= st.sourceRange.endCol &&
+                   ri >= st.sourceRange.startRow && ri <= st.sourceRange.endRow
+  if (inSource) return false
+  return ci >= fr.startCol && ci <= fr.endCol && ri >= fr.startRow && ri <= fr.endRow
+}
+
+/** Compute the fill target range based on drag direction */
+function getFillRange(): { startCol: number; startRow: number; endCol: number; endRow: number } | null {
+  const st = fillDragState.value
+  if (!st || !st.active) return null
+  const src = st.sourceRange
+  // Determine fill direction — the axis with larger displacement wins
+  const dCol = st.currentCol - src.endCol
+  const dRow = st.currentRow - src.endRow
+  const dColNeg = src.startCol - st.currentCol
+  const dRowNeg = src.startRow - st.currentRow
+
+  // Fill down
+  if (dRow > 0 && dRow >= Math.abs(dCol)) {
+    return { startCol: src.startCol, startRow: src.startRow, endCol: src.endCol, endRow: st.currentRow }
+  }
+  // Fill right
+  if (dCol > 0 && dCol >= Math.abs(dRow)) {
+    return { startCol: src.startCol, startRow: src.startRow, endCol: st.currentCol, endRow: src.endRow }
+  }
+  // Fill up
+  if (dRowNeg > 0 && dRowNeg >= dColNeg) {
+    return { startCol: src.startCol, startRow: st.currentRow, endCol: src.endCol, endRow: src.endRow }
+  }
+  // Fill left
+  if (dColNeg > 0) {
+    return { startCol: st.currentCol, startRow: src.startRow, endCol: src.endCol, endRow: src.endRow }
+  }
+  return null
+}
+
+function startFillDrag(_ci: number, _ri: number, _e: MouseEvent) {
+  const sr = ss.getNormalizedSelection()
+  if (!sr || sr.tableId !== props.table.id) return
+  fillDragState.value = {
+    active: true,
+    sourceRange: { startCol: sr.startCol, startRow: sr.startRow, endCol: sr.endCol, endRow: sr.endRow },
+    currentCol: sr.endCol,
+    currentRow: sr.endRow,
+  }
+  document.addEventListener('mousemove', onFillDragMove)
+  document.addEventListener('mouseup', onFillDragEnd)
+}
+
+function onFillDragMove(e: MouseEvent) {
+  const st = fillDragState.value
+  if (!st || !st.active) return
+  const gridWrapper = tableEl.value?.querySelector('.table-grid-wrapper')
+  if (!gridWrapper) return
+
+  // Determine target row from tbody rows
+  const rows = gridWrapper.querySelectorAll('tbody tr')
+  let targetRow = st.currentRow
+  for (let ri = 0; ri < props.table.rows.length; ri++) {
+    const tr = rows[ri]
+    if (!tr) continue
+    const rect = tr.getBoundingClientRect()
+    if (e.clientY >= rect.top && e.clientY < rect.bottom) {
+      targetRow = ri
+      break
+    }
+    if (e.clientY >= rect.bottom) targetRow = ri
+  }
+
+  // Determine target column from the header cells (reliable 1:1 mapping)
+  const headerCells = gridWrapper.querySelectorAll('thead th.col-header')
+  let targetCol = st.currentCol
+  for (let ci = 0; ci < headerCells.length; ci++) {
+    const rect = headerCells[ci].getBoundingClientRect()
+    if (e.clientX >= rect.left && e.clientX < rect.right) {
+      targetCol = ci
+      break
+    }
+    if (e.clientX >= rect.right) targetCol = ci
+  }
+
+  st.currentCol = targetCol
+  st.currentRow = targetRow
+}
+
+function onFillDragEnd() {
+  const st = fillDragState.value
+  if (st && st.active) {
+    const fr = getFillRange()
+    if (fr) {
+      const tableId = props.table.id
+      ss.fillCells(tableId, {
+        tableId,
+        startCol: st.sourceRange.startCol,
+        startRow: st.sourceRange.startRow,
+        endCol: st.sourceRange.endCol,
+        endRow: st.sourceRange.endRow,
+      }, {
+        tableId,
+        startCol: fr.startCol,
+        startRow: fr.startRow,
+        endCol: fr.endCol,
+        endRow: fr.endRow,
+      })
+      // Select the filled range
+      ss.selectionRange.value = {
+        tableId,
+        startCol: fr.startCol,
+        startRow: fr.startRow,
+        endCol: fr.endCol,
+        endRow: fr.endRow,
+      }
+    }
+  }
+  fillDragState.value = null
+  document.removeEventListener('mousemove', onFillDragMove)
+  document.removeEventListener('mouseup', onFillDragEnd)
 }
 
 // ── Corner cell (select all) ──
@@ -1236,11 +1386,19 @@ watch(
   &.selected {
     outline: 2px solid var(--accent-color);
     outline-offset: -1px;
-    z-index: 1;
+    z-index: 3;
+    overflow: visible;
   }
 
   &.in-selection {
     background: var(--accent-color-alpha, rgba(66, 133, 244, 0.12));
+    z-index: 1;
+  }
+
+  &.in-fill {
+    background: var(--accent-color-alpha, rgba(66, 133, 244, 0.12));
+    outline: 1px dashed var(--accent-color);
+    outline-offset: -1px;
     z-index: 1;
   }
 
@@ -1316,6 +1474,26 @@ watch(
   z-index: 3;
   pointer-events: auto;
   cursor: default;
+}
+
+/* ── Fill handle ── */
+
+.fill-handle {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 8px;
+  height: 8px;
+  background: var(--accent-color);
+  border: 1.5px solid #fff;
+  border-radius: 1px;
+  cursor: crosshair;
+  z-index: 4;
+  pointer-events: auto;
+
+  :root[data-theme="dark"] & {
+    border-color: var(--bg-primary);
+  }
 }
 
 /* ── Row / Column reorder drop indicators ── */

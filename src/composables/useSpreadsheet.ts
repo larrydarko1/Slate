@@ -493,6 +493,9 @@ export function useSpreadsheet() {
             sr.startRow = insertAt
             sr.endRow = insertAt + count - 1
         }
+        // Remap formula cell-references so they still point at the same data
+        const rowMapper = (idx: number) => remapRowIdx(idx, fromStart, fromEnd, insertAt)
+        remapAllFormulasInTable(t, null, rowMapper)
         recalculate()
     }
 
@@ -558,6 +561,9 @@ export function useSpreadsheet() {
             sr.startCol = insertAt
             sr.endCol = insertAt + count - 1
         }
+        // Remap formula cell-references so they still point at the same data
+        const colMapper = (idx: number) => remapColIdx(idx, fromStart, fromEnd, insertAt)
+        remapAllFormulasInTable(t, colMapper, null)
         recalculate()
     }
 
@@ -1252,6 +1258,208 @@ export function useSpreadsheet() {
         return !!(cell?.note)
     }
 
+    // ── Formula reference remapping (for reorder) ──
+
+    /**
+     * Remap local cell references in a formula using arbitrary index mapping functions.
+     * Cross-table references (after '::') are left untouched (absolute, like Apple Numbers).
+     * Used by reorderRows / reorderColumns to keep formulas pointing at the same data.
+     */
+    function remapFormulaReferences(
+        formula: string,
+        colMapper: ((col: number) => number) | null,
+        rowMapper: ((row: number) => number) | null,
+    ): string {
+        let result = ''
+        let i = 0
+        while (i < formula.length) {
+            // Skip quoted strings
+            if (formula[i] === '"') {
+                let j = i + 1
+                while (j < formula.length && formula[j] !== '"') j++
+                result += formula.substring(i, j + 1)
+                i = j + 1
+                continue
+            }
+            // Skip quoted names (single quotes for table/canvas names)
+            if (formula[i] === "'") {
+                let j = i + 1
+                while (j < formula.length && formula[j] !== "'") j++
+                result += formula.substring(i, j + 1)
+                i = j + 1
+                continue
+            }
+            // Cross-table ref — don't remap
+            const endsWithDoubleColon = result.length >= 2 && result.slice(-2) === '::'
+            const rest = formula.substring(i)
+            const cellRefMatch = rest.match(/^([A-Za-z]+)(\d+)/)
+            if (cellRefMatch) {
+                const letters = cellRefMatch[1].toUpperCase()
+                const digits = cellRefMatch[2]
+                const afterRef = formula.substring(i + cellRefMatch[0].length)
+                const isFunction = /^\s*\(/.test(afterRef)
+                const keywords = ['TRUE', 'FALSE', 'IF', 'AND', 'OR', 'NOT', 'SUM', 'AVERAGE', 'MIN', 'MAX', 'COUNT', 'COUNTA', 'ROUND', 'ABS', 'SQRT', 'POWER', 'MOD', 'INT', 'CONCAT', 'UPPER', 'LOWER', 'LEN', 'TRIM', 'LEFT', 'RIGHT', 'MID', 'PI', 'NOW', 'TODAY', 'SUMIF', 'COUNTIF', 'VLOOKUP', 'HLOOKUP', 'INDEX', 'MATCH']
+                if (isFunction || keywords.includes(letters) || endsWithDoubleColon) {
+                    result += cellRefMatch[0]
+                    i += cellRefMatch[0].length
+                    continue
+                }
+                const oldCol = columnLetterToIndex(letters)
+                const oldRow = parseInt(digits) - 1
+                const newCol = colMapper ? colMapper(oldCol) : oldCol
+                const newRow = rowMapper ? rowMapper(oldRow) : oldRow
+                result += indexToColumnLetter(newCol) + (newRow + 1)
+                i += cellRefMatch[0].length
+                continue
+            }
+            result += formula[i]
+            i++
+        }
+        return result
+    }
+
+    /**
+     * Walk every cell in the given table and remap local formula references
+     * using the provided col/row mapping functions.
+     */
+    function remapAllFormulasInTable(
+        t: SpreadsheetTable,
+        colMapper: ((col: number) => number) | null,
+        rowMapper: ((row: number) => number) | null,
+    ) {
+        for (const row of t.rows) {
+            for (const cell of row) {
+                if (cell.formula) {
+                    cell.formula = remapFormulaReferences(cell.formula, colMapper, rowMapper)
+                }
+            }
+        }
+    }
+
+    // ── Formula reference shifting (for fill & paste) ──
+
+    /**
+     * Shift all cell references in a formula string by the given column and row deltas.
+     * Handles simple refs (A1), ranges (A1:B5), cross-table ('Table 1'::A1), and
+     * cross-canvas refs.  References that would shift to negative indices are clamped to 0.
+     * Only same-table (local) references are shifted; cross-table refs keep their cell
+     * positions unchanged (matching Apple Numbers behavior — external refs are absolute).
+     */
+    function shiftFormulaReferences(formula: string, colDelta: number, rowDelta: number): string {
+        // Match cell references like A1, AB23, etc. We need to be careful not to match
+        // inside quoted names. Process the formula character by character.
+        let result = ''
+        let i = 0
+        while (i < formula.length) {
+            // Skip quoted strings
+            if (formula[i] === '"') {
+                let j = i + 1
+                while (j < formula.length && formula[j] !== '"') j++
+                result += formula.substring(i, j + 1)
+                i = j + 1
+                continue
+            }
+            // Skip quoted names (single quotes for table/canvas names)
+            if (formula[i] === "'") {
+                let j = i + 1
+                while (j < formula.length && formula[j] !== "'") j++
+                result += formula.substring(i, j + 1)
+                i = j + 1
+                continue
+            }
+            // Check if we're right after a '::' — that means we're in a cross-table ref.
+            // Cross-table cell refs should NOT be shifted (they're absolute in Numbers).
+            const beforeStr = result
+            const endsWithDoubleColon = beforeStr.length >= 2 && beforeStr.slice(-2) === '::'
+            // Try to match a cell reference at position i
+            const rest = formula.substring(i)
+            const cellRefMatch = rest.match(/^([A-Za-z]+)(\d+)/)
+            if (cellRefMatch) {
+                const letters = cellRefMatch[1].toUpperCase()
+                const digits = cellRefMatch[2]
+                // Make sure it's not a function name (functions are followed by '(')
+                const afterRef = formula.substring(i + cellRefMatch[0].length)
+                const isFunction = /^\s*\(/.test(afterRef)
+                // Known keywords that aren't cell refs
+                const keywords = ['TRUE', 'FALSE', 'IF', 'AND', 'OR', 'NOT', 'SUM', 'AVERAGE', 'MIN', 'MAX', 'COUNT', 'COUNTA', 'ROUND', 'ABS', 'SQRT', 'POWER', 'MOD', 'INT', 'CONCAT', 'UPPER', 'LOWER', 'LEN', 'TRIM', 'LEFT', 'RIGHT', 'MID', 'PI', 'NOW', 'TODAY', 'SUMIF', 'COUNTIF', 'VLOOKUP', 'HLOOKUP', 'INDEX', 'MATCH']
+                if (isFunction || keywords.includes(letters)) {
+                    result += cellRefMatch[0]
+                    i += cellRefMatch[0].length
+                    continue
+                }
+                if (endsWithDoubleColon) {
+                    // Cross-table ref — don't shift
+                    result += cellRefMatch[0]
+                    i += cellRefMatch[0].length
+                    continue
+                }
+                // Shift the reference
+                const oldCol = columnLetterToIndex(letters)
+                const oldRow = parseInt(digits) - 1
+                const newCol = Math.max(0, oldCol + colDelta)
+                const newRow = Math.max(0, oldRow + rowDelta)
+                result += indexToColumnLetter(newCol) + (newRow + 1)
+                i += cellRefMatch[0].length
+                continue
+            }
+            result += formula[i]
+            i++
+        }
+        return result
+    }
+
+    /**
+     * Fill cells from a source range into a target range, tiling the source pattern
+     * and shifting formula references relative to each destination cell's offset
+     * from the corresponding source cell.
+     */
+    function fillCells(tableId: string, source: SelectionRange, target: SelectionRange) {
+        const t = findTable(tableId)
+        if (!t) return
+        pushUndo()
+
+        const srcRows = source.endRow - source.startRow + 1
+        const srcCols = source.endCol - source.startCol + 1
+
+        // Expand table if necessary
+        const neededRows = target.endRow + 1
+        const neededCols = target.endCol + 1
+        while (t.rows.length < neededRows) {
+            t.rows.push(t.columns.map(() => createEmptyCell()))
+        }
+        while (t.columns.length < neededCols) {
+            t.columns.push({ id: generateId('col'), width: 120 })
+            for (const row of t.rows) row.push(createEmptyCell())
+        }
+
+        for (let r = target.startRow; r <= target.endRow; r++) {
+            for (let c = target.startCol; c <= target.endCol; c++) {
+                // Skip cells that are inside the source range
+                if (r >= source.startRow && r <= source.endRow && c >= source.startCol && c <= source.endCol) continue
+                // Map to the corresponding source cell (tiling)
+                const srcR = source.startRow + ((r - target.startRow) % srcRows)
+                const srcC = source.startCol + ((c - target.startCol) % srcCols)
+                const srcCell = getCell(tableId, srcC, srcR)
+                if (!srcCell) continue
+
+                const colDelta = c - srcC
+                const rowDelta = r - srcR
+
+                if (srcCell.formula) {
+                    const shifted = shiftFormulaReferences(srcCell.formula, colDelta, rowDelta)
+                    setCellValue(tableId, c, r, '=' + shifted)
+                } else {
+                    const raw = getRawValue(tableId, srcC, srcR)
+                    setCellValue(tableId, c, r, raw)
+                }
+                if (srcCell.format) {
+                    setCellFormat(tableId, c, r, { ...srcCell.format })
+                }
+            }
+        }
+        recalculate()
+    }
+
     // ── Clipboard (Copy / Cut / Paste) ──
 
     interface ClipboardCell {
@@ -1345,11 +1553,22 @@ export function useSpreadsheet() {
             for (const row of t.rows) row.push(createEmptyCell())
         }
 
-        // Write cells
+        // Write cells — shift formula references relative to paste position
+        const srcStartCol = clipboardSource?.startCol ?? 0
+        const srcStartRow = clipboardSource?.startRow ?? 0
         for (let r = 0; r < data.length; r++) {
             for (let c = 0; c < data[r].length; c++) {
                 const entry = data[r][c]
-                setCellValue(tableId, startCol + c, startRow + r, entry.raw)
+                let raw = entry.raw
+                // Shift formula references when pasting
+                if (raw.startsWith('=') && clipboardSource) {
+                    const colDelta = (startCol + c) - (srcStartCol + c)
+                    const rowDelta = (startRow + r) - (srcStartRow + r)
+                    if (colDelta !== 0 || rowDelta !== 0) {
+                        raw = '=' + shiftFormulaReferences(raw.substring(1), colDelta, rowDelta)
+                    }
+                }
+                setCellValue(tableId, startCol + c, startRow + r, raw)
                 if (entry.format) {
                     setCellFormat(tableId, startCol + c, startRow + r, entry.format)
                 }
@@ -2557,6 +2776,8 @@ export function useSpreadsheet() {
         copyCells,
         cutCells,
         pasteCells,
+        fillCells,
+        shiftFormulaReferences,
 
         // Editing
         startEditing,
