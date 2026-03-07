@@ -1008,6 +1008,9 @@ function onColumnContextMenu(ci: number, e: MouseEvent) {
   const colCount = isMultiCol ? sr!.endCol - sr!.startCol + 1 : 1
 
   const items: MenuItem[] = [
+    { label: 'Sort Ascending ↑', action: () => ss.sortColumn(props.table.id, ci, 'asc') },
+    { label: 'Sort Descending ↓', action: () => ss.sortColumn(props.table.id, ci, 'desc') },
+    { label: '', separator: true },
     { label: 'Insert Column Before', action: () => ss.insertColumnAt(props.table.id, ci) },
     { label: 'Insert Column After', action: () => ss.insertColumnAt(props.table.id, ci + 1) },
     { label: '', separator: true },

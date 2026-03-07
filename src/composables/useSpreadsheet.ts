@@ -523,6 +523,74 @@ export function useSpreadsheet() {
     }
 
     /**
+     * Sort all data rows (rows after headerRows) by the values in the given column.
+     * Null/empty values are always placed last. Multi-row merged regions in the
+     * data area are removed since they become invalid after rearranging rows.
+     */
+    function sortColumn(tableId: string, colIdx: number, direction: 'asc' | 'desc') {
+        const t = findTable(tableId)
+        if (!t) return
+        pushUndo()
+        const headerCount = t.headerRows
+
+        function getSortValue(row: Cell[]): CellValue {
+            const cell = row[colIdx]
+            if (!cell) return null
+            return cell.formula != null ? (cell.computed ?? null) : cell.value
+        }
+
+        function compareValues(a: CellValue, b: CellValue): number {
+            const sign = direction === 'asc' ? 1 : -1
+            if (a === null && b === null) return 0
+            if (a === null) return 1   // nulls always last regardless of direction
+            if (b === null) return -1
+            if (typeof a === 'number' && typeof b === 'number') return sign * (a - b)
+            if (typeof a === 'boolean' && typeof b === 'boolean') return sign * (Number(a) - Number(b))
+            const sa = String(a).toLowerCase()
+            const sb = String(b).toLowerCase()
+            if (sa < sb) return -sign
+            if (sa > sb) return sign
+            return 0
+        }
+
+        const indexed = t.rows.slice(headerCount).map((row, i) => ({ row, origIdx: i + headerCount }))
+        indexed.sort((a, b) => compareValues(getSortValue(a.row), getSortValue(b.row)))
+
+        for (let i = 0; i < indexed.length; i++) {
+            t.rows[headerCount + i] = indexed[i].row
+        }
+
+        // Build a map: original row index → new row index
+        const rowMap = new Map<number, number>()
+        for (let i = 0; i < indexed.length; i++) {
+            rowMap.set(indexed[i].origIdx, headerCount + i)
+        }
+        for (let i = 0; i < headerCount; i++) {
+            rowMap.set(i, i)
+        }
+
+        // Remap merged regions; drop multi-row merges in the data area
+        t.mergedRegions = t.mergedRegions
+            .map(m => {
+                if (m.startRow === m.endRow) {
+                    const newRow = rowMap.get(m.startRow) ?? m.startRow
+                    return { ...m, startRow: newRow, endRow: newRow }
+                }
+                // Multi-row merge entirely in header: keep as-is
+                if (m.endRow < headerCount) return m
+                // Otherwise drop it
+                return null
+            })
+            .filter((m): m is MergedRegion => m !== null)
+
+        // Remap formula cell-references so they still point at the same data
+        const rowMapper = (idx: number) => rowMap.get(idx) ?? idx
+        remapAllFormulasInTable(t, null, rowMapper)
+
+        recalculate()
+    }
+
+    /**
      * Move a contiguous block of columns [fromStart..fromEnd] so that the block
      * ends up starting at position toIdx.  toIdx is expressed in the *original*
      * index space (before the move).
@@ -2729,6 +2797,7 @@ export function useSpreadsheet() {
         reorderRows,
         reorderColumn,
         reorderColumns,
+        sortColumn,
 
         // Cell
         getCell,
