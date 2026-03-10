@@ -66,13 +66,22 @@ iconutil -c icns build/slate-file.iconset -o build/slate.icns
 echo "  ✓ slate.icns (macOS)"
 
 # Windows .ico file icon
-# Using ImageMagick if available, otherwise use sips and fallback
+# Using ImageMagick if available, otherwise fall back to Python Pillow
 if command -v convert &> /dev/null; then
     convert "$FILE_ICON" -define icon:auto-resize=256,128,96,64,48,32,16 build/slate.ico
     echo "  ✓ slate.ico (Windows)"
+elif command -v python3 &> /dev/null && python3 -c "from PIL import Image" &> /dev/null; then
+    python3 - << 'PYEOF'
+from PIL import Image
+img = Image.open("public/slate-file-icon-512x512.png").convert("RGBA")
+sizes = [(256,256),(128,128),(96,96),(64,64),(48,48),(32,32),(16,16)]
+icons = [img.resize(s, Image.LANCZOS) for s in sizes]
+icons[0].save("build/slate.ico", format="ICO", sizes=sizes, append_images=icons[1:])
+PYEOF
+    echo "  ✓ slate.ico (Windows, via Python Pillow)"
 else
-    echo "  ⚠ Windows .ico generation skipped (ImageMagick not found)"
-    echo "    Install with: brew install imagemagick"
+    echo "  ⚠ Windows .ico generation skipped (ImageMagick and Pillow not found)"
+    echo "    Install one of: brew install imagemagick  OR  pip3 install pillow"
 fi
 
 # Linux .png file icon (256x256)
