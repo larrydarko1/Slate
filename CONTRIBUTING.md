@@ -25,7 +25,8 @@ Thank you for your interest in contributing to Slate! This guide will help you g
 3. **Make your changes** — follow the coding style of the project
 4. **Test your changes**:
    ```bash
-   npm run dev    # manual testing
+   npm run test:run  # run tests
+   npm run dev       # manual testing
    ```
 5. **Commit** with a clear message:
    ```bash
@@ -68,6 +69,7 @@ We loosely follow [Conventional Commits](https://www.conventionalcommits.org/):
 - Provide a clear description of what changed and why
 - Link related issues (e.g., `Closes # 123`)
 - Ensure the app builds without errors: `vue-tsc -b && vite build`
+- Ensure tests pass: `npm run test:run`
 
 ## Questions?
 

@@ -9,7 +9,9 @@
     "build": "vue-tsc -b && vite build && electron-builder",
     "build:mac": "vue-tsc -b && vite build && electron-builder --mac",
     "build:win": "vue-tsc -b && vite build && electron-builder --win",
-    "build:linux": "vue-tsc -b && vite build && electron-builder --linux"
+    "build:linux": "vue-tsc -b && vite build && electron-builder --linux",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

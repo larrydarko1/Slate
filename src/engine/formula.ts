@@ -10,8 +10,8 @@
  *  - Cross-table references: 'Table 1'::A1, 'Table 1'::A1:B5
  *  - Cross-canvas references: 'Canvas 1'::'Table 1'::A1
  *  - Functions: SUM, AVERAGE, MIN, MAX, COUNT, COUNTA, ROUND, ABS, SQRT,
- *               POWER, MOD, INT, IF, AND, OR, NOT, CONCAT, UPPER, LOWER,
- *               LEN, TRIM, LEFT, RIGHT, MID, PI, NOW, TODAY
+ *               POWER, MOD, INT, CEILING, FLOOR, IF, AND, OR, NOT, CONCAT,
+ *               UPPER, LOWER, LEN, TRIM, LEFT, RIGHT, MID, PI, NOW, TODAY
  *
  * Type-aware evaluation:
  *  - Tracks CellDataType through operations
