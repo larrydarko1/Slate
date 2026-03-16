@@ -1,3 +1,355 @@
+<script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount, inject } from 'vue'
+import { SPREADSHEET_KEY } from '../composables/useSpreadsheet'
+import type { CellDataType } from '../engine/cellTypes'
+import { getTypeLabel } from '../engine/cellTypes'
+
+defineEmits<{ 
+  addTable: []
+  addTextBox: []
+  addChart: []
+  newFile: []
+  openFile: []
+  saveFile: []
+  mergeCells: []
+  unmergeCells: []
+}>()
+
+const ss = inject(SPREADSHEET_KEY)!
+
+// ── TextBox formatting ──
+
+const hasActiveTextBox = computed(() => !!ss.activeTextBoxId.value)
+
+const activeTextBoxData = computed(() => {
+  if (!ss.activeTextBoxId.value) return null
+  return ss.findTextBox(ss.activeTextBoxId.value) ?? null
+})
+
+const tbTextColorRef = ref<HTMLElement | null>(null)
+const tbFillColorRef = ref<HTMLElement | null>(null)
+const tbBorderColorRef = ref<HTMLElement | null>(null)
+const tbColorMenuType = ref<'tbText' | 'tbFill' | 'tbBorder' | null>(null)
+const tbLastTextColor = ref('#000000')
+const tbLastFillColor = ref('#FFFFFF')
+const tbLastBorderColor = ref('#CCCCCC')
+
+function toggleTbColorMenu(type: 'tbText' | 'tbFill' | 'tbBorder') {
+  tbColorMenuType.value = tbColorMenuType.value === type ? null : type
+}
+
+function tbUpdateProp(prop: string, value: any) {
+  const id = ss.activeTextBoxId.value
+  if (!id) return
+  ss.updateTextBox(id, { [prop]: value })
+}
+
+function tbToggleBold() {
+  const current = activeTextBoxData.value?.fontWeight ?? 'normal'
+  tbUpdateProp('fontWeight', current === 'bold' ? 'normal' : 'bold')
+}
+
+function tbToggleItalic() {
+  const current = activeTextBoxData.value?.fontStyle ?? 'normal'
+  tbUpdateProp('fontStyle', current === 'italic' ? 'normal' : 'italic')
+}
+
+function tbSetAlign(a: 'left' | 'center' | 'right') {
+  tbUpdateProp('align', a)
+}
+
+function tbIncreaseFontSize() {
+  const size = activeTextBoxData.value?.fontSize ?? 14
+  tbUpdateProp('fontSize', Math.min(size + 2, 120))
+}
+
+function tbDecreaseFontSize() {
+  const size = activeTextBoxData.value?.fontSize ?? 14
+  tbUpdateProp('fontSize', Math.max(size - 2, 8))
+}
+
+function tbApplyTextColor(color: string) {
+  tbUpdateProp('textColor', color)
+  if (color) tbLastTextColor.value = color
+  tbColorMenuType.value = null
+}
+
+function tbApplyFillColor(color: string) {
+  tbUpdateProp('bgColor', color)
+  if (color) tbLastFillColor.value = color
+  tbColorMenuType.value = null
+}
+
+function tbApplyBorderColor(color: string) {
+  tbUpdateProp('borderColor', color)
+  if (color) {
+    tbLastBorderColor.value = color
+    // auto-set borderWidth to 1 if not set
+    if (!activeTextBoxData.value?.borderWidth) tbUpdateProp('borderWidth', 1)
+  }
+  tbColorMenuType.value = null
+}
+
+// ── Unified formatting (works for both cells and text boxes) ──
+
+const fmtIsBold = computed(() => {
+  if (hasActiveTextBox.value) return activeTextBoxData.value?.fontWeight === 'bold'
+  const fmt = ss.getActiveCellFormat()
+  return fmt?.bold ?? false
+})
+
+const fmtIsItalic = computed(() => {
+  if (hasActiveTextBox.value) return activeTextBoxData.value?.fontStyle === 'italic'
+  const fmt = ss.getActiveCellFormat()
+  return fmt?.italic ?? false
+})
+
+const fmtAlign = computed<'left' | 'center' | 'right'>(() => {
+  if (hasActiveTextBox.value) return activeTextBoxData.value?.align ?? 'left'
+  const fmt = ss.getActiveCellFormat()
+  return fmt?.align ?? 'left'
+})
+
+function fmtToggleBold() {
+  if (hasActiveTextBox.value) {
+    tbToggleBold()
+  } else if (hasActiveCell.value) {
+    const current = ss.getActiveCellFormat()?.bold ?? false
+    ss.setSelectionFormat({ bold: !current })
+  }
+}
+
+function fmtToggleItalic() {
+  if (hasActiveTextBox.value) {
+    tbToggleItalic()
+  } else if (hasActiveCell.value) {
+    const current = ss.getActiveCellFormat()?.italic ?? false
+    ss.setSelectionFormat({ italic: !current })
+  }
+}
+
+function fmtSetAlign(a: 'left' | 'center' | 'right') {
+  if (hasActiveTextBox.value) {
+    tbSetAlign(a)
+  } else if (hasActiveCell.value) {
+    ss.setSelectionFormat({ align: a })
+  }
+}
+
+// ── Font family picker ──
+
+const fontSelectorRef = ref<HTMLElement | null>(null)
+const fontMenuOpen = ref(false)
+
+const fontOptions = [
+  'System Default',
+  'Arial',
+  'Helvetica Neue',
+  'Georgia',
+  'Times New Roman',
+  'Courier New',
+  'Menlo',
+  'SF Mono',
+  'Verdana',
+  'Trebuchet MS',
+  'Palatino',
+  'Garamond',
+  'Futura',
+  'Avenir',
+  'Gill Sans',
+  'Optima',
+]
+
+const fmtFontFamily = computed(() => {
+  if (hasActiveTextBox.value) return activeTextBoxData.value?.fontFamily ?? 'System Default'
+  const fmt = ss.getActiveCellFormat()
+  return fmt?.fontFamily ?? 'System Default'
+})
+
+function toggleFontMenu() {
+  fontMenuOpen.value = !fontMenuOpen.value
+}
+
+function fmtSetFont(font: string) {
+  if (hasActiveTextBox.value) {
+    tbUpdateProp('fontFamily', font)
+  } else if (hasActiveCell.value) {
+    ss.setSelectionFormat({ fontFamily: font === 'System Default' ? undefined : font })
+  }
+  fontMenuOpen.value = false
+}
+
+// ── Type selector ──
+
+const typeSelectorRef = ref<HTMLElement | null>(null)
+const typeMenuOpen = ref(false)
+
+const typeOptions: { value: CellDataType; label: string; short: string }[] = [
+  { value: 'text', label: 'Text', short: 'ABC' },
+  { value: 'integer', label: 'Integer', short: '123' },
+  { value: 'float', label: 'Decimal', short: '1.2' },
+  { value: 'percent', label: 'Percent (%)', short: '%' },
+  { value: 'currency_usd', label: 'Dollar ($)', short: '$' },
+  { value: 'currency_eur', label: 'Euro (€)', short: '€' },
+]
+
+const hasActiveCell = computed(() => !!ss.activeCell.value)
+
+const currentCellType = computed<CellDataType>(() => {
+  if (!ss.activeCell.value) return 'text'
+  return ss.getCellType(ss.activeCell.value.tableId, ss.activeCell.value.col, ss.activeCell.value.row)
+})
+
+const supportsDecimals = computed(() => {
+  const t = currentCellType.value
+  return t === 'float' || t === 'percent' || t === 'currency_eur' || t === 'currency_usd'
+})
+
+const currentTypeLabel = computed(() => {
+  const opt = typeOptions.find(o => o.value === currentCellType.value)
+  return opt ? opt.short : getTypeLabel(currentCellType.value)
+})
+
+function changeDecimals(delta: number) {
+  if (!ss.activeCell.value) return
+  const fmt = ss.getActiveCellFormat()
+  const current = fmt?.decimalPlaces ?? 2
+  const next = Math.max(0, Math.min(10, current + delta))
+  ss.setSelectionFormat({ decimalPlaces: next })
+}
+
+function toggleTypeMenu() {
+  typeMenuOpen.value = !typeMenuOpen.value
+}
+
+function setType(t: CellDataType) {
+  if (!ss.activeCell.value) return
+  ss.setCellType(ss.activeCell.value.tableId, ss.activeCell.value.col, ss.activeCell.value.row, t)
+  typeMenuOpen.value = false
+}
+
+function onClickOutside(e: MouseEvent) {
+  if (typeMenuOpen.value && typeSelectorRef.value && !typeSelectorRef.value.contains(e.target as Node)) {
+    typeMenuOpen.value = false
+  }
+  if (fontMenuOpen.value && fontSelectorRef.value && !fontSelectorRef.value.contains(e.target as Node)) {
+    fontMenuOpen.value = false
+  }
+  if (colorMenuType.value && textColorRef.value && fillColorRef.value
+    && !textColorRef.value.contains(e.target as Node)
+    && !fillColorRef.value.contains(e.target as Node)) {
+    colorMenuType.value = null
+  }
+  // Close text box color menus
+  if (tbColorMenuType.value
+    && (!tbTextColorRef.value || !tbTextColorRef.value.contains(e.target as Node))
+    && (!tbFillColorRef.value || !tbFillColorRef.value.contains(e.target as Node))
+    && (!tbBorderColorRef.value || !tbBorderColorRef.value.contains(e.target as Node))) {
+    tbColorMenuType.value = null
+  }
+}
+
+// ── Cell coloring ──
+
+const textColorRef = ref<HTMLElement | null>(null)
+const fillColorRef = ref<HTMLElement | null>(null)
+const colorMenuType = ref<'text' | 'fill' | null>(null)
+const lastTextColor = ref('#000000')
+const lastFillColor = ref('#FFEB3B')
+
+const colorPalette = [
+  '#000000', '#434343', '#666666', '#999999', '#B7B7B7', '#CCCCCC', '#D9D9D9', '#EFEFEF', '#F3F3F3', '#FFFFFF',
+  '#980000', '#FF0000', '#FF9900', '#FFFF00', '#00FF00', '#00FFFF', '#4A86E8', '#0000FF', '#9900FF', '#FF00FF',
+  '#E6B8AF', '#F4CCCC', '#FCE5CD', '#FFF2CC', '#D9EAD3', '#D0E0E3', '#C9DAF8', '#CFE2F3', '#D9D2E9', '#EAD1DC',
+  '#DD7E6B', '#EA9999', '#F9CB9C', '#FFE599', '#B6D7A8', '#A2C4C9', '#A4C2F4', '#9FC5E8', '#B4A7D6', '#D5A6BD',
+  '#CC4125', '#E06666', '#F6B26B', '#FFD966', '#93C47D', '#76A5AF', '#6D9EEB', '#6FA8DC', '#8E7CC3', '#C27BA0',
+  '#A61C00', '#CC0000', '#E69138', '#F1C232', '#6AA84F', '#45818E', '#3C78D8', '#3D85C6', '#674EA7', '#A64D79',
+  '#85200C', '#990000', '#B45F06', '#BF9000', '#38761D', '#134F5C', '#1155CC', '#0B5394', '#351C75', '#741B47',
+]
+
+const currentTextColor = computed(() => {
+  const fmt = ss.getActiveCellFormat()
+  return fmt?.textColor ?? null
+})
+
+const currentFillColor = computed(() => {
+  const fmt = ss.getActiveCellFormat()
+  return fmt?.bgColor ?? null
+})
+
+function toggleColorMenu(type: 'text' | 'fill') {
+  colorMenuType.value = colorMenuType.value === type ? null : type
+}
+
+function applyTextColor(color: string) {
+  ss.setSelectionFormat({ textColor: color })
+  lastTextColor.value = color
+  colorMenuType.value = null
+}
+
+function applyFillColor(color: string) {
+  ss.setSelectionFormat({ bgColor: color })
+  lastFillColor.value = color
+  colorMenuType.value = null
+}
+
+function clearTextColor() {
+  ss.setSelectionFormat({ textColor: undefined })
+  colorMenuType.value = null
+}
+
+function clearFillColor() {
+  ss.setSelectionFormat({ bgColor: undefined })
+  colorMenuType.value = null
+}
+
+function onCustomTextColor(e: Event) {
+  const color = (e.target as HTMLInputElement).value
+  applyTextColor(color)
+}
+
+function onCustomFillColor(e: Event) {
+  const color = (e.target as HTMLInputElement).value
+  applyFillColor(color)
+}
+
+function isLightColor(hex: string): boolean {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return (r * 299 + g * 587 + b * 114) / 1000 > 200
+}
+
+// ── Theme ──
+
+const isDark = ref(false)
+
+onMounted(() => {
+  const saved = localStorage.getItem('slate-theme')
+  if (saved) {
+    isDark.value = saved === 'dark'
+  } else {
+    isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+  }
+  applyTheme()
+  document.addEventListener('click', onClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onClickOutside)
+})
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  applyTheme()
+  localStorage.setItem('slate-theme', isDark.value ? 'dark' : 'light')
+}
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
+}
+</script>
+
 <template>
   <div class="toolbar">
     <div class="toolbar-group">
@@ -364,358 +716,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, inject } from 'vue'
-import { SPREADSHEET_KEY } from '../composables/useSpreadsheet'
-import type { CellDataType } from '../engine/cellTypes'
-import { getTypeLabel } from '../engine/cellTypes'
-
-defineEmits<{ 
-  addTable: []
-  addTextBox: []
-  addChart: []
-  newFile: []
-  openFile: []
-  saveFile: []
-  mergeCells: []
-  unmergeCells: []
-}>()
-
-const ss = inject(SPREADSHEET_KEY)!
-
-// ── TextBox formatting ──
-
-const hasActiveTextBox = computed(() => !!ss.activeTextBoxId.value)
-
-const activeTextBoxData = computed(() => {
-  if (!ss.activeTextBoxId.value) return null
-  return ss.findTextBox(ss.activeTextBoxId.value) ?? null
-})
-
-const tbTextColorRef = ref<HTMLElement | null>(null)
-const tbFillColorRef = ref<HTMLElement | null>(null)
-const tbBorderColorRef = ref<HTMLElement | null>(null)
-const tbColorMenuType = ref<'tbText' | 'tbFill' | 'tbBorder' | null>(null)
-const tbLastTextColor = ref('#000000')
-const tbLastFillColor = ref('#FFFFFF')
-const tbLastBorderColor = ref('#CCCCCC')
-
-function toggleTbColorMenu(type: 'tbText' | 'tbFill' | 'tbBorder') {
-  tbColorMenuType.value = tbColorMenuType.value === type ? null : type
-}
-
-function tbUpdateProp(prop: string, value: any) {
-  const id = ss.activeTextBoxId.value
-  if (!id) return
-  ss.updateTextBox(id, { [prop]: value })
-}
-
-function tbToggleBold() {
-  const current = activeTextBoxData.value?.fontWeight ?? 'normal'
-  tbUpdateProp('fontWeight', current === 'bold' ? 'normal' : 'bold')
-}
-
-function tbToggleItalic() {
-  const current = activeTextBoxData.value?.fontStyle ?? 'normal'
-  tbUpdateProp('fontStyle', current === 'italic' ? 'normal' : 'italic')
-}
-
-function tbSetAlign(a: 'left' | 'center' | 'right') {
-  tbUpdateProp('align', a)
-}
-
-function tbIncreaseFontSize() {
-  const size = activeTextBoxData.value?.fontSize ?? 14
-  tbUpdateProp('fontSize', Math.min(size + 2, 120))
-}
-
-function tbDecreaseFontSize() {
-  const size = activeTextBoxData.value?.fontSize ?? 14
-  tbUpdateProp('fontSize', Math.max(size - 2, 8))
-}
-
-function tbApplyTextColor(color: string) {
-  tbUpdateProp('textColor', color)
-  if (color) tbLastTextColor.value = color
-  tbColorMenuType.value = null
-}
-
-function tbApplyFillColor(color: string) {
-  tbUpdateProp('bgColor', color)
-  if (color) tbLastFillColor.value = color
-  tbColorMenuType.value = null
-}
-
-function tbApplyBorderColor(color: string) {
-  tbUpdateProp('borderColor', color)
-  if (color) {
-    tbLastBorderColor.value = color
-    // auto-set borderWidth to 1 if not set
-    if (!activeTextBoxData.value?.borderWidth) tbUpdateProp('borderWidth', 1)
-  }
-  tbColorMenuType.value = null
-}
-
-// ── Unified formatting (works for both cells and text boxes) ──
-
-const fmtIsBold = computed(() => {
-  if (hasActiveTextBox.value) return activeTextBoxData.value?.fontWeight === 'bold'
-  const fmt = ss.getActiveCellFormat()
-  return fmt?.bold ?? false
-})
-
-const fmtIsItalic = computed(() => {
-  if (hasActiveTextBox.value) return activeTextBoxData.value?.fontStyle === 'italic'
-  const fmt = ss.getActiveCellFormat()
-  return fmt?.italic ?? false
-})
-
-const fmtAlign = computed<'left' | 'center' | 'right'>(() => {
-  if (hasActiveTextBox.value) return activeTextBoxData.value?.align ?? 'left'
-  const fmt = ss.getActiveCellFormat()
-  return fmt?.align ?? 'left'
-})
-
-function fmtToggleBold() {
-  if (hasActiveTextBox.value) {
-    tbToggleBold()
-  } else if (hasActiveCell.value) {
-    const current = ss.getActiveCellFormat()?.bold ?? false
-    ss.setSelectionFormat({ bold: !current })
-  }
-}
-
-function fmtToggleItalic() {
-  if (hasActiveTextBox.value) {
-    tbToggleItalic()
-  } else if (hasActiveCell.value) {
-    const current = ss.getActiveCellFormat()?.italic ?? false
-    ss.setSelectionFormat({ italic: !current })
-  }
-}
-
-function fmtSetAlign(a: 'left' | 'center' | 'right') {
-  if (hasActiveTextBox.value) {
-    tbSetAlign(a)
-  } else if (hasActiveCell.value) {
-    ss.setSelectionFormat({ align: a })
-  }
-}
-
-// ── Font family picker ──
-
-const fontSelectorRef = ref<HTMLElement | null>(null)
-const fontMenuOpen = ref(false)
-
-const fontOptions = [
-  'System Default',
-  'Arial',
-  'Helvetica Neue',
-  'Georgia',
-  'Times New Roman',
-  'Courier New',
-  'Menlo',
-  'SF Mono',
-  'Verdana',
-  'Trebuchet MS',
-  'Palatino',
-  'Garamond',
-  'Futura',
-  'Avenir',
-  'Gill Sans',
-  'Optima',
-]
-
-const fmtFontFamily = computed(() => {
-  if (hasActiveTextBox.value) return activeTextBoxData.value?.fontFamily ?? 'System Default'
-  const fmt = ss.getActiveCellFormat()
-  return fmt?.fontFamily ?? 'System Default'
-})
-
-function toggleFontMenu() {
-  fontMenuOpen.value = !fontMenuOpen.value
-}
-
-function fmtSetFont(font: string) {
-  if (hasActiveTextBox.value) {
-    tbUpdateProp('fontFamily', font)
-  } else if (hasActiveCell.value) {
-    ss.setSelectionFormat({ fontFamily: font === 'System Default' ? undefined : font })
-  }
-  fontMenuOpen.value = false
-}
-
-// ── Type selector ──
-
-const typeSelectorRef = ref<HTMLElement | null>(null)
-const typeMenuOpen = ref(false)
-
-const typeOptions: { value: CellDataType; label: string; short: string }[] = [
-  { value: 'text', label: 'Text', short: 'ABC' },
-  { value: 'integer', label: 'Integer', short: '123' },
-  { value: 'float', label: 'Decimal', short: '1.2' },
-  { value: 'percent', label: 'Percent (%)', short: '%' },
-  { value: 'currency_usd', label: 'Dollar ($)', short: '$' },
-  { value: 'currency_eur', label: 'Euro (€)', short: '€' },
-]
-
-const hasActiveCell = computed(() => !!ss.activeCell.value)
-
-const currentCellType = computed<CellDataType>(() => {
-  if (!ss.activeCell.value) return 'text'
-  return ss.getCellType(ss.activeCell.value.tableId, ss.activeCell.value.col, ss.activeCell.value.row)
-})
-
-const supportsDecimals = computed(() => {
-  const t = currentCellType.value
-  return t === 'float' || t === 'percent' || t === 'currency_eur' || t === 'currency_usd'
-})
-
-const currentTypeLabel = computed(() => {
-  const opt = typeOptions.find(o => o.value === currentCellType.value)
-  return opt ? opt.short : getTypeLabel(currentCellType.value)
-})
-
-function changeDecimals(delta: number) {
-  if (!ss.activeCell.value) return
-  const fmt = ss.getActiveCellFormat()
-  const current = fmt?.decimalPlaces ?? 2
-  const next = Math.max(0, Math.min(10, current + delta))
-  ss.setSelectionFormat({ decimalPlaces: next })
-}
-
-function toggleTypeMenu() {
-  typeMenuOpen.value = !typeMenuOpen.value
-}
-
-function setType(t: CellDataType) {
-  if (!ss.activeCell.value) return
-  ss.setCellType(ss.activeCell.value.tableId, ss.activeCell.value.col, ss.activeCell.value.row, t)
-  typeMenuOpen.value = false
-}
-
-function onClickOutside(e: MouseEvent) {
-  if (typeMenuOpen.value && typeSelectorRef.value && !typeSelectorRef.value.contains(e.target as Node)) {
-    typeMenuOpen.value = false
-  }
-  if (fontMenuOpen.value && fontSelectorRef.value && !fontSelectorRef.value.contains(e.target as Node)) {
-    fontMenuOpen.value = false
-  }
-  if (colorMenuType.value && textColorRef.value && fillColorRef.value
-    && !textColorRef.value.contains(e.target as Node)
-    && !fillColorRef.value.contains(e.target as Node)) {
-    colorMenuType.value = null
-  }
-  // Close text box color menus
-  if (tbColorMenuType.value
-    && (!tbTextColorRef.value || !tbTextColorRef.value.contains(e.target as Node))
-    && (!tbFillColorRef.value || !tbFillColorRef.value.contains(e.target as Node))
-    && (!tbBorderColorRef.value || !tbBorderColorRef.value.contains(e.target as Node))) {
-    tbColorMenuType.value = null
-  }
-}
-
-// ── Cell coloring ──
-
-const textColorRef = ref<HTMLElement | null>(null)
-const fillColorRef = ref<HTMLElement | null>(null)
-const colorMenuType = ref<'text' | 'fill' | null>(null)
-const lastTextColor = ref('#000000')
-const lastFillColor = ref('#FFEB3B')
-
-const colorPalette = [
-  '#000000', '#434343', '#666666', '#999999', '#B7B7B7', '#CCCCCC', '#D9D9D9', '#EFEFEF', '#F3F3F3', '#FFFFFF',
-  '#980000', '#FF0000', '#FF9900', '#FFFF00', '#00FF00', '#00FFFF', '#4A86E8', '#0000FF', '#9900FF', '#FF00FF',
-  '#E6B8AF', '#F4CCCC', '#FCE5CD', '#FFF2CC', '#D9EAD3', '#D0E0E3', '#C9DAF8', '#CFE2F3', '#D9D2E9', '#EAD1DC',
-  '#DD7E6B', '#EA9999', '#F9CB9C', '#FFE599', '#B6D7A8', '#A2C4C9', '#A4C2F4', '#9FC5E8', '#B4A7D6', '#D5A6BD',
-  '#CC4125', '#E06666', '#F6B26B', '#FFD966', '#93C47D', '#76A5AF', '#6D9EEB', '#6FA8DC', '#8E7CC3', '#C27BA0',
-  '#A61C00', '#CC0000', '#E69138', '#F1C232', '#6AA84F', '#45818E', '#3C78D8', '#3D85C6', '#674EA7', '#A64D79',
-  '#85200C', '#990000', '#B45F06', '#BF9000', '#38761D', '#134F5C', '#1155CC', '#0B5394', '#351C75', '#741B47',
-]
-
-const currentTextColor = computed(() => {
-  const fmt = ss.getActiveCellFormat()
-  return fmt?.textColor ?? null
-})
-
-const currentFillColor = computed(() => {
-  const fmt = ss.getActiveCellFormat()
-  return fmt?.bgColor ?? null
-})
-
-function toggleColorMenu(type: 'text' | 'fill') {
-  colorMenuType.value = colorMenuType.value === type ? null : type
-}
-
-function applyTextColor(color: string) {
-  ss.setSelectionFormat({ textColor: color })
-  lastTextColor.value = color
-  colorMenuType.value = null
-}
-
-function applyFillColor(color: string) {
-  ss.setSelectionFormat({ bgColor: color })
-  lastFillColor.value = color
-  colorMenuType.value = null
-}
-
-function clearTextColor() {
-  ss.setSelectionFormat({ textColor: undefined })
-  colorMenuType.value = null
-}
-
-function clearFillColor() {
-  ss.setSelectionFormat({ bgColor: undefined })
-  colorMenuType.value = null
-}
-
-function onCustomTextColor(e: Event) {
-  const color = (e.target as HTMLInputElement).value
-  applyTextColor(color)
-}
-
-function onCustomFillColor(e: Event) {
-  const color = (e.target as HTMLInputElement).value
-  applyFillColor(color)
-}
-
-function isLightColor(hex: string): boolean {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return (r * 299 + g * 587 + b * 114) / 1000 > 200
-}
-
-// ── Theme ──
-
-const isDark = ref(false)
-
-onMounted(() => {
-  const saved = localStorage.getItem('slate-theme')
-  if (saved) {
-    isDark.value = saved === 'dark'
-  } else {
-    isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
-  }
-  applyTheme()
-  document.addEventListener('click', onClickOutside)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', onClickOutside)
-})
-
-function toggleTheme() {
-  isDark.value = !isDark.value
-  applyTheme()
-  localStorage.setItem('slate-theme', isDark.value ? 'dark' : 'light')
-}
-
-function applyTheme() {
-  document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
-}
-</script>
 
 <style scoped lang="scss">
 .toolbar {

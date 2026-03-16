@@ -1,22 +1,3 @@
-<template>
-  <div class="app-shell" @keydown="handleKeydown">
-    <TitleBar />
-    <Toolbar 
-      @addTable="ss.addTable()" 
-      @addTextBox="ss.addTextBox()"
-      @addChart="ss.addChart()"
-      @newFile="handleNewFile"
-      @openFile="ss.openFile"
-      @saveFile="ss.saveFile"
-      @mergeCells="ss.mergeSelection"
-      @unmergeCells="ss.unmergeSelection"
-    />
-    <FormulaBar />
-    <CanvasWorkspace />
-    <CanvasTabs />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { provide, onMounted } from 'vue'
 import { useSpreadsheet, SPREADSHEET_KEY } from './composables/useSpreadsheet'
@@ -96,6 +77,25 @@ onMounted(() => {
   })
 })
 </script>
+
+<template>
+  <div class="app-shell" @keydown="handleKeydown">
+    <TitleBar />
+    <Toolbar 
+      @addTable="ss.addTable()" 
+      @addTextBox="ss.addTextBox()"
+      @addChart="ss.addChart()"
+      @newFile="handleNewFile"
+      @openFile="ss.openFile"
+      @saveFile="ss.saveFile"
+      @mergeCells="ss.mergeSelection"
+      @unmergeCells="ss.unmergeSelection"
+    />
+    <FormulaBar />
+    <CanvasWorkspace />
+    <CanvasTabs />
+  </div>
+</template>
 
 <style lang="scss">
 .app-shell {

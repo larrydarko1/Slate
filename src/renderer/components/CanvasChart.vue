@@ -1,160 +1,3 @@
-<template>
-  <div
-    class="canvas-chart"
-    :class="{ active: isActive }"
-    :style="boxStyle"
-    @mousedown.stop="onMouseDown"
-  >
-    <!-- Chart title (editable when active) -->
-    <div class="chart-title-bar" v-if="chart.title || isActive">
-      <input
-        v-if="isActive"
-        class="chart-title-input"
-        :value="chart.title"
-        @input="onTitleInput"
-        @mousedown.stop
-        placeholder="Chart title"
-      />
-      <span v-else class="chart-title-text">{{ chart.title }}</span>
-    </div>
-
-    <!-- Chart body -->
-    <div class="chart-body" ref="chartBodyRef">
-      <component
-        v-if="chartComponent && chartData"
-        :is="chartComponent"
-        :data="chartData"
-        :options="chartOptions"
-        :style="{ width: '100%', height: '100%' }"
-      />
-      <div v-else class="chart-empty">
-        <p class="chart-empty-icon">📊</p>
-        <p class="chart-empty-text">Select a data source</p>
-        <p class="chart-empty-sub">Click a reference field, then select cells on any table</p>
-      </div>
-    </div>
-
-    <!-- Data source config (only when active) -->
-    <div v-if="isActive" class="chart-config" @mousedown.stop>
-      <div class="config-row">
-        <label>Type</label>
-        <select :value="chart.chartType" @change="onTypeChange">
-          <option value="bar">Bar</option>
-          <option value="line">Line</option>
-          <option value="pie">Pie</option>
-          <option value="doughnut">Doughnut</option>
-          <option value="scatter">Scatter</option>
-          <option value="area">Area</option>
-          <option value="radar">Radar</option>
-        </select>
-      </div>
-
-      <!-- Labels reference -->
-      <div class="config-section">
-        <div class="config-section-header">Labels</div>
-        <div
-          class="ref-field"
-          :class="{ picking: ss.chartSelectionMode.value === 'labels' }"
-          :style="refFieldStyle('labels')"
-          @click="onRefFieldClick('labels')"
-        >
-          <span class="ref-color-dot" :style="{ background: '#94a3b8' }"></span>
-          <input
-            class="ref-input"
-            :value="chart.dataSource?.labelRef?.refString ?? ''"
-            @input="onRefInput('labels', $event)"
-            @focus="onRefFieldClick('labels')"
-            @mousedown.stop
-            placeholder="Click here, then select cells…"
-          />
-          <button
-            v-if="chart.dataSource?.labelRef"
-            class="ref-clear"
-            @click.stop="clearRef('labels')"
-            title="Clear"
-          >×</button>
-        </div>
-      </div>
-
-      <!-- Series references -->
-      <div class="config-section">
-        <div class="config-section-header">
-          <span>Series</span>
-          <button class="add-series-btn" @click="ss.addChartSeries()" title="Add series">+</button>
-        </div>
-        <div
-          v-for="(sref, i) in (chart.dataSource?.seriesRefs ?? [])"
-          :key="i"
-          class="ref-field"
-          :class="{ picking: ss.chartSelectionMode.value === 'series:' + i }"
-          :style="refFieldStyle('series:' + i)"
-          @click="onRefFieldClick('series:' + i)"
-        >
-          <span class="ref-color-dot" :style="{ background: seriesColor(i) }"></span>
-          <input
-            class="ref-input"
-            :value="sref.refString"
-            @input="onRefInput('series:' + i, $event)"
-            @focus="onRefFieldClick('series:' + i)"
-            @mousedown.stop
-            placeholder="Click here, then select cells…"
-          />
-          <button
-            class="ref-clear"
-            @click.stop="ss.removeChartSeries(i)"
-            title="Remove series"
-          >×</button>
-        </div>
-        <div v-if="!chart.dataSource?.seriesRefs?.length" class="ref-empty-hint">
-          Click <strong>+</strong> to add a data series
-        </div>
-      </div>
-
-      <!-- Options -->
-      <div class="config-row">
-        <label>Header</label>
-        <input type="checkbox" :checked="chart.dataSource?.useHeader ?? true" @change="onHeaderToggle" />
-        <span class="config-hint">First row is header</span>
-      </div>
-      <div class="config-row">
-        <label>Legend</label>
-        <select :value="chart.showLegend ? chart.legendPosition : 'off'" @change="onLegendChange">
-          <option value="off">Hidden</option>
-          <option value="top">Top</option>
-          <option value="bottom">Bottom</option>
-          <option value="left">Left</option>
-          <option value="right">Right</option>
-        </select>
-      </div>
-      <div class="config-row">
-        <label>Grid</label>
-        <input type="checkbox" :checked="chart.showGrid" @change="onGridToggle" />
-      </div>
-    </div>
-
-    <!-- Resize handles (only when active) -->
-    <template v-if="isActive">
-      <div class="resize-handle rh-e" @mousedown.stop.prevent="startResize('e', $event)"></div>
-      <div class="resize-handle rh-s" @mousedown.stop.prevent="startResize('s', $event)"></div>
-      <div class="resize-handle rh-se" @mousedown.stop.prevent="startResize('se', $event)"></div>
-      <div class="resize-handle rh-w" @mousedown.stop.prevent="startResize('w', $event)"></div>
-      <div class="resize-handle rh-n" @mousedown.stop.prevent="startResize('n', $event)"></div>
-      <div class="resize-handle rh-nw" @mousedown.stop.prevent="startResize('nw', $event)"></div>
-      <div class="resize-handle rh-ne" @mousedown.stop.prevent="startResize('ne', $event)"></div>
-      <div class="resize-handle rh-sw" @mousedown.stop.prevent="startResize('sw', $event)"></div>
-    </template>
-
-    <!-- Delete button -->
-    <button
-      v-if="isActive"
-      class="chart-delete"
-      title="Delete chart"
-      @click.stop="ss.removeChart(chart.id)"
-      @mousedown.stop
-    >×</button>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { computed, inject, ref, onMounted, onBeforeUnmount, type PropType } from 'vue'
 import type { ChartObject } from '../types/spreadsheet'
@@ -640,6 +483,164 @@ function onResizeEnd() {
   document.removeEventListener('mouseup', onResizeEnd)
 }
 </script>
+
+
+<template>
+  <div
+    class="canvas-chart"
+    :class="{ active: isActive }"
+    :style="boxStyle"
+    @mousedown.stop="onMouseDown"
+  >
+    <!-- Chart title (editable when active) -->
+    <div class="chart-title-bar" v-if="chart.title || isActive">
+      <input
+        v-if="isActive"
+        class="chart-title-input"
+        :value="chart.title"
+        @input="onTitleInput"
+        @mousedown.stop
+        placeholder="Chart title"
+      />
+      <span v-else class="chart-title-text">{{ chart.title }}</span>
+    </div>
+
+    <!-- Chart body -->
+    <div class="chart-body" ref="chartBodyRef">
+      <component
+        v-if="chartComponent && chartData"
+        :is="chartComponent"
+        :data="chartData"
+        :options="chartOptions"
+        :style="{ width: '100%', height: '100%' }"
+      />
+      <div v-else class="chart-empty">
+        <p class="chart-empty-icon">📊</p>
+        <p class="chart-empty-text">Select a data source</p>
+        <p class="chart-empty-sub">Click a reference field, then select cells on any table</p>
+      </div>
+    </div>
+
+    <!-- Data source config (only when active) -->
+    <div v-if="isActive" class="chart-config" @mousedown.stop>
+      <div class="config-row">
+        <label>Type</label>
+        <select :value="chart.chartType" @change="onTypeChange">
+          <option value="bar">Bar</option>
+          <option value="line">Line</option>
+          <option value="pie">Pie</option>
+          <option value="doughnut">Doughnut</option>
+          <option value="scatter">Scatter</option>
+          <option value="area">Area</option>
+          <option value="radar">Radar</option>
+        </select>
+      </div>
+
+      <!-- Labels reference -->
+      <div class="config-section">
+        <div class="config-section-header">Labels</div>
+        <div
+          class="ref-field"
+          :class="{ picking: ss.chartSelectionMode.value === 'labels' }"
+          :style="refFieldStyle('labels')"
+          @click="onRefFieldClick('labels')"
+        >
+          <span class="ref-color-dot" :style="{ background: '#94a3b8' }"></span>
+          <input
+            class="ref-input"
+            :value="chart.dataSource?.labelRef?.refString ?? ''"
+            @input="onRefInput('labels', $event)"
+            @focus="onRefFieldClick('labels')"
+            @mousedown.stop
+            placeholder="Click here, then select cells…"
+          />
+          <button
+            v-if="chart.dataSource?.labelRef"
+            class="ref-clear"
+            @click.stop="clearRef('labels')"
+            title="Clear"
+          >×</button>
+        </div>
+      </div>
+
+      <!-- Series references -->
+      <div class="config-section">
+        <div class="config-section-header">
+          <span>Series</span>
+          <button class="add-series-btn" @click="ss.addChartSeries()" title="Add series">+</button>
+        </div>
+        <div
+          v-for="(sref, i) in (chart.dataSource?.seriesRefs ?? [])"
+          :key="i"
+          class="ref-field"
+          :class="{ picking: ss.chartSelectionMode.value === 'series:' + i }"
+          :style="refFieldStyle('series:' + i)"
+          @click="onRefFieldClick('series:' + i)"
+        >
+          <span class="ref-color-dot" :style="{ background: seriesColor(i) }"></span>
+          <input
+            class="ref-input"
+            :value="sref.refString"
+            @input="onRefInput('series:' + i, $event)"
+            @focus="onRefFieldClick('series:' + i)"
+            @mousedown.stop
+            placeholder="Click here, then select cells…"
+          />
+          <button
+            class="ref-clear"
+            @click.stop="ss.removeChartSeries(i)"
+            title="Remove series"
+          >×</button>
+        </div>
+        <div v-if="!chart.dataSource?.seriesRefs?.length" class="ref-empty-hint">
+          Click <strong>+</strong> to add a data series
+        </div>
+      </div>
+
+      <!-- Options -->
+      <div class="config-row">
+        <label>Header</label>
+        <input type="checkbox" :checked="chart.dataSource?.useHeader ?? true" @change="onHeaderToggle" />
+        <span class="config-hint">First row is header</span>
+      </div>
+      <div class="config-row">
+        <label>Legend</label>
+        <select :value="chart.showLegend ? chart.legendPosition : 'off'" @change="onLegendChange">
+          <option value="off">Hidden</option>
+          <option value="top">Top</option>
+          <option value="bottom">Bottom</option>
+          <option value="left">Left</option>
+          <option value="right">Right</option>
+        </select>
+      </div>
+      <div class="config-row">
+        <label>Grid</label>
+        <input type="checkbox" :checked="chart.showGrid" @change="onGridToggle" />
+      </div>
+    </div>
+
+    <!-- Resize handles (only when active) -->
+    <template v-if="isActive">
+      <div class="resize-handle rh-e" @mousedown.stop.prevent="startResize('e', $event)"></div>
+      <div class="resize-handle rh-s" @mousedown.stop.prevent="startResize('s', $event)"></div>
+      <div class="resize-handle rh-se" @mousedown.stop.prevent="startResize('se', $event)"></div>
+      <div class="resize-handle rh-w" @mousedown.stop.prevent="startResize('w', $event)"></div>
+      <div class="resize-handle rh-n" @mousedown.stop.prevent="startResize('n', $event)"></div>
+      <div class="resize-handle rh-nw" @mousedown.stop.prevent="startResize('nw', $event)"></div>
+      <div class="resize-handle rh-ne" @mousedown.stop.prevent="startResize('ne', $event)"></div>
+      <div class="resize-handle rh-sw" @mousedown.stop.prevent="startResize('sw', $event)"></div>
+    </template>
+
+    <!-- Delete button -->
+    <button
+      v-if="isActive"
+      class="chart-delete"
+      title="Delete chart"
+      @click.stop="ss.removeChart(chart.id)"
+      @mousedown.stop
+    >×</button>
+  </div>
+</template>
 
 <style scoped lang="scss">
 .canvas-chart {

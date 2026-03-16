@@ -1,210 +1,3 @@
-<template>
-  <div
-    class="spreadsheet-table"
-    :class="{ active: isActiveTable, 'formula-mode': ss.formulaMode.value && ss.isEditing.value }"
-    :style="tableStyle"
-    @mousedown="onTableMouseDown"
-    @keydown="onKeyDown"
-    tabindex="0"
-    ref="tableEl"
-  >
-    <!-- Title bar -->
-    <div
-      class="table-title-bar"
-      @mousedown.stop="startDrag"
-      @dblclick.stop
-    >
-      <input
-        v-if="editingName"
-        class="table-name-input editing"
-        v-model="localName"
-        ref="nameInputRef"
-        @blur="commitName"
-        @keydown.enter.prevent="commitName"
-        @keydown.escape.prevent="cancelNameEdit"
-        @mousedown.stop
-      />
-      <span v-else class="table-name" @dblclick.stop="startNameEdit">{{ table.name }}</span>
-      <button class="table-close-btn" @click.stop="$emit('remove')" title="Delete table">×</button>
-    </div>
-
-    <!-- Table grid -->
-    <div class="table-grid-wrapper">
-      <table class="table-grid" cellpadding="0" cellspacing="0">
-        <thead>
-          <tr>
-            <th
-              class="corner-cell"
-              :class="{ 'all-selected': ss.isEntireTableSelected(table.id) }"
-              @mousedown.stop="onCornerClick"
-            ></th>
-            <th
-              v-for="(col, ci) in table.columns"
-              :key="col.id"
-              :style="{ width: col.width + 'px', minWidth: col.width + 'px' }"
-              class="col-header"
-              :class="{
-                'col-selected': ss.isColInSelection(table.id, ci),
-                'reorder-source': reorderColState.active && ci >= reorderColState.fromStart && ci <= reorderColState.fromEnd,
-                'reorder-drop-before': reorderColState.active && reorderColState.toIdx === ci && reorderColState.toIdx < reorderColState.fromStart,
-                'reorder-drop-after': reorderColState.active && reorderColState.toIdx === ci && reorderColState.toIdx > reorderColState.fromEnd,
-              }"
-              @mousedown.stop="onColHeaderMouseDown(ci, $event)"
-              @mouseover="onColHeaderMouseOver(ci)"
-              @contextmenu.prevent="onColumnContextMenu(ci, $event)"
-            >
-              <span>{{ columnLetter(ci) }}</span>
-              <div
-                class="col-resize-handle"
-                @mousedown.stop.prevent="startColResize(ci, $event)"
-              ></div>
-            </th>
-            <th
-              class="add-col-header"
-              @mousedown.stop.prevent="startAddColDrag($event)"
-              title="Drag to add columns"
-            >
-              <span class="add-handle add-handle-col">≡</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(row, ri) in table.rows"
-            :key="ri"
-            :class="{
-              'reorder-row-source': reorderRowState.active && ri >= reorderRowState.fromStart && ri <= reorderRowState.fromEnd,
-              'reorder-row-drop-before': reorderRowState.active && reorderRowState.toIdx === ri && reorderRowState.toIdx < reorderRowState.fromStart,
-              'reorder-row-drop-after': reorderRowState.active && reorderRowState.toIdx === ri && reorderRowState.toIdx > reorderRowState.fromEnd,
-            }"
-          >
-            <td
-              class="row-header"
-              :class="{
-                'row-selected': ss.isRowInSelection(table.id, ri),
-                'reorder-source': reorderRowState.active && ri >= reorderRowState.fromStart && ri <= reorderRowState.fromEnd,
-                'reorder-drop-before': reorderRowState.active && reorderRowState.toIdx === ri && reorderRowState.toIdx < reorderRowState.fromStart,
-                'reorder-drop-after': reorderRowState.active && reorderRowState.toIdx === ri && reorderRowState.toIdx > reorderRowState.fromEnd,
-              }"
-              @mousedown.stop="onRowHeaderMouseDown(ri, $event)"
-              @mouseover="onRowHeaderMouseOver(ri)"
-              @contextmenu.prevent="onRowContextMenu(ri, $event)"
-            >
-              {{ ri + 1 }}
-            </td>
-            <template v-for="(_cell, ci) in row" :key="ci">
-              <td
-                v-if="!ss.isCellHiddenByMerge(table.id, ci, ri)"
-                class="cell"
-                :class="cellClasses(ci, ri)"
-                :style="cellTdStyle(ci, ri)"
-                :colspan="mergedColspan(ci, ri)"
-                :rowspan="mergedRowspan(ci, ri)"
-                @mousedown.stop="onCellMouseDown(ci, ri, $event)"
-                @mouseover="onCellMouseOver(ci, ri)"
-                @dblclick.stop="onCellDblClick(ci, ri)"
-                @contextmenu.prevent="onCellContextMenu(ci, ri, $event)"
-              >
-                <!-- Note indicator triangle -->
-                <div
-                  v-if="ss.cellHasNote(table.id, ci, ri)"
-                  class="note-indicator"
-                  @mouseenter="showNotePopup(ci, ri, $event)"
-                  @mouseleave="hideNotePopup"
-                ></div>
-                <template v-if="isCellEditing(ci, ri)">
-                  <input
-                    class="cell-edit-input"
-                    ref="cellInputRef"
-                    :value="ss.editValue.value"
-                    @input="onCellInput"
-                    @keydown.enter.prevent="onCellEnter"
-                    @keydown.tab.prevent="onCellTab($event)"
-                    @keydown.escape.prevent="ss.cancelEdit()"
-                    @blur="onCellEditBlur"
-                    @mousedown.stop
-                  />
-                </template>
-                <template v-else>
-                  <span class="cell-text" :class="cellTextClass(ci, ri)" :style="cellTextStyle(ci, ri)" :title="ss.getDisplayValue(table.id, ci, ri)">
-                    {{ ss.getDisplayValue(table.id, ci, ri) }}
-                  </span>
-                  <button
-                    v-if="ss.getCellType(table.id, ci, ri) === 'url' && ss.getDisplayValue(table.id, ci, ri)"
-                    class="cell-link-btn"
-                    @mousedown.stop
-                    @click.stop="openCellUrl(ss.getDisplayValue(table.id, ci, ri))"
-                    title="Open link in browser"
-                  >
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 2H2a1 1 0 00-1 1v5a1 1 0 001 1h5a1 1 0 001-1V6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M6.5 1H9v2.5M9 1L5.5 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </button>
-                </template>
-                <!-- Fill handle at bottom-right corner of selection -->
-                <div
-                  v-if="isSelectionCorner(ci, ri) && !ss.isEditing.value"
-                  class="fill-handle"
-                  @mousedown.stop.prevent="startFillDrag(ci, ri, $event)"
-                ></div>
-              </td>
-            </template>
-          </tr>
-          <!-- Add row drag handle -->
-          <tr>
-            <td
-              class="add-row-cell"
-              :colspan="table.columns.length + 2"
-              @mousedown.stop.prevent="startAddRowDrag($event)"
-              title="Drag to add rows"
-            >
-              <span class="add-handle add-handle-row">≡</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Context menu -->
-    <ContextMenu ref="ctxMenu" />
-
-    <!-- Note popup -->
-    <Teleport to="body">
-      <div
-        v-if="notePopup.visible"
-        class="note-popup"
-        :style="{ left: notePopup.x + 'px', top: notePopup.y + 'px' }"
-        @mouseenter="onNotePopupEnter"
-        @mouseleave="onNotePopupLeave"
-      >
-        <div class="note-popup-text">{{ notePopup.text }}</div>
-      </div>
-    </Teleport>
-
-    <!-- Note editor dialog -->
-    <Teleport to="body">
-      <div v-if="noteEditor.visible" class="note-editor-overlay" @mousedown.self="cancelNoteEdit">
-        <div class="note-editor" :style="{ left: noteEditor.x + 'px', top: noteEditor.y + 'px' }">
-          <textarea
-            ref="noteTextareaRef"
-            class="note-editor-textarea"
-            v-model="noteEditor.text"
-            placeholder="Type a note…"
-            @keydown.escape.prevent="cancelNoteEdit"
-          ></textarea>
-          <div class="note-editor-actions">
-            <button v-if="noteEditor.hasExisting" class="note-editor-delete" @click="deleteNoteFromEditor">Delete</button>
-            <div class="note-editor-spacer"></div>
-            <button class="note-editor-cancel" @click="cancelNoteEdit">Cancel</button>
-            <button class="note-editor-save" @click="saveNoteFromEditor">Save</button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-  </div>
-</template>
-
 <script setup lang="ts">
 import {
   computed,
@@ -1201,6 +994,213 @@ watch(
   },
 )
 </script>
+
+<template>
+  <div
+    class="spreadsheet-table"
+    :class="{ active: isActiveTable, 'formula-mode': ss.formulaMode.value && ss.isEditing.value }"
+    :style="tableStyle"
+    @mousedown="onTableMouseDown"
+    @keydown="onKeyDown"
+    tabindex="0"
+    ref="tableEl"
+  >
+    <!-- Title bar -->
+    <div
+      class="table-title-bar"
+      @mousedown.stop="startDrag"
+      @dblclick.stop
+    >
+      <input
+        v-if="editingName"
+        class="table-name-input editing"
+        v-model="localName"
+        ref="nameInputRef"
+        @blur="commitName"
+        @keydown.enter.prevent="commitName"
+        @keydown.escape.prevent="cancelNameEdit"
+        @mousedown.stop
+      />
+      <span v-else class="table-name" @dblclick.stop="startNameEdit">{{ table.name }}</span>
+      <button class="table-close-btn" @click.stop="$emit('remove')" title="Delete table">×</button>
+    </div>
+
+    <!-- Table grid -->
+    <div class="table-grid-wrapper">
+      <table class="table-grid" cellpadding="0" cellspacing="0">
+        <thead>
+          <tr>
+            <th
+              class="corner-cell"
+              :class="{ 'all-selected': ss.isEntireTableSelected(table.id) }"
+              @mousedown.stop="onCornerClick"
+            ></th>
+            <th
+              v-for="(col, ci) in table.columns"
+              :key="col.id"
+              :style="{ width: col.width + 'px', minWidth: col.width + 'px' }"
+              class="col-header"
+              :class="{
+                'col-selected': ss.isColInSelection(table.id, ci),
+                'reorder-source': reorderColState.active && ci >= reorderColState.fromStart && ci <= reorderColState.fromEnd,
+                'reorder-drop-before': reorderColState.active && reorderColState.toIdx === ci && reorderColState.toIdx < reorderColState.fromStart,
+                'reorder-drop-after': reorderColState.active && reorderColState.toIdx === ci && reorderColState.toIdx > reorderColState.fromEnd,
+              }"
+              @mousedown.stop="onColHeaderMouseDown(ci, $event)"
+              @mouseover="onColHeaderMouseOver(ci)"
+              @contextmenu.prevent="onColumnContextMenu(ci, $event)"
+            >
+              <span>{{ columnLetter(ci) }}</span>
+              <div
+                class="col-resize-handle"
+                @mousedown.stop.prevent="startColResize(ci, $event)"
+              ></div>
+            </th>
+            <th
+              class="add-col-header"
+              @mousedown.stop.prevent="startAddColDrag($event)"
+              title="Drag to add columns"
+            >
+              <span class="add-handle add-handle-col">≡</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="(row, ri) in table.rows"
+            :key="ri"
+            :class="{
+              'reorder-row-source': reorderRowState.active && ri >= reorderRowState.fromStart && ri <= reorderRowState.fromEnd,
+              'reorder-row-drop-before': reorderRowState.active && reorderRowState.toIdx === ri && reorderRowState.toIdx < reorderRowState.fromStart,
+              'reorder-row-drop-after': reorderRowState.active && reorderRowState.toIdx === ri && reorderRowState.toIdx > reorderRowState.fromEnd,
+            }"
+          >
+            <td
+              class="row-header"
+              :class="{
+                'row-selected': ss.isRowInSelection(table.id, ri),
+                'reorder-source': reorderRowState.active && ri >= reorderRowState.fromStart && ri <= reorderRowState.fromEnd,
+                'reorder-drop-before': reorderRowState.active && reorderRowState.toIdx === ri && reorderRowState.toIdx < reorderRowState.fromStart,
+                'reorder-drop-after': reorderRowState.active && reorderRowState.toIdx === ri && reorderRowState.toIdx > reorderRowState.fromEnd,
+              }"
+              @mousedown.stop="onRowHeaderMouseDown(ri, $event)"
+              @mouseover="onRowHeaderMouseOver(ri)"
+              @contextmenu.prevent="onRowContextMenu(ri, $event)"
+            >
+              {{ ri + 1 }}
+            </td>
+            <template v-for="(_cell, ci) in row" :key="ci">
+              <td
+                v-if="!ss.isCellHiddenByMerge(table.id, ci, ri)"
+                class="cell"
+                :class="cellClasses(ci, ri)"
+                :style="cellTdStyle(ci, ri)"
+                :colspan="mergedColspan(ci, ri)"
+                :rowspan="mergedRowspan(ci, ri)"
+                @mousedown.stop="onCellMouseDown(ci, ri, $event)"
+                @mouseover="onCellMouseOver(ci, ri)"
+                @dblclick.stop="onCellDblClick(ci, ri)"
+                @contextmenu.prevent="onCellContextMenu(ci, ri, $event)"
+              >
+                <!-- Note indicator triangle -->
+                <div
+                  v-if="ss.cellHasNote(table.id, ci, ri)"
+                  class="note-indicator"
+                  @mouseenter="showNotePopup(ci, ri, $event)"
+                  @mouseleave="hideNotePopup"
+                ></div>
+                <template v-if="isCellEditing(ci, ri)">
+                  <input
+                    class="cell-edit-input"
+                    ref="cellInputRef"
+                    :value="ss.editValue.value"
+                    @input="onCellInput"
+                    @keydown.enter.prevent="onCellEnter"
+                    @keydown.tab.prevent="onCellTab($event)"
+                    @keydown.escape.prevent="ss.cancelEdit()"
+                    @blur="onCellEditBlur"
+                    @mousedown.stop
+                  />
+                </template>
+                <template v-else>
+                  <span class="cell-text" :class="cellTextClass(ci, ri)" :style="cellTextStyle(ci, ri)" :title="ss.getDisplayValue(table.id, ci, ri)">
+                    {{ ss.getDisplayValue(table.id, ci, ri) }}
+                  </span>
+                  <button
+                    v-if="ss.getCellType(table.id, ci, ri) === 'url' && ss.getDisplayValue(table.id, ci, ri)"
+                    class="cell-link-btn"
+                    @mousedown.stop
+                    @click.stop="openCellUrl(ss.getDisplayValue(table.id, ci, ri))"
+                    title="Open link in browser"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 2H2a1 1 0 00-1 1v5a1 1 0 001 1h5a1 1 0 001-1V6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M6.5 1H9v2.5M9 1L5.5 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </template>
+                <!-- Fill handle at bottom-right corner of selection -->
+                <div
+                  v-if="isSelectionCorner(ci, ri) && !ss.isEditing.value"
+                  class="fill-handle"
+                  @mousedown.stop.prevent="startFillDrag(ci, ri, $event)"
+                ></div>
+              </td>
+            </template>
+          </tr>
+          <!-- Add row drag handle -->
+          <tr>
+            <td
+              class="add-row-cell"
+              :colspan="table.columns.length + 2"
+              @mousedown.stop.prevent="startAddRowDrag($event)"
+              title="Drag to add rows"
+            >
+              <span class="add-handle add-handle-row">≡</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Context menu -->
+    <ContextMenu ref="ctxMenu" />
+
+    <!-- Note popup -->
+    <Teleport to="body">
+      <div
+        v-if="notePopup.visible"
+        class="note-popup"
+        :style="{ left: notePopup.x + 'px', top: notePopup.y + 'px' }"
+        @mouseenter="onNotePopupEnter"
+        @mouseleave="onNotePopupLeave"
+      >
+        <div class="note-popup-text">{{ notePopup.text }}</div>
+      </div>
+    </Teleport>
+
+    <!-- Note editor dialog -->
+    <Teleport to="body">
+      <div v-if="noteEditor.visible" class="note-editor-overlay" @mousedown.self="cancelNoteEdit">
+        <div class="note-editor" :style="{ left: noteEditor.x + 'px', top: noteEditor.y + 'px' }">
+          <textarea
+            ref="noteTextareaRef"
+            class="note-editor-textarea"
+            v-model="noteEditor.text"
+            placeholder="Type a note…"
+            @keydown.escape.prevent="cancelNoteEdit"
+          ></textarea>
+          <div class="note-editor-actions">
+            <button v-if="noteEditor.hasExisting" class="note-editor-delete" @click="deleteNoteFromEditor">Delete</button>
+            <div class="note-editor-spacer"></div>
+            <button class="note-editor-cancel" @click="cancelNoteEdit">Cancel</button>
+            <button class="note-editor-save" @click="saveNoteFromEditor">Save</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+  </div>
+</template>
 
 <style scoped lang="scss">
 .spreadsheet-table {

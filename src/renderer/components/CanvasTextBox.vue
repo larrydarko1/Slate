@@ -1,61 +1,3 @@
-<template>
-  <div
-    class="canvas-textbox"
-    :class="{ active: isActive, editing: isTextEditing }"
-    :style="boxStyle"
-    @mousedown.stop="onMouseDown"
-    @dblclick.stop="startTextEdit"
-  >
-    <!-- Text content -->
-    <div
-      v-if="!isTextEditing"
-      class="textbox-display"
-      :style="textStyle"
-    >{{ textBox.text || (isActive ? '' : '') }}</div>
-
-    <!-- Edit mode -->
-    <textarea
-      v-if="isTextEditing"
-      ref="textareaRef"
-      class="textbox-editor"
-      :style="textStyle"
-      :value="textBox.text"
-      @input="onInput"
-      @blur="finishTextEdit"
-      @keydown.escape.prevent="finishTextEdit"
-      @mousedown.stop
-    ></textarea>
-
-    <!-- Placeholder when empty and active -->
-    <div
-      v-if="isActive && !isTextEditing && !textBox.text"
-      class="textbox-placeholder"
-      :style="{ textAlign: textBox.align }"
-    >Type something…</div>
-
-    <!-- Resize handles (only when active) -->
-    <template v-if="isActive && !isTextEditing">
-      <div class="resize-handle rh-e" @mousedown.stop.prevent="startResize('e', $event)"></div>
-      <div class="resize-handle rh-s" @mousedown.stop.prevent="startResize('s', $event)"></div>
-      <div class="resize-handle rh-se" @mousedown.stop.prevent="startResize('se', $event)"></div>
-      <div class="resize-handle rh-w" @mousedown.stop.prevent="startResize('w', $event)"></div>
-      <div class="resize-handle rh-n" @mousedown.stop.prevent="startResize('n', $event)"></div>
-      <div class="resize-handle rh-nw" @mousedown.stop.prevent="startResize('nw', $event)"></div>
-      <div class="resize-handle rh-ne" @mousedown.stop.prevent="startResize('ne', $event)"></div>
-      <div class="resize-handle rh-sw" @mousedown.stop.prevent="startResize('sw', $event)"></div>
-    </template>
-
-    <!-- Delete button -->
-    <button
-      v-if="isActive && !isTextEditing"
-      class="textbox-delete"
-      title="Delete text box"
-      @click.stop="ss.removeTextBox(textBox.id)"
-      @mousedown.stop
-    >×</button>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { computed, inject, nextTick, ref, type PropType } from 'vue'
 import type { TextBox } from '../types/spreadsheet'
@@ -218,6 +160,64 @@ function onResizeEnd() {
   document.removeEventListener('mouseup', onResizeEnd)
 }
 </script>
+
+<template>
+  <div
+    class="canvas-textbox"
+    :class="{ active: isActive, editing: isTextEditing }"
+    :style="boxStyle"
+    @mousedown.stop="onMouseDown"
+    @dblclick.stop="startTextEdit"
+  >
+    <!-- Text content -->
+    <div
+      v-if="!isTextEditing"
+      class="textbox-display"
+      :style="textStyle"
+    >{{ textBox.text || (isActive ? '' : '') }}</div>
+
+    <!-- Edit mode -->
+    <textarea
+      v-if="isTextEditing"
+      ref="textareaRef"
+      class="textbox-editor"
+      :style="textStyle"
+      :value="textBox.text"
+      @input="onInput"
+      @blur="finishTextEdit"
+      @keydown.escape.prevent="finishTextEdit"
+      @mousedown.stop
+    ></textarea>
+
+    <!-- Placeholder when empty and active -->
+    <div
+      v-if="isActive && !isTextEditing && !textBox.text"
+      class="textbox-placeholder"
+      :style="{ textAlign: textBox.align }"
+    >Type something…</div>
+
+    <!-- Resize handles (only when active) -->
+    <template v-if="isActive && !isTextEditing">
+      <div class="resize-handle rh-e" @mousedown.stop.prevent="startResize('e', $event)"></div>
+      <div class="resize-handle rh-s" @mousedown.stop.prevent="startResize('s', $event)"></div>
+      <div class="resize-handle rh-se" @mousedown.stop.prevent="startResize('se', $event)"></div>
+      <div class="resize-handle rh-w" @mousedown.stop.prevent="startResize('w', $event)"></div>
+      <div class="resize-handle rh-n" @mousedown.stop.prevent="startResize('n', $event)"></div>
+      <div class="resize-handle rh-nw" @mousedown.stop.prevent="startResize('nw', $event)"></div>
+      <div class="resize-handle rh-ne" @mousedown.stop.prevent="startResize('ne', $event)"></div>
+      <div class="resize-handle rh-sw" @mousedown.stop.prevent="startResize('sw', $event)"></div>
+    </template>
+
+    <!-- Delete button -->
+    <button
+      v-if="isActive && !isTextEditing"
+      class="textbox-delete"
+      title="Delete text box"
+      @click.stop="ss.removeTextBox(textBox.id)"
+      @mousedown.stop
+    >×</button>
+  </div>
+</template>
 
 <style scoped lang="scss">
 .canvas-textbox {

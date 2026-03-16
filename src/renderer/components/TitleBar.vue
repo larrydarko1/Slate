@@ -1,3 +1,7 @@
+
+<script setup lang="ts">
+</script>
+
 <template>
   <div class="title-bar">
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="100" height="50" viewBox="0 0 1920 1080" >
@@ -11,9 +15,6 @@
 </svg>
   </div>
 </template>
-
-<script setup lang="ts">
-</script>
 
 <style scoped lang="scss">
 .title-bar {

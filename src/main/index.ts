@@ -8,7 +8,7 @@ import fs from 'fs/promises';
 import { existsSync, writeFileSync, renameSync, unlinkSync } from 'fs';
 import { pathToFileURL } from 'url';
 
-import { assertInsideBoundary, assertSafeFileName } from './lib/validation';
+import { assertSafeFileName } from './lib/validation';
 
 // ─── State ───────────────────────────────────────────────────────────────────
 

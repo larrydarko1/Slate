@@ -1,40 +1,3 @@
-<template>
-  <div
-    class="canvas-workspace"
-    ref="canvasRef"
-    @mousedown="onCanvasMouseDown"
-    @wheel="onWheel"
-  >
-    <!-- Grid dot pattern background -->
-    <div class="canvas-bg" :style="bgStyle"></div>
-
-    <!-- Pannable content layer -->
-    <div class="canvas-content" :style="contentStyle">
-      <SpreadsheetTable
-        v-for="table in ss.tables.value"
-        :key="table.id"
-        :table="table"
-        @remove="ss.removeTable(table.id)"
-      />
-      <CanvasTextBox
-        v-for="tb in ss.textBoxes.value"
-        :key="tb.id"
-        :textBox="tb"
-      />
-      <CanvasChart
-        v-for="ch in ss.charts.value"
-        :key="ch.id"
-        :chart="ch"
-      />
-    </div>
-
-    <!-- Empty state -->
-    <div v-if="ss.tables.value.length === 0 && ss.textBoxes.value.length === 0 && ss.charts.value.length === 0" class="canvas-empty">
-      <p class="empty-title">No tables yet</p>
-      <p class="empty-sub">Click <strong>+ Table</strong> in the toolbar to get started.</p>
-    </div>
-  </div>
-</template>
 
 <script setup lang="ts">
 import { computed, inject, ref } from 'vue'
@@ -123,6 +86,44 @@ function onWheel(e: WheelEvent) {
   }
 }
 </script>
+
+<template>
+  <div
+    class="canvas-workspace"
+    ref="canvasRef"
+    @mousedown="onCanvasMouseDown"
+    @wheel="onWheel"
+  >
+    <!-- Grid dot pattern background -->
+    <div class="canvas-bg" :style="bgStyle"></div>
+
+    <!-- Pannable content layer -->
+    <div class="canvas-content" :style="contentStyle">
+      <SpreadsheetTable
+        v-for="table in ss.tables.value"
+        :key="table.id"
+        :table="table"
+        @remove="ss.removeTable(table.id)"
+      />
+      <CanvasTextBox
+        v-for="tb in ss.textBoxes.value"
+        :key="tb.id"
+        :textBox="tb"
+      />
+      <CanvasChart
+        v-for="ch in ss.charts.value"
+        :key="ch.id"
+        :chart="ch"
+      />
+    </div>
+
+    <!-- Empty state -->
+    <div v-if="ss.tables.value.length === 0 && ss.textBoxes.value.length === 0 && ss.charts.value.length === 0" class="canvas-empty">
+      <p class="empty-title">No tables yet</p>
+      <p class="empty-sub">Click <strong>+ Table</strong> in the toolbar to get started.</p>
+    </div>
+  </div>
+</template>
 
 <style scoped lang="scss">
 .canvas-workspace {
