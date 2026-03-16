@@ -1,4 +1,8 @@
 <script setup lang="ts">
+// CanvasWorkspace — scrollable/zoomable canvas that hosts tables, text boxes, and charts.
+// Owns: pan/scroll, zoom gestures, canvas background interaction, object deselection.
+// Does NOT own: individual object rendering (SpreadsheetTable, CanvasTextBox, CanvasChart).
+
 import { computed, inject, ref } from 'vue';
 import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';
 import SpreadsheetTable from './SpreadsheetTable.vue';

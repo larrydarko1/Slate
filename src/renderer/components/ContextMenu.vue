@@ -1,4 +1,8 @@
 <script setup lang="ts">
+// ContextMenu — reusable right-click context menu with teleport overlay.
+// Owns: menu positioning, click-away dismissal, item rendering.
+// Does NOT own: menu item definitions (provided by parent via expose).
+
 import { ref } from 'vue';
 
 export interface MenuItem {

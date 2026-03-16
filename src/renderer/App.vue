@@ -1,4 +1,8 @@
 <script setup lang="ts">
+// App — root component, provides spreadsheet state to the entire app.
+// Owns: dependency injection via provide(), global keyboard shortcuts, file-open listener.
+// Does NOT own: spreadsheet logic (composables/), UI layout (child components).
+
 import { provide, onMounted } from 'vue';
 import { useSpreadsheet, SPREADSHEET_KEY } from './composables/useSpreadsheet';
 import TitleBar from './components/TitleBar.vue';

@@ -1,4 +1,8 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+// TitleBar — macOS-style draggable title bar with the Slate logo.
+// Owns: logo SVG rendering, window drag region.
+// Does NOT own: window controls (native), app state.
+</script>
 
 <template>
     <div class="title-bar">

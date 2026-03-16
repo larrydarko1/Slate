@@ -1,11 +1,13 @@
-// useTables — table CRUD, row/column operations, reordering, and sorting.
-// Owns: addTable, removeTable, renameTable, moveTable, row/col add/delete/insert/reorder, sort.
-// Does NOT own: cell access (useCells.ts), selection (useSelection.ts), recalculation (useFormulaEngine.ts).
+// useTables — table CRUD, row/column operations, and bulk selection operations.
+// Owns: addTable, removeTable, renameTable, moveTable, row/col add/delete/insert, bulk delete.
+// Does NOT own: reordering (useTableReorder.ts), sorting (useTableSort.ts), cell access (useCells.ts).
 
 import type { SpreadsheetCoreState } from './state';
 import type { SpreadsheetHelpers } from './helpers';
-import type { SpreadsheetTable, Cell, CellValue, MergedRegion } from '../../types/spreadsheet';
+import type { SpreadsheetTable, MergedRegion } from '../../types/spreadsheet';
 import { generateId, createEmptyCell, createDefaultTable } from '../../types/spreadsheet';
+import { createTableReorder } from './useTableReorder';
+import { createTableSort } from './useTableSort';
 
 interface TablesDeps {
     findTable: SpreadsheetHelpers['findTable'];
@@ -24,6 +26,8 @@ interface TablesDeps {
 }
 
 export function createTables(state: SpreadsheetCoreState, deps: TablesDeps) {
+    // ── CRUD ─────────────────────────────────────────────────────────────────
+
     function addTable(): void {
         deps.pushUndo();
         state.counters.tableCount++;
@@ -194,155 +198,23 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps) {
         deps.recalculate();
     }
 
-    // ── Reorder ──────────────────────────────────────────────────────────────
+    // ── Delegated modules ────────────────────────────────────────────────────
 
-    function reorderRow(tableId: string, fromIdx: number, toIdx: number): void {
-        reorderRows(tableId, fromIdx, fromIdx, toIdx);
-    }
+    const { reorderRow, reorderRows, reorderColumn, reorderColumns } = createTableReorder(state, {
+        findTable: deps.findTable,
+        pushUndo: deps.pushUndo,
+        recalculate: deps.recalculate,
+        remapAllFormulasInTable: deps.remapAllFormulasInTable,
+        remapRowIdx: deps.remapRowIdx,
+        remapColIdx: deps.remapColIdx,
+    });
 
-    function reorderRows(tableId: string, fromStart: number, fromEnd: number, toIdx: number): void {
-        const t = deps.findTable(tableId);
-        if (!t) return;
-        const count = fromEnd - fromStart + 1;
-        if (toIdx >= fromStart && toIdx <= fromEnd) return;
-        if (fromStart < 0 || fromEnd >= t.rows.length) return;
-        if (toIdx < 0 || toIdx >= t.rows.length) return;
-        deps.pushUndo();
-
-        const movedRows = t.rows.splice(fromStart, count);
-        const insertAt = toIdx > fromStart ? toIdx - count + 1 : toIdx;
-        t.rows.splice(insertAt, 0, ...movedRows);
-
-        t.mergedRegions = t.mergedRegions.map((m) => {
-            let sr = deps.remapRowIdx(m.startRow, fromStart, fromEnd, insertAt);
-            let er = deps.remapRowIdx(m.endRow, fromStart, fromEnd, insertAt);
-            if (sr > er) {
-                const tmp = sr;
-                sr = er;
-                er = tmp;
-            }
-            return { ...m, startRow: sr, endRow: er };
-        });
-
-        if (state.activeCell.value?.tableId === tableId) {
-            state.activeCell.value.row = deps.remapRowIdx(state.activeCell.value.row, fromStart, fromEnd, insertAt);
-        }
-        if (state.selectionRange.value?.tableId === tableId) {
-            const sr = state.selectionRange.value;
-            sr.startRow = insertAt;
-            sr.endRow = insertAt + count - 1;
-        }
-
-        const rowMapper = (idx: number) => deps.remapRowIdx(idx, fromStart, fromEnd, insertAt);
-        deps.remapAllFormulasInTable(t, null, rowMapper);
-        deps.recalculate();
-    }
-
-    function reorderColumn(tableId: string, fromIdx: number, toIdx: number): void {
-        reorderColumns(tableId, fromIdx, fromIdx, toIdx);
-    }
-
-    function reorderColumns(tableId: string, fromStart: number, fromEnd: number, toIdx: number): void {
-        const t = deps.findTable(tableId);
-        if (!t) return;
-        const count = fromEnd - fromStart + 1;
-        if (toIdx >= fromStart && toIdx <= fromEnd) return;
-        if (fromStart < 0 || fromEnd >= t.columns.length) return;
-        if (toIdx < 0 || toIdx >= t.columns.length) return;
-        deps.pushUndo();
-
-        const movedCols = t.columns.splice(fromStart, count);
-        const insertAt = toIdx > fromStart ? toIdx - count + 1 : toIdx;
-        t.columns.splice(insertAt, 0, ...movedCols);
-
-        for (const row of t.rows) {
-            const movedCells = row.splice(fromStart, count);
-            row.splice(insertAt, 0, ...movedCells);
-        }
-
-        t.mergedRegions = t.mergedRegions.map((m) => {
-            let sc = deps.remapColIdx(m.startCol, fromStart, fromEnd, insertAt);
-            let ec = deps.remapColIdx(m.endCol, fromStart, fromEnd, insertAt);
-            if (sc > ec) {
-                const tmp = sc;
-                sc = ec;
-                ec = tmp;
-            }
-            return { ...m, startCol: sc, endCol: ec };
-        });
-
-        if (state.activeCell.value?.tableId === tableId) {
-            state.activeCell.value.col = deps.remapColIdx(state.activeCell.value.col, fromStart, fromEnd, insertAt);
-        }
-        if (state.selectionRange.value?.tableId === tableId) {
-            const sr = state.selectionRange.value;
-            sr.startCol = insertAt;
-            sr.endCol = insertAt + count - 1;
-        }
-
-        const colMapper = (idx: number) => deps.remapColIdx(idx, fromStart, fromEnd, insertAt);
-        deps.remapAllFormulasInTable(t, colMapper, null);
-        deps.recalculate();
-    }
-
-    // ── Sort ─────────────────────────────────────────────────────────────────
-
-    function sortColumn(tableId: string, colIdx: number, direction: 'asc' | 'desc'): void {
-        const t = deps.findTable(tableId);
-        if (!t) return;
-        deps.pushUndo();
-        const headerCount = t.headerRows;
-
-        function getSortValue(row: Cell[]): CellValue {
-            const cell = row[colIdx];
-            if (!cell) return null;
-            return cell.formula != null ? (cell.computed ?? null) : cell.value;
-        }
-
-        function compareValues(a: CellValue, b: CellValue): number {
-            const sign = direction === 'asc' ? 1 : -1;
-            if (a === null && b === null) return 0;
-            if (a === null) return 1;
-            if (b === null) return -1;
-            if (typeof a === 'number' && typeof b === 'number') return sign * (a - b);
-            if (typeof a === 'boolean' && typeof b === 'boolean') return sign * (Number(a) - Number(b));
-            const sa = String(a).toLowerCase();
-            const sb = String(b).toLowerCase();
-            if (sa < sb) return -sign;
-            if (sa > sb) return sign;
-            return 0;
-        }
-
-        const indexed = t.rows.slice(headerCount).map((row, i) => ({ row, origIdx: i + headerCount }));
-        indexed.sort((a, b) => compareValues(getSortValue(a.row), getSortValue(b.row)));
-
-        for (let i = 0; i < indexed.length; i++) {
-            t.rows[headerCount + i] = indexed[i].row;
-        }
-
-        const rowMap = new Map<number, number>();
-        for (let i = 0; i < indexed.length; i++) {
-            rowMap.set(indexed[i].origIdx, headerCount + i);
-        }
-        for (let i = 0; i < headerCount; i++) {
-            rowMap.set(i, i);
-        }
-
-        t.mergedRegions = t.mergedRegions
-            .map((m) => {
-                if (m.startRow === m.endRow) {
-                    const newRow = rowMap.get(m.startRow) ?? m.startRow;
-                    return { ...m, startRow: newRow, endRow: newRow };
-                }
-                if (m.endRow < headerCount) return m;
-                return null;
-            })
-            .filter((m): m is MergedRegion => m !== null);
-
-        const rowMapper = (idx: number) => rowMap.get(idx) ?? idx;
-        deps.remapAllFormulasInTable(t, null, rowMapper);
-        deps.recalculate();
-    }
+    const { sortColumn } = createTableSort({
+        findTable: deps.findTable,
+        pushUndo: deps.pushUndo,
+        recalculate: deps.recalculate,
+        remapAllFormulasInTable: deps.remapAllFormulasInTable,
+    });
 
     // ── Bulk selection operations ────────────────────────────────────────────
 

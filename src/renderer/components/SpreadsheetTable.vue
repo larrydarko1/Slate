@@ -9,6 +9,8 @@ import { computed, inject, nextTick, ref, toRef, watch, type PropType } from 'vu
 import type { SpreadsheetTable } from '../types/spreadsheet';
 import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';
 import ContextMenu from './ContextMenu.vue';
+import NotePopup from './table/NotePopup.vue';
+import NoteEditor from './table/NoteEditor.vue';
 import { useTableCellRendering } from '../composables/table/useTableCellRendering';
 import { useTableStructure } from '../composables/table/useTableStructure';
 import { useFillHandle } from '../composables/table/useFillHandle';
@@ -84,7 +86,6 @@ const {
 const {
     notePopup,
     noteEditor,
-    noteTextareaRef,
     showNotePopup,
     hideNotePopup,
     onNotePopupEnter,
@@ -529,40 +530,27 @@ watch(
         <ContextMenu ref="ctxMenu" />
 
         <!-- Note popup -->
-        <Teleport to="body">
-            <div
-                v-if="notePopup.visible"
-                class="note-popup"
-                :style="{ left: notePopup.x + 'px', top: notePopup.y + 'px' }"
-                @mouseenter="onNotePopupEnter"
-                @mouseleave="onNotePopupLeave"
-            >
-                <div class="note-popup-text">{{ notePopup.text }}</div>
-            </div>
-        </Teleport>
+        <NotePopup
+            :visible="notePopup.visible"
+            :x="notePopup.x"
+            :y="notePopup.y"
+            :text="notePopup.text"
+            @mouseenter="onNotePopupEnter"
+            @mouseleave="onNotePopupLeave"
+        />
 
         <!-- Note editor dialog -->
-        <Teleport to="body">
-            <div v-if="noteEditor.visible" class="note-editor-overlay" @mousedown.self="cancelNoteEdit">
-                <div class="note-editor" :style="{ left: noteEditor.x + 'px', top: noteEditor.y + 'px' }">
-                    <textarea
-                        ref="noteTextareaRef"
-                        v-model="noteEditor.text"
-                        class="note-editor-textarea"
-                        placeholder="Type a note…"
-                        @keydown.escape.prevent="cancelNoteEdit"
-                    ></textarea>
-                    <div class="note-editor-actions">
-                        <button v-if="noteEditor.hasExisting" class="note-editor-delete" @click="deleteNoteFromEditor">
-                            Delete
-                        </button>
-                        <div class="note-editor-spacer"></div>
-                        <button class="note-editor-cancel" @click="cancelNoteEdit">Cancel</button>
-                        <button class="note-editor-save" @click="saveNoteFromEditor">Save</button>
-                    </div>
-                </div>
-            </div>
-        </Teleport>
+        <NoteEditor
+            :visible="noteEditor.visible"
+            :x="noteEditor.x"
+            :y="noteEditor.y"
+            :text="noteEditor.text"
+            :has-existing="noteEditor.hasExisting"
+            @update:text="noteEditor.text = $event"
+            @save="saveNoteFromEditor"
+            @delete="deleteNoteFromEditor"
+            @cancel="cancelNoteEdit"
+        />
     </div>
 </template>
 
@@ -999,142 +987,5 @@ tr.reorder-row-drop-after > td {
 
 .add-handle-col {
     display: inline-block;
-}
-</style>
-
-<!-- Non-scoped styles for teleported note popup & editor -->
-<style lang="scss">
-.note-popup {
-    position: fixed;
-    z-index: 10002;
-    max-width: 260px;
-    min-width: 100px;
-    padding: 8px 12px;
-    background: #fef9e7;
-    color: #3d3100;
-    border: 1px solid #f0d96c;
-    border-radius: 8px;
-    box-shadow:
-        0 4px 16px rgba(0, 0, 0, 0.12),
-        0 0 0 1px rgba(0, 0, 0, 0.04);
-    font-size: 12px;
-    line-height: 1.5;
-    pointer-events: auto;
-    word-wrap: break-word;
-    white-space: pre-wrap;
-
-    :root[data-theme='dark'] & {
-        background: #3d3100;
-        color: #fef3c7;
-        border-color: #78600a;
-    }
-}
-
-.note-popup-text {
-    margin: 0;
-}
-
-/* ── Note editor ── */
-
-.note-editor-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 10003;
-}
-
-.note-editor {
-    position: absolute;
-    width: 260px;
-    background: #fef9e7;
-    border: 1px solid #f0d96c;
-    border-radius: 10px;
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.16),
-        0 0 0 1px rgba(0, 0, 0, 0.04);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-
-    :root[data-theme='dark'] & {
-        background: #3d3100;
-        border-color: #78600a;
-    }
-}
-
-.note-editor-textarea {
-    width: 100%;
-    min-height: 80px;
-    max-height: 200px;
-    padding: 10px 12px;
-    border: none;
-    outline: none;
-    resize: vertical;
-    font-size: 12px;
-    font-family: inherit;
-    line-height: 1.5;
-    background: transparent;
-    color: #3d3100;
-
-    :root[data-theme='dark'] & {
-        color: #fef3c7;
-    }
-
-    &::placeholder {
-        color: #b89f4a;
-    }
-}
-
-.note-editor-actions {
-    display: flex;
-    align-items: center;
-    padding: 6px 8px;
-    gap: 6px;
-    border-top: 1px solid #f0d96c;
-
-    :root[data-theme='dark'] & {
-        border-top-color: #78600a;
-    }
-}
-
-.note-editor-spacer {
-    flex: 1;
-}
-
-.note-editor-cancel,
-.note-editor-save,
-.note-editor-delete {
-    padding: 4px 12px;
-    border: none;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.note-editor-cancel {
-    background: transparent;
-    color: #78600a;
-
-    &:hover {
-        background: rgba(0, 0, 0, 0.06);
-    }
-}
-
-.note-editor-save {
-    background: #f5a623;
-    color: #fff;
-
-    &:hover {
-        background: #e09510;
-    }
-}
-
-.note-editor-delete {
-    background: transparent;
-    color: var(--danger-color, #ef4444);
-
-    &:hover {
-        background: var(--danger-color-alpha, rgba(239, 68, 68, 0.1));
-    }
 }
 </style>

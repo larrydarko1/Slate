@@ -1,4 +1,8 @@
 <script setup lang="ts">
+// CanvasTabs — tab bar for switching, adding, renaming, and reordering canvases.
+// Owns: tab drag-reorder, rename editing, tab context menu, zoom controls.
+// Does NOT own: canvas state (useCanvases), spreadsheet data (useSpreadsheet).
+
 import { inject, nextTick, ref, computed } from 'vue';
 import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';
 import { MAX_CANVASES, createDefaultCanvas } from '../types/spreadsheet';

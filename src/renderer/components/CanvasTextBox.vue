@@ -1,4 +1,8 @@
 <script setup lang="ts">
+// CanvasTextBox — renders a single text box on the canvas with drag/resize and inline editing.
+// Owns: text box positioning, resizing, inline text editing, selection state.
+// Does NOT own: text box CRUD (useTextBoxes), drag/resize math (useDragResize).
+
 import { computed, inject, nextTick, ref, type PropType } from 'vue';
 import type { TextBox } from '../types/spreadsheet';
 import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';

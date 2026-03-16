@@ -1,4 +1,8 @@
 <script setup lang="ts">
+// ChartConfigPanel — side panel for configuring chart type, data sources, and options.
+// Owns: chart type selector, data source ref editing, option toggles.
+// Does NOT own: chart rendering (CanvasChart), chart data resolution (useChartData).
+
 import { inject, type PropType } from 'vue';
 import type { ChartObject } from '../../types/spreadsheet';
 import { SPREADSHEET_KEY } from '../../composables/useSpreadsheet';

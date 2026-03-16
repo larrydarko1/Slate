@@ -1,4 +1,8 @@
 <script setup lang="ts">
+// FormulaBar — displays and edits the active cell's value/formula with syntax highlighting.
+// Owns: cell name display, formula input, type/format selectors, formula token coloring.
+// Does NOT own: formula evaluation (engine/formula.ts), cell state (useCells).
+
 import { computed, inject, ref, watch } from 'vue';
 import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';
 import { indexToColumnLetter } from '../types/spreadsheet';

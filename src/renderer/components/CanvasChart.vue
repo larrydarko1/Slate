@@ -1,4 +1,8 @@
 <script setup lang="ts">
+// CanvasChart — renders a single chart on the canvas with drag/resize handles.
+// Owns: chart positioning, resizing, selection state, config panel toggle.
+// Does NOT own: chart data resolution (useChartData), chart rendering (vue-chartjs).
+
 import { computed, inject, toRef, type PropType } from 'vue';
 import type { ChartObject } from '../types/spreadsheet';
 import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';
