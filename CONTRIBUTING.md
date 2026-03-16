@@ -19,19 +19,19 @@ Thank you for your interest in contributing to Slate! This guide will help you g
 
 1. **Fork** the repository
 2. **Create a branch** from `main`:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+    ```bash
+    git checkout -b feature/your-feature-name
+    ```
 3. **Make your changes** — follow the coding style of the project
 4. **Test your changes**:
-   ```bash
-   npm run test:run  # run tests
-   npm run dev       # manual testing
-   ```
-5. **Commit** with a clear message:
-   ```bash
-   git commit -m "feat: add your feature description"
-   ```
+    ```bash
+    npm test     # run tests
+    npm run dev  # manual testing
+    ```
+5. **Commit** using [Conventional Commits](https://www.conventionalcommits.org/) — commitlint enforces this via a git hook:
+    ```bash
+    git commit -m "feat: add your feature description"
+    ```
 6. **Push** and open a **Pull Request** against `main`
 
 ## Development Setup
@@ -45,7 +45,7 @@ npm run dev
 
 ## Commit Message Convention
 
-We loosely follow [Conventional Commits](https://www.conventionalcommits.org/):
+We enforce [Conventional Commits](https://www.conventionalcommits.org/) via **commitlint** (git hook):
 
 - `feat:` — new feature
 - `fix:` — bug fix
@@ -57,19 +57,26 @@ We loosely follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ## Code Style
 
-- **TypeScript** for all source files
+- **TypeScript** (strict mode) for all source files — no `any` unless justified with a comment
 - **Vue 3 Composition API** with `<script setup>`
-- **SCSS** for styling
-- Use descriptive variable and function names
-- Keep components focused and composable
+- **SCSS** for styling, CSS variables for theming
+- Single quotes, 4-space indent, 120 char line width, trailing commas (enforced by Prettier)
+- ESLint flat config with `typescript-eslint` + `eslint-plugin-vue` + `eslint-config-prettier`
+- **Git hooks** (Husky): `pre-commit` runs lint-staged (ESLint + Prettier), `commit-msg` runs commitlint
 
 ## Pull Request Guidelines
 
 - Keep PRs focused — one feature or fix per PR
 - Provide a clear description of what changed and why
-- Link related issues (e.g., `Closes # 123`)
-- Ensure the app builds without errors: `vue-tsc -b && vite build`
-- Ensure tests pass: `npm run test:run`
+- Link related issues (e.g., `Closes #123`)
+- Ensure the full pipeline passes before submitting:
+    ```bash
+    npm run lint
+    npm run format:check
+    npx vue-tsc -b
+    npm run build
+    npm test
+    ```
 
 ## Questions?
 
