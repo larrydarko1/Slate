@@ -2,7 +2,7 @@
 // Owns: BrowserWindow lifecycle, IPC handlers, file I/O, menu, single-instance lock.
 // Does NOT own: spreadsheet logic (src/renderer), formula engine (src/renderer/engine).
 
-import { app, BrowserWindow, ipcMain, dialog, shell, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Menu, screen } from 'electron';
 import path from 'path';
 import fs from 'fs/promises';
 import { existsSync, writeFileSync, renameSync, unlinkSync } from 'fs';
@@ -43,11 +43,13 @@ function createWindow(): void {
             ? path.join(__dirname, '../../build/icon.icns')
             : path.join(__dirname, '../../build/icon.png');
 
+    const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
+
     mainWindow = new BrowserWindow({
-        width: 1400,
-        height: 900,
-        minWidth: 1000,
-        minHeight: 700,
+        width: Math.round(sw * 0.9),
+        height: Math.round(sh * 0.9),
+        minWidth: Math.round(sw * 0.45),
+        minHeight: Math.round(sh * 0.5),
         icon: iconPath,
         webPreferences: {
             preload: path.join(__dirname, '../preload/index.mjs'),
@@ -57,7 +59,7 @@ function createWindow(): void {
             spellcheck: true,
         },
         backgroundColor: '#1a1a1a',
-        titleBarStyle: 'hiddenInset',
+        title: '',
         show: false,
     });
 

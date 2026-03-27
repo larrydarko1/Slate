@@ -5,7 +5,6 @@
 
 import { provide, onMounted } from 'vue';
 import { useSpreadsheet, SPREADSHEET_KEY } from './composables/useSpreadsheet';
-import TitleBar from './components/TitleBar.vue';
 import Toolbar from './components/Toolbar.vue';
 import FormulaBar from './components/FormulaBar.vue';
 import CanvasWorkspace from './components/CanvasWorkspace.vue';
@@ -84,7 +83,6 @@ onMounted(() => {
 
 <template>
     <div class="app-shell" @keydown="handleKeydown">
-        <TitleBar />
         <Toolbar
             @add-table="ss.addTable()"
             @add-text-box="ss.addTextBox()"
