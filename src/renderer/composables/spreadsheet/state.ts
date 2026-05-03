@@ -70,6 +70,7 @@ export function createState() {
     const formulaRefs = ref<FormulaRef[]>([]);
     const canUndo = ref(false);
     const canRedo = ref(false);
+    const isDirty = ref(false);
     const chartSelectionMode = ref<string | null>(null);
     const chartSelectionActive = computed(() => chartSelectionMode.value !== null);
     const currentFilePath = ref<string | null>(null);
@@ -94,6 +95,7 @@ export function createState() {
         formulaRefs,
         canUndo,
         canRedo,
+        isDirty,
         chartSelectionMode,
         chartSelectionActive,
         currentFilePath,

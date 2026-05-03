@@ -137,6 +137,7 @@ export function useSpreadsheet() {
         formulaRefs: state.formulaRefs,
         canUndo: state.canUndo,
         canRedo: state.canRedo,
+        isDirty: state.isDirty,
         chartSelectionMode: state.chartSelectionMode,
         chartSelectionActive: state.chartSelectionActive,
 

@@ -223,6 +223,9 @@ function ctxDelete() {
 
         <!-- Zoom controls -->
         <div class="canvas-tabs-spacer"></div>
+        <span v-if="ss.isDirty.value" class="unsaved-message" title="You have unsaved changes (⌘S to save)"
+            >Unsaved changes</span
+        >
         <div class="zoom-controls">
             <button
                 class="zoom-btn"
@@ -433,7 +436,7 @@ function ctxDelete() {
     align-items: center;
     gap: 2px;
     flex-shrink: 0;
-    margin-right: 2px;
+    margin-right: 8px;
 }
 
 .zoom-btn {
@@ -526,6 +529,39 @@ function ctxDelete() {
                 background: $danger-color-alpha;
             }
         }
+    }
+}
+
+.unsaved-message {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 0 9px;
+    height: 22px;
+    border-radius: 11px;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: #b45309;
+    flex-shrink: 0;
+    margin-right: 8px;
+    cursor: default;
+    -webkit-app-region: no-drag;
+
+    [data-theme='dark'] & {
+        background: rgba(245, 158, 11, 0.12);
+        border-color: rgba(245, 158, 11, 0.3);
+        color: #fbbf24;
+    }
+
+    &::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #f59e0b;
+        flex-shrink: 0;
     }
 }
 </style>

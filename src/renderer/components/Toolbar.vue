@@ -647,7 +647,6 @@ function applyTheme() {
         </template>
 
         <div class="toolbar-spacer"></div>
-
         <div class="toolbar-group">
             <button class="tb theme-toggle" :title="isDark ? 'Light mode' : 'Dark mode'" @click="toggleTheme">
                 <!-- Sun icon (shown in dark mode) -->

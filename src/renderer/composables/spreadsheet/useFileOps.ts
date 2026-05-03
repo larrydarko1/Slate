@@ -146,6 +146,7 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps) {
             state.activeTextBoxId.value = null;
             state.activeChartId.value = null;
             state.isEditing.value = false;
+            state.isDirty.value = false;
             deps.recalculate();
             return true;
         } catch (error) {
@@ -175,6 +176,7 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps) {
 
         if (result.success) {
             state.currentFilePath.value = targetPath;
+            state.isDirty.value = false;
             return true;
         } else {
             alert(`Failed to save file: ${result.error}`);
@@ -227,6 +229,7 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps) {
         state.activeChartId.value = null;
         state.isEditing.value = false;
         state.currentFilePath.value = null;
+        state.isDirty.value = false;
         state.counters.maxZ = 0;
         state.counters.tableCount = 0;
         state.counters.canvasCount = 1;

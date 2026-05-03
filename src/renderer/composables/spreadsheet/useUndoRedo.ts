@@ -37,6 +37,7 @@ export function createUndoRedo(state: SpreadsheetCoreState, deps: UndoRedoDeps) 
         redoStack.length = 0;
         state.canUndo.value = undoStack.length > 0;
         state.canRedo.value = false;
+        state.isDirty.value = true;
         queueMicrotask(() => {
             undoNesting = 0;
         });
