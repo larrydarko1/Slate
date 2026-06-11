@@ -67,10 +67,14 @@ function onGridToggle(e: Event): void {
 </script>
 
 <template>
-    <div class="chart-config" @mousedown.stop>
+    <div
+        class="chart-config"
+        @mousedown.stop>
         <div class="config-row">
             <label>Type</label>
-            <select :value="chart.chartType" @change="onTypeChange">
+            <select
+                :value="chart.chartType"
+                @change="onTypeChange">
                 <option value="bar">Bar</option>
                 <option value="line">Line</option>
                 <option value="pie">Pie</option>
@@ -88,23 +92,22 @@ function onGridToggle(e: Event): void {
                 class="ref-field"
                 :class="{ picking: ss.chartSelectionMode.value === 'labels' }"
                 :style="refFieldStyle('labels')"
-                @click="onRefFieldClick('labels')"
-            >
-                <span class="ref-color-dot" :style="{ background: '#94a3b8' }"></span>
+                @click="onRefFieldClick('labels')">
+                <span
+                    class="ref-color-dot"
+                    :style="{ background: '#94a3b8' }"></span>
                 <input
                     class="ref-input"
                     :value="chart.dataSource?.labelRef?.refString ?? ''"
                     placeholder="Click here, then select cells…"
                     @input="onRefInput('labels', $event)"
                     @focus="onRefFieldClick('labels')"
-                    @mousedown.stop
-                />
+                    @mousedown.stop />
                 <button
                     v-if="chart.dataSource?.labelRef"
                     class="ref-clear"
                     title="Clear"
-                    @click.stop="clearRef('labels')"
-                >
+                    @click.stop="clearRef('labels')">
                     ×
                 </button>
             </div>
@@ -114,7 +117,12 @@ function onGridToggle(e: Event): void {
         <div class="config-section">
             <div class="config-section-header">
                 <span>Series</span>
-                <button class="add-series-btn" title="Add series" @click="ss.addChartSeries()">+</button>
+                <button
+                    class="add-series-btn"
+                    title="Add series"
+                    @click="ss.addChartSeries()"
+                    >+</button
+                >
             </div>
             <div
                 v-for="(sref, i) in chart.dataSource?.seriesRefs ?? []"
@@ -122,20 +130,27 @@ function onGridToggle(e: Event): void {
                 class="ref-field"
                 :class="{ picking: ss.chartSelectionMode.value === 'series:' + i }"
                 :style="refFieldStyle('series:' + i)"
-                @click="onRefFieldClick('series:' + i)"
-            >
-                <span class="ref-color-dot" :style="{ background: seriesColor(i) }"></span>
+                @click="onRefFieldClick('series:' + i)">
+                <span
+                    class="ref-color-dot"
+                    :style="{ background: seriesColor(i) }"></span>
                 <input
                     class="ref-input"
                     :value="sref.refString"
                     placeholder="Click here, then select cells…"
                     @input="onRefInput('series:' + i, $event)"
                     @focus="onRefFieldClick('series:' + i)"
-                    @mousedown.stop
-                />
-                <button class="ref-clear" title="Remove series" @click.stop="ss.removeChartSeries(i)">×</button>
+                    @mousedown.stop />
+                <button
+                    class="ref-clear"
+                    title="Remove series"
+                    @click.stop="ss.removeChartSeries(i)"
+                    >×</button
+                >
             </div>
-            <div v-if="!chart.dataSource?.seriesRefs?.length" class="ref-empty-hint">
+            <div
+                v-if="!chart.dataSource?.seriesRefs?.length"
+                class="ref-empty-hint">
                 Click <strong>+</strong> to add a data series
             </div>
         </div>
@@ -143,12 +158,17 @@ function onGridToggle(e: Event): void {
         <!-- Options -->
         <div class="config-row">
             <label>Header</label>
-            <input type="checkbox" :checked="chart.dataSource?.useHeader ?? true" @change="onHeaderToggle" />
+            <input
+                type="checkbox"
+                :checked="chart.dataSource?.useHeader ?? true"
+                @change="onHeaderToggle" />
             <span class="config-hint">First row is header</span>
         </div>
         <div class="config-row">
             <label>Legend</label>
-            <select :value="chart.showLegend ? chart.legendPosition : 'off'" @change="onLegendChange">
+            <select
+                :value="chart.showLegend ? chart.legendPosition : 'off'"
+                @change="onLegendChange">
                 <option value="off">Hidden</option>
                 <option value="top">Top</option>
                 <option value="bottom">Bottom</option>
@@ -158,7 +178,10 @@ function onGridToggle(e: Event): void {
         </div>
         <div class="config-row">
             <label>Grid</label>
-            <input type="checkbox" :checked="chart.showGrid" @change="onGridToggle" />
+            <input
+                type="checkbox"
+                :checked="chart.showGrid"
+                @change="onGridToggle" />
         </div>
     </div>
 </template>

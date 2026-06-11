@@ -33,15 +33,19 @@ defineExpose({ open, close });
 
 <template>
     <Teleport to="body">
-        <div v-if="visible" class="context-menu-overlay" @mousedown.self="close">
-            <div class="context-menu" :style="{ left: pos.x + 'px', top: pos.y + 'px' }">
+        <div
+            v-if="visible"
+            class="context-menu-overlay"
+            @mousedown.self="close">
+            <div
+                class="context-menu"
+                :style="{ left: pos.x + 'px', top: pos.y + 'px' }">
                 <div
                     v-for="item in items"
                     :key="item.label"
                     class="context-menu-item"
                     :class="{ separator: item.separator, danger: item.danger }"
-                    @click.stop="onItemClick(item)"
-                >
+                    @click.stop="onItemClick(item)">
                     <template v-if="!item.separator">{{ item.label }}</template>
                 </div>
             </div>

@@ -58,7 +58,7 @@ export function useTableCellRendering(
 
     function cellClasses(ci: number, ri: number) {
         return {
-            selected: isSelected(ci, ri),
+            'selected': isSelected(ci, ri),
             'in-selection': ss.isInSelection(table.value.id, ci, ri) && !isSelected(ci, ri),
             'in-fill': isCellInFillPreview(ci, ri),
             'header-row': ri < table.value.headerRows,
@@ -74,8 +74,8 @@ export function useTableCellRendering(
         return {
             'formula-result': cell.formula != null,
             'error-value': typeof cell.computed === 'string' && cell.computed.startsWith('#'),
-            bold: cell.format?.bold,
-            italic: cell.format?.italic,
+            'bold': cell.format?.bold,
+            'italic': cell.format?.italic,
             'type-integer': cellType === 'integer',
             'type-float': cellType === 'float',
             'type-percent': cellType === 'percent',

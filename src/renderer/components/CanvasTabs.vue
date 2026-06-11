@@ -147,17 +147,19 @@ function ctxDelete() {
 
 <template>
     <div class="canvas-tabs">
-        <div ref="scrollRef" class="canvas-tabs-scroll">
+        <div
+            ref="scrollRef"
+            class="canvas-tabs-scroll">
             <div
                 v-for="(canvas, index) in ss.canvases.value"
                 :key="canvas.id"
                 class="canvas-tab"
                 :class="{
-                    active: canvas.id === ss.activeCanvasId.value,
+                    'active': canvas.id === ss.activeCanvasId.value,
                     'formula-source': formulaSourceCanvasId != null && canvas.id === formulaSourceCanvasId,
                     'drop-before': dropTarget === index && dropSide === 'before',
                     'drop-after': dropTarget === index && dropSide === 'after',
-                    dragging: dragIndex === index,
+                    'dragging': dragIndex === index,
                 }"
                 draggable="true"
                 @dragstart="onDragStart($event, index)"
@@ -167,8 +169,7 @@ function ctxDelete() {
                 @dragend="onDragEnd"
                 @click="ss.switchCanvas(canvas.id)"
                 @dblclick="startRename(canvas.id, canvas.name)"
-                @contextmenu.prevent="onContextMenu($event, canvas.id)"
-            >
+                @contextmenu.prevent="onContextMenu($event, canvas.id)">
                 <template v-if="renamingId === canvas.id">
                     <input
                         ref="renameInputRef"
@@ -177,8 +178,7 @@ function ctxDelete() {
                         @blur="commitRename"
                         @keydown.enter.prevent="commitRename"
                         @keydown.escape.prevent="cancelRename"
-                        @click.stop
-                    />
+                        @click.stop />
                 </template>
                 <template v-else>
                     <span class="canvas-tab-label">{{ canvas.name }}</span>
@@ -186,15 +186,17 @@ function ctxDelete() {
                         v-if="ss.canvases.value.length > 1"
                         class="canvas-tab-close"
                         title="Remove canvas"
-                        @click.stop="confirmRemove(canvas.id, canvas.name)"
-                    >
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        @click.stop="confirmRemove(canvas.id, canvas.name)">
+                        <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 10 10"
+                            fill="none">
                             <path
                                 d="M2.5 2.5l5 5M7.5 2.5l-5 5"
                                 stroke="currentColor"
                                 stroke-width="1.3"
-                                stroke-linecap="round"
-                            />
+                                stroke-linecap="round" />
                         </svg>
                     </button>
                 </template>
@@ -204,16 +206,26 @@ function ctxDelete() {
             class="canvas-tab-add"
             :disabled="ss.canvases.value.length >= maxCanvases"
             :title="ss.canvases.value.length >= maxCanvases ? `Maximum ${maxCanvases} canvases` : 'Add canvas'"
-            @click="ss.addCanvas()"
-        >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            @click="ss.addCanvas()">
+            <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none">
+                <path
+                    d="M6 2v8M2 6h8"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round" />
             </svg>
         </button>
 
         <!-- Zoom controls -->
         <div class="canvas-tabs-spacer"></div>
-        <span v-if="ss.isDirty.value" class="unsaved-message" title="You have unsaved changes (⌘S to save)"
+        <span
+            v-if="ss.isDirty.value"
+            class="unsaved-message"
+            title="You have unsaved changes (⌘S to save)"
             >Unsaved changes</span
         >
         <div class="zoom-controls">
@@ -221,16 +233,40 @@ function ctxDelete() {
                 class="zoom-btn"
                 title="Zoom out (⌘−)"
                 :disabled="ss.canvasZoom.value <= 0.25"
-                @click="ss.zoomOut()"
-            >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M2.5 6h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                @click="ss.zoomOut()">
+                <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="none">
+                    <path
+                        d="M2.5 6h7"
+                        stroke="currentColor"
+                        stroke-width="1.4"
+                        stroke-linecap="round" />
                 </svg>
             </button>
-            <button class="zoom-label" title="Reset zoom (⌘0)" @click="ss.resetZoom()">{{ zoomLabel }}</button>
-            <button class="zoom-btn" title="Zoom in (⌘+)" :disabled="ss.canvasZoom.value >= 4" @click="ss.zoomIn()">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M6 2.5v7M2.5 6h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            <button
+                class="zoom-label"
+                title="Reset zoom (⌘0)"
+                @click="ss.resetZoom()"
+                >{{ zoomLabel }}</button
+            >
+            <button
+                class="zoom-btn"
+                title="Zoom in (⌘+)"
+                :disabled="ss.canvasZoom.value >= 4"
+                @click="ss.zoomIn()">
+                <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="none">
+                    <path
+                        d="M6 2.5v7M2.5 6h7"
+                        stroke="currentColor"
+                        stroke-width="1.4"
+                        stroke-linecap="round" />
                 </svg>
             </button>
         </div>
@@ -241,18 +277,21 @@ function ctxDelete() {
                 v-if="contextMenu"
                 class="canvas-ctx-menu"
                 :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
-                @click.stop
-            >
+                @click.stop>
                 <button @click="ctxRename">Rename</button>
                 <button @click="ctxDuplicate">Duplicate</button>
-                <button v-if="ss.canvases.value.length > 1" class="danger" @click="ctxDelete">Delete</button>
+                <button
+                    v-if="ss.canvases.value.length > 1"
+                    class="danger"
+                    @click="ctxDelete"
+                    >Delete</button
+                >
             </div>
             <div
                 v-if="contextMenu"
                 class="canvas-ctx-backdrop"
                 @click="contextMenu = null"
-                @contextmenu.prevent="contextMenu = null"
-            ></div>
+                @contextmenu.prevent="contextMenu = null"></div>
         </Teleport>
     </div>
 </template>

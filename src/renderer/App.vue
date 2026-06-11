@@ -78,7 +78,9 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="app-shell" @keydown="handleKeydown">
+    <div
+        class="app-shell"
+        @keydown="handleKeydown">
         <Toolbar
             @add-table="ss.addTable()"
             @add-text-box="ss.addTextBox()"
@@ -87,8 +89,7 @@ onMounted(() => {
             @open-file="ss.openFile"
             @save-file="ss.saveFile"
             @merge-cells="ss.mergeSelection"
-            @unmerge-cells="ss.unmergeSelection"
-        />
+            @unmerge-cells="ss.unmergeSelection" />
         <FormulaBar />
         <CanvasWorkspace />
         <CanvasTabs />

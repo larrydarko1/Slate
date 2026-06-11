@@ -139,14 +139,26 @@ function onTab() {
     <div class="formula-bar">
         <div class="cell-ref">
             <span v-if="activeCell">{{ cellRefLabel }}</span>
-            <span v-else class="cell-ref-empty">—</span>
+            <span
+                v-else
+                class="cell-ref-empty"
+                >—</span
+            >
         </div>
-        <div v-if="activeCell" class="type-badge" :class="typeBadgeClass" :title="typeLabel">
+        <div
+            v-if="activeCell"
+            class="type-badge"
+            :class="typeBadgeClass"
+            :title="typeLabel">
             {{ typeShortLabel }}
         </div>
         <div class="formula-separator"></div>
         <div class="formula-input-wrapper">
-            <span v-if="activeCell && hasFormula" class="fx-label">ƒx</span>
+            <span
+                v-if="activeCell && hasFormula"
+                class="fx-label"
+                >ƒx</span
+            >
             <div class="formula-input-container">
                 <input
                     ref="inputRef"
@@ -159,11 +171,15 @@ function onTab() {
                     @input="onInput"
                     @keydown.enter.prevent="onEnter"
                     @keydown.escape.prevent="onEscape"
-                    @keydown.tab.prevent="onTab"
-                />
-                <div v-if="showRichOverlay" class="formula-rich-overlay" aria-hidden="true">
+                    @keydown.tab.prevent="onTab" />
+                <div
+                    v-if="showRichOverlay"
+                    class="formula-rich-overlay"
+                    aria-hidden="true">
                     <span class="formula-eq">=</span>
-                    <template v-for="(token, i) in formulaTokens" :key="i">
+                    <template
+                        v-for="(token, i) in formulaTokens"
+                        :key="i">
                         <span
                             v-if="token.isRef"
                             class="ref-badge"
@@ -174,7 +190,11 @@ function onTab() {
                             }"
                             >{{ token.text }}</span
                         >
-                        <span v-else class="formula-text">{{ token.text }}</span>
+                        <span
+                            v-else
+                            class="formula-text"
+                            >{{ token.text }}</span
+                        >
                     </template>
                 </div>
             </div>
@@ -183,17 +203,28 @@ function onTab() {
                 :class="{ active: ss.formulaMode.value }"
                 :disabled="!activeCell"
                 title="Point-to-insert mode — click cells to add references to formula"
-                @click.stop="ss.toggleFormulaMode()"
-            >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3" />
-                    <circle cx="7" cy="7" r="1.5" fill="currentColor" />
+                @click.stop="ss.toggleFormulaMode()">
+                <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none">
+                    <circle
+                        cx="7"
+                        cy="7"
+                        r="5.5"
+                        stroke="currentColor"
+                        stroke-width="1.3" />
+                    <circle
+                        cx="7"
+                        cy="7"
+                        r="1.5"
+                        fill="currentColor" />
                     <path
                         d="M7 1.5v2M7 10.5v2M1.5 7h2M10.5 7h2"
                         stroke="currentColor"
                         stroke-width="1.3"
-                        stroke-linecap="round"
-                    />
+                        stroke-linecap="round" />
                 </svg>
             </button>
         </div>

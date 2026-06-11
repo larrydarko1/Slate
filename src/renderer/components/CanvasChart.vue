@@ -81,18 +81,27 @@ function onTitleInput(e: Event): void {
 </script>
 
 <template>
-    <div class="canvas-chart" :class="{ active: isActive }" :style="boxStyle" @mousedown.stop="onMouseDown">
+    <div
+        class="canvas-chart"
+        :class="{ active: isActive }"
+        :style="boxStyle"
+        @mousedown.stop="onMouseDown">
         <!-- Chart title (editable when active) -->
-        <div v-if="chart.title || isActive" class="chart-title-bar">
+        <div
+            v-if="chart.title || isActive"
+            class="chart-title-bar">
             <input
                 v-if="isActive"
                 class="chart-title-input"
                 :value="chart.title"
                 placeholder="Chart title"
                 @input="onTitleInput"
-                @mousedown.stop
-            />
-            <span v-else class="chart-title-text">{{ chart.title }}</span>
+                @mousedown.stop />
+            <span
+                v-else
+                class="chart-title-text"
+                >{{ chart.title }}</span
+            >
         </div>
 
         <!-- Chart body -->
@@ -102,9 +111,10 @@ function onTitleInput(e: Event): void {
                 v-if="chartComponent && chartData"
                 :data="chartData"
                 :options="chartOptions"
-                :style="{ width: '100%', height: '100%' }"
-            />
-            <div v-else class="chart-empty">
+                :style="{ width: '100%', height: '100%' }" />
+            <div
+                v-else
+                class="chart-empty">
                 <p class="chart-empty-icon">📊</p>
                 <p class="chart-empty-text">Select a data source</p>
                 <p class="chart-empty-sub">Click a reference field, then select cells on any table</p>
@@ -112,18 +122,36 @@ function onTitleInput(e: Event): void {
         </div>
 
         <!-- Data source config (only when active) -->
-        <ChartConfigPanel v-if="isActive" :chart="chart" />
+        <ChartConfigPanel
+            v-if="isActive"
+            :chart="chart" />
 
         <!-- Resize handles (only when active) -->
         <template v-if="isActive">
-            <div class="resize-handle rh-e" @mousedown.stop.prevent="onResizeStart('e', $event)"></div>
-            <div class="resize-handle rh-s" @mousedown.stop.prevent="onResizeStart('s', $event)"></div>
-            <div class="resize-handle rh-se" @mousedown.stop.prevent="onResizeStart('se', $event)"></div>
-            <div class="resize-handle rh-w" @mousedown.stop.prevent="onResizeStart('w', $event)"></div>
-            <div class="resize-handle rh-n" @mousedown.stop.prevent="onResizeStart('n', $event)"></div>
-            <div class="resize-handle rh-nw" @mousedown.stop.prevent="onResizeStart('nw', $event)"></div>
-            <div class="resize-handle rh-ne" @mousedown.stop.prevent="onResizeStart('ne', $event)"></div>
-            <div class="resize-handle rh-sw" @mousedown.stop.prevent="onResizeStart('sw', $event)"></div>
+            <div
+                class="resize-handle rh-e"
+                @mousedown.stop.prevent="onResizeStart('e', $event)"></div>
+            <div
+                class="resize-handle rh-s"
+                @mousedown.stop.prevent="onResizeStart('s', $event)"></div>
+            <div
+                class="resize-handle rh-se"
+                @mousedown.stop.prevent="onResizeStart('se', $event)"></div>
+            <div
+                class="resize-handle rh-w"
+                @mousedown.stop.prevent="onResizeStart('w', $event)"></div>
+            <div
+                class="resize-handle rh-n"
+                @mousedown.stop.prevent="onResizeStart('n', $event)"></div>
+            <div
+                class="resize-handle rh-nw"
+                @mousedown.stop.prevent="onResizeStart('nw', $event)"></div>
+            <div
+                class="resize-handle rh-ne"
+                @mousedown.stop.prevent="onResizeStart('ne', $event)"></div>
+            <div
+                class="resize-handle rh-sw"
+                @mousedown.stop.prevent="onResizeStart('sw', $event)"></div>
         </template>
 
         <!-- Delete button -->
@@ -132,8 +160,7 @@ function onTitleInput(e: Event): void {
             class="chart-delete"
             title="Delete chart"
             @click.stop="ss.removeChart(chart.id)"
-            @mousedown.stop
-        >
+            @mousedown.stop>
             ×
         </button>
     </div>

@@ -66,33 +66,42 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 
 <template>
     <div class="toolbar-group">
-        <div ref="fontSelectorRef" class="font-selector-wrapper">
-            <button class="tb has-label font-selector-btn" title="Font family" @click="toggleFontMenu">
+        <div
+            ref="fontSelectorRef"
+            class="font-selector-wrapper">
+            <button
+                class="tb has-label font-selector-btn"
+                title="Font family"
+                @click="toggleFontMenu">
                 <span
                     class="font-selector-label"
                     :style="{ fontFamily: fmtFontFamily !== 'System Default' ? fmtFontFamily : undefined }"
                     >{{ fmtFontFamily }}</span
                 >
-                <svg class="chevron" width="8" height="8" viewBox="0 0 8 8">
+                <svg
+                    class="chevron"
+                    width="8"
+                    height="8"
+                    viewBox="0 0 8 8">
                     <path
                         d="M2 3l2 2 2-2"
                         stroke="currentColor"
                         stroke-width="1.2"
                         stroke-linecap="round"
                         stroke-linejoin="round"
-                        fill="none"
-                    />
+                        fill="none" />
                 </svg>
             </button>
-            <div v-if="fontMenuOpen" class="font-dropdown">
+            <div
+                v-if="fontMenuOpen"
+                class="font-dropdown">
                 <button
                     v-for="font in fontOptions"
                     :key="font"
                     class="font-option"
                     :class="{ active: font === fmtFontFamily }"
                     :style="{ fontFamily: font !== 'System Default' ? font : undefined }"
-                    @click="fmtSetFont(font)"
-                >
+                    @click="fmtSetFont(font)">
                     {{ font }}
                 </button>
             </div>

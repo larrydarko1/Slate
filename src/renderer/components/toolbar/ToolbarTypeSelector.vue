@@ -65,40 +65,56 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 
 <template>
     <div class="toolbar-group">
-        <div ref="typeSelectorRef" class="type-selector-wrapper">
+        <div
+            ref="typeSelectorRef"
+            class="type-selector-wrapper">
             <button
                 class="tb has-label type-selector-btn"
                 :disabled="!hasActiveCell"
                 title="Cell format type"
-                @click="toggleTypeMenu"
-            >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 3h10v2H3V3ZM3 7h6v2H3V7ZM3 11h8v2H3v-2Z" fill="currentColor" opacity="0.5" />
-                    <path d="M12 8l2 3h-4l2-3Z" fill="currentColor" />
+                @click="toggleTypeMenu">
+                <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none">
+                    <path
+                        d="M3 3h10v2H3V3ZM3 7h6v2H3V7ZM3 11h8v2H3v-2Z"
+                        fill="currentColor"
+                        opacity="0.5" />
+                    <path
+                        d="M12 8l2 3h-4l2-3Z"
+                        fill="currentColor" />
                 </svg>
                 <span>{{ currentTypeLabel }}</span>
-                <svg class="chevron" width="8" height="8" viewBox="0 0 8 8">
+                <svg
+                    class="chevron"
+                    width="8"
+                    height="8"
+                    viewBox="0 0 8 8">
                     <path
                         d="M2 3l2 2 2-2"
                         stroke="currentColor"
                         stroke-width="1.2"
                         stroke-linecap="round"
                         stroke-linejoin="round"
-                        fill="none"
-                    />
+                        fill="none" />
                 </svg>
             </button>
-            <div v-if="typeMenuOpen" class="type-dropdown">
+            <div
+                v-if="typeMenuOpen"
+                class="type-dropdown">
                 <button
                     v-for="opt in typeOptions"
                     :key="opt.value"
                     class="type-option"
                     :class="{ active: opt.value === currentCellType }"
-                    @click="setType(opt.value)"
-                >
-                    <span class="type-option-badge" :class="'badge-' + opt.value.replace('_', '-')">{{
-                        opt.short
-                    }}</span>
+                    @click="setType(opt.value)">
+                    <span
+                        class="type-option-badge"
+                        :class="'badge-' + opt.value.replace('_', '-')"
+                        >{{ opt.short }}</span
+                    >
                     <span class="type-option-label">{{ opt.label }}</span>
                 </button>
             </div>
@@ -109,36 +125,68 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
             class="tb decimal-btn"
             :disabled="!hasActiveCell || !supportsDecimals"
             title="Decrease decimal places"
-            @click="changeDecimals(-1)"
-        >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <text x="1" y="12" font-size="9" font-weight="600" fill="currentColor">.0</text>
+            @click="changeDecimals(-1)">
+            <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none">
+                <text
+                    x="1"
+                    y="12"
+                    font-size="9"
+                    font-weight="600"
+                    fill="currentColor">
+                    .0
+                </text>
                 <path
                     d="M11 5l3 3-3 3"
                     stroke="currentColor"
                     stroke-width="1.3"
                     stroke-linecap="round"
-                    stroke-linejoin="round"
-                />
-                <text x="9.5" y="12" font-size="7" font-weight="600" fill="currentColor">0</text>
+                    stroke-linejoin="round" />
+                <text
+                    x="9.5"
+                    y="12"
+                    font-size="7"
+                    font-weight="600"
+                    fill="currentColor">
+                    0
+                </text>
             </svg>
         </button>
         <button
             class="tb decimal-btn"
             :disabled="!hasActiveCell || !supportsDecimals"
             title="Increase decimal places"
-            @click="changeDecimals(1)"
-        >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <text x="1" y="12" font-size="9" font-weight="600" fill="currentColor">.00</text>
+            @click="changeDecimals(1)">
+            <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none">
+                <text
+                    x="1"
+                    y="12"
+                    font-size="9"
+                    font-weight="600"
+                    fill="currentColor">
+                    .00
+                </text>
                 <path
                     d="M14 5l-3 3 3 3"
                     stroke="currentColor"
                     stroke-width="1.3"
                     stroke-linecap="round"
-                    stroke-linejoin="round"
-                />
-                <text x="10" y="12" font-size="7" font-weight="600" fill="currentColor">0</text>
+                    stroke-linejoin="round" />
+                <text
+                    x="10"
+                    y="12"
+                    font-size="7"
+                    font-weight="600"
+                    fill="currentColor">
+                    0
+                </text>
             </svg>
         </button>
     </div>

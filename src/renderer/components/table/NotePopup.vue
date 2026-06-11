@@ -19,8 +19,7 @@ defineEmits<{
             class="note-popup"
             :style="{ left: x + 'px', top: y + 'px' }"
             @mouseenter="$emit('mouseenter')"
-            @mouseleave="$emit('mouseleave')"
-        >
+            @mouseleave="$emit('mouseleave')">
             <div class="note-popup-text">{{ text }}</div>
         </div>
     </Teleport>

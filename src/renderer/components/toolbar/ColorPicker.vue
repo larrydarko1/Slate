@@ -13,8 +13,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-    apply: [color: string];
-    clear: [];
+    'apply': [color: string];
+    'clear': [];
     'update:open': [value: boolean];
 }>();
 
@@ -42,44 +42,73 @@ function onCustomColor(e: Event) {
 
 <template>
     <div class="color-btn-wrapper">
-        <button class="tb color-btn" :disabled="disabled" :title="label" @click="onQuickApply">
+        <button
+            class="tb color-btn"
+            :disabled="disabled"
+            :title="label"
+            @click="onQuickApply">
             <slot name="icon" />
-            <span class="color-indicator" :style="{ backgroundColor: lastColor }"></span>
+            <span
+                class="color-indicator"
+                :style="{ backgroundColor: lastColor }"></span>
         </button>
-        <button class="tb color-chevron" :disabled="disabled" @click.stop="toggleDropdown">
-            <svg width="8" height="8" viewBox="0 0 8 8">
+        <button
+            class="tb color-chevron"
+            :disabled="disabled"
+            @click.stop="toggleDropdown">
+            <svg
+                width="8"
+                height="8"
+                viewBox="0 0 8 8">
                 <path
                     d="M2 3l2 2 2-2"
                     stroke="currentColor"
                     stroke-width="1.2"
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                    fill="none"
-                />
+                    fill="none" />
             </svg>
         </button>
-        <div v-if="open" class="color-dropdown dropdown-anchor-right" @click.stop>
+        <div
+            v-if="open"
+            class="color-dropdown dropdown-anchor-right"
+            @click.stop>
             <div class="color-dropdown-header">{{ label }}</div>
             <div class="color-grid">
                 <button
                     v-for="c in palette"
                     :key="c"
                     class="color-swatch"
-                    :class="{ active: c === currentColor, 'is-light': isLightColor(c) }"
+                    :class="{ 'active': c === currentColor, 'is-light': isLightColor(c) }"
                     :style="{ backgroundColor: c }"
                     :title="c"
-                    @click="emit('apply', c)"
-                ></button>
+                    @click="emit('apply', c)"></button>
             </div>
-            <button class="color-clear-btn" @click="emit('clear')">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+            <button
+                class="color-clear-btn"
+                @click="emit('clear')">
+                <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="none">
+                    <path
+                        d="M2 2l8 8M10 2l-8 8"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                        stroke-linecap="round" />
                 </svg>
                 <span>{{ clearLabel }}</span>
             </button>
-            <div v-if="showCustom" class="color-custom-row">
+            <div
+                v-if="showCustom"
+                class="color-custom-row">
                 <label class="color-custom-label">Custom:</label>
-                <input type="color" class="color-custom-input" :value="lastColor" @input="onCustomColor($event)" />
+                <input
+                    type="color"
+                    class="color-custom-input"
+                    :value="lastColor"
+                    @input="onCustomColor($event)" />
             </div>
             <!-- Extra controls slot (e.g. border width/radius) -->
             <slot name="extra" />

@@ -10,9 +10,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-    save: [text: string];
-    delete: [];
-    cancel: [];
+    'save': [text: string];
+    'delete': [];
+    'cancel': [];
     'update:text': [text: string];
 }>();
 
@@ -28,21 +28,38 @@ watch(
 
 <template>
     <Teleport to="body">
-        <div v-if="visible" class="note-editor-overlay" @mousedown.self="emit('cancel')">
-            <div class="note-editor" :style="{ left: x + 'px', top: y + 'px' }">
+        <div
+            v-if="visible"
+            class="note-editor-overlay"
+            @mousedown.self="emit('cancel')">
+            <div
+                class="note-editor"
+                :style="{ left: x + 'px', top: y + 'px' }">
                 <textarea
                     ref="textareaRef"
                     class="note-editor-textarea"
                     :value="text"
                     placeholder="Type a note…"
                     @input="emit('update:text', ($event.target as HTMLTextAreaElement).value)"
-                    @keydown.escape.prevent="emit('cancel')"
-                ></textarea>
+                    @keydown.escape.prevent="emit('cancel')"></textarea>
                 <div class="note-editor-actions">
-                    <button v-if="hasExisting" class="note-editor-delete" @click="emit('delete')">Delete</button>
+                    <button
+                        v-if="hasExisting"
+                        class="note-editor-delete"
+                        @click="emit('delete')"
+                        >Delete</button
+                    >
                     <div class="note-editor-spacer"></div>
-                    <button class="note-editor-cancel" @click="emit('cancel')">Cancel</button>
-                    <button class="note-editor-save" @click="emit('save', text)">Save</button>
+                    <button
+                        class="note-editor-cancel"
+                        @click="emit('cancel')"
+                        >Cancel</button
+                    >
+                    <button
+                        class="note-editor-save"
+                        @click="emit('save', text)"
+                        >Save</button
+                    >
                 </div>
             </div>
         </div>

@@ -94,10 +94,12 @@ function finishTextEdit() {
         :class="{ active: isActive, editing: isTextEditing }"
         :style="boxStyle"
         @mousedown.stop="onMouseDown"
-        @dblclick.stop="startTextEdit"
-    >
+        @dblclick.stop="startTextEdit">
         <!-- Text content -->
-        <div v-if="!isTextEditing" class="textbox-display" :style="textStyle">
+        <div
+            v-if="!isTextEditing"
+            class="textbox-display"
+            :style="textStyle">
             {{ textBox.text || (isActive ? '' : '') }}
         </div>
 
@@ -111,28 +113,42 @@ function finishTextEdit() {
             @input="onInput"
             @blur="finishTextEdit"
             @keydown.escape.prevent="finishTextEdit"
-            @mousedown.stop
-        ></textarea>
+            @mousedown.stop></textarea>
 
         <!-- Placeholder when empty and active -->
         <div
             v-if="isActive && !isTextEditing && !textBox.text"
             class="textbox-placeholder"
-            :style="{ textAlign: textBox.align }"
-        >
+            :style="{ textAlign: textBox.align }">
             Type something…
         </div>
 
         <!-- Resize handles (only when active) -->
         <template v-if="isActive && !isTextEditing">
-            <div class="resize-handle rh-e" @mousedown.stop.prevent="onResizeStart('e', $event)"></div>
-            <div class="resize-handle rh-s" @mousedown.stop.prevent="onResizeStart('s', $event)"></div>
-            <div class="resize-handle rh-se" @mousedown.stop.prevent="onResizeStart('se', $event)"></div>
-            <div class="resize-handle rh-w" @mousedown.stop.prevent="onResizeStart('w', $event)"></div>
-            <div class="resize-handle rh-n" @mousedown.stop.prevent="onResizeStart('n', $event)"></div>
-            <div class="resize-handle rh-nw" @mousedown.stop.prevent="onResizeStart('nw', $event)"></div>
-            <div class="resize-handle rh-ne" @mousedown.stop.prevent="onResizeStart('ne', $event)"></div>
-            <div class="resize-handle rh-sw" @mousedown.stop.prevent="onResizeStart('sw', $event)"></div>
+            <div
+                class="resize-handle rh-e"
+                @mousedown.stop.prevent="onResizeStart('e', $event)"></div>
+            <div
+                class="resize-handle rh-s"
+                @mousedown.stop.prevent="onResizeStart('s', $event)"></div>
+            <div
+                class="resize-handle rh-se"
+                @mousedown.stop.prevent="onResizeStart('se', $event)"></div>
+            <div
+                class="resize-handle rh-w"
+                @mousedown.stop.prevent="onResizeStart('w', $event)"></div>
+            <div
+                class="resize-handle rh-n"
+                @mousedown.stop.prevent="onResizeStart('n', $event)"></div>
+            <div
+                class="resize-handle rh-nw"
+                @mousedown.stop.prevent="onResizeStart('nw', $event)"></div>
+            <div
+                class="resize-handle rh-ne"
+                @mousedown.stop.prevent="onResizeStart('ne', $event)"></div>
+            <div
+                class="resize-handle rh-sw"
+                @mousedown.stop.prevent="onResizeStart('sw', $event)"></div>
         </template>
 
         <!-- Delete button -->
@@ -141,8 +157,7 @@ function finishTextEdit() {
             class="textbox-delete"
             title="Delete text box"
             @click.stop="ss.removeTextBox(textBox.id)"
-            @mousedown.stop
-        >
+            @mousedown.stop>
             ×
         </button>
     </div>
