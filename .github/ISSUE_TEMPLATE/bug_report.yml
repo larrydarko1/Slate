@@ -36,7 +36,9 @@ body:
       attributes:
           label: Operating system
           options:
-              - macOS (Apple Silicon)
-              - Linux
+              - Linux (official release build)
+              - Linux (built from source)
+              - macOS (built from source — unsupported, best effort)
+              - Other (built from source — unsupported, best effort)
       validations:
           required: true

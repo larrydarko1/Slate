@@ -2,7 +2,10 @@
 
 Slate is a **free and open-source, canvas-based spreadsheet app** for desktop built with **Electron**, **Vue 3**, and TypeScript. Inspired by Apple Numbers, Slate brings a design-forward, layout-first spreadsheet experience to every platform — tables, charts, and text boxes arranged freely on an infinite canvas.
 
-> **Note:** This app runs natively on **Desktop** (macOS and Linux). All files are saved as `.slate` files on your local machine.
+> **Note:** Slate is a native desktop app. All files are saved as `.slate` files on your local machine.
+>
+> **Prebuilt binaries are published for Linux only.** The source is MIT licensed and still runs on
+> macOS — see [Other platforms](#other-platforms) to build it yourself.
 
 # Demo
 
@@ -33,7 +36,7 @@ Slate is a **free and open-source, canvas-based spreadsheet app** for desktop bu
 ### Files
 
 - **Native file format** — `.slate` files (JSON-based, versioned)
-- **Cross-platform** — macOS and Linux builds
+- **Linux builds** — AppImage, deb, rpm and tar.gz (macOS builds from source)
 
 ## Getting Started
 
@@ -75,24 +78,48 @@ npm run test:watch  # watch mode
 ### Building for Production
 
 ```sh
-# Build for macOS
-npm run build:mac
-
-# Build for Linux
+# Build for Linux — the platform this project releases
 npm run build:linux
+
+# Build for macOS — unreleased, self-build only (see Other platforms)
+npm run build:mac
 ```
 
 Builds are output to the `dist-electron/` directory:
 
-- **macOS:** `.dmg` installer (Apple Silicon / arm64)
 - **Linux:** `.AppImage`, `.deb`, `.rpm`, and `.tar.gz`
+- **macOS:** `.dmg` installer (Apple Silicon / arm64)
 
 Building the `.rpm` needs the `rpm` tool on the build machine (`sudo apt-get install rpm`
-on Debian/Ubuntu); the other Linux targets have no extra prerequisite.
+on Debian/Ubuntu); the other Linux targets have no extra prerequisite. `build:mac` has to run
+on a Mac.
+
+## Other platforms
+
+Releases carry Linux packages only. macOS is not shipped because the app would need a paid Apple
+developer certificate to install cleanly, and an ad-hoc signature is rejected by Gatekeeper often
+enough — the "app is damaged" dialog — that the download caused more problems than it solved.
+
+The macOS build target is still in the repository and is deliberately kept working. Slate is MIT
+licensed, so if you want it on a Mac, build it:
+
+```sh
+git clone https://github.com/larrydarko1/slate.git
+cd slate && npm ci && npm run build:mac
+```
+
+The `.dmg` lands in `dist-electron/`, ad-hoc signed for the machine that built it. Nothing about the
+app is macOS-crippled — the platform-specific main-process paths (the `open-file` association and the
+dock's window-all-closed behaviour) are all still there.
+
+What "unsupported" means in practice: the maintainer does not run macOS and cannot reproduce or
+verify anything there. Bug reports from self-built platforms are welcome and will be read, but they
+are fixed on a best-effort basis, and CI never builds or tests them. The same applies to Windows,
+which has no build target at all — `electron-builder --win` may well work, but nobody has checked.
 
 ## Tech Stack
 
-- **Desktop:** Electron 40, electron-vite 5
+- **Desktop:** Electron 44, electron-vite 5
 - **Frontend:** Vue 3, TypeScript (strict), SCSS
 - **Charts:** [Chart.js](https://www.chartjs.org/) + [vue-chartjs](https://vue-chartjs.org/)
 - **IPC validation:** [Zod](https://zod.dev/) — every channel argument is parsed before use

@@ -112,40 +112,43 @@ jobs:
 
                       ## Installing
 
-                      Slate ships for macOS (Apple Silicon) and Linux. These builds are not signed with a paid developer
-                      certificate, so your OS will warn you the first time you open the app.
+                      Slate ships prebuilt binaries for **Linux only**. These builds are not signed, so
+                      your desktop environment may warn you the first time you open the app.
 
-                      - **macOS** (Apple Silicon) — right-click the app → **Open**, then click **Open** in the dialog.
-                        If macOS calls the app "damaged", run: `xattr -cr /Applications/Slate.app`
-                      - **Linux, AppImage** — `chmod +x` the file, then run it.
-                      - **Linux, deb / rpm** — install with your package manager.
-                      - **Linux, tar.gz** — extract anywhere and run the `slate` binary inside.
+                      - **AppImage** — `chmod +x` the file, then run it.
+                      - **deb / rpm** — install with your package manager.
+                      - **tar.gz** — extract anywhere and run the `slate` binary inside.
 
                       Opening a `.slate` file by double-clicking works once the app is installed; the deb
                       and rpm packages register the file association, the AppImage and tar.gz do not.
 
-    # ── Installers, one job per platform ──────────────────
+                      ## Other platforms
+
+                      Slate is MIT licensed and the source still runs on macOS — there is just no prebuilt,
+                      signed download, because maintaining Apple's signing story is not something this
+                      project can stand behind. To run it there, build it yourself:
+
+                      ```sh
+                      git clone https://github.com/larrydarko1/slate.git
+                      cd slate && npm ci && npm run build:mac
+                      ```
+
+                      The result lands in `dist-electron/`. It is untested by the maintainer — bug reports from self-built platforms are welcome
+                      but are fixed on a best-effort basis.
+
+    # ── Installers ────────────────────────────────────────
+    # Linux is the only platform this project distributes binaries for. macOS builds were dropped
+    # deliberately: without a paid Apple developer certificate the only option is an ad-hoc
+    # signature, which Gatekeeper treats as damaged often enough that the download was a worse
+    # experience than no download. The macOS build target is still in package.json, so anyone on a
+    # Mac can `npm run build:mac` for themselves — it is just not something CI publishes.
     build:
-        name: Build ${{ matrix.name }}
+        name: Build Linux packages
         needs: [version, prepare]
-        runs-on: ${{ matrix.os }}
+        runs-on: ubuntu-24.04
         timeout-minutes: 40
         permissions:
             contents: write
-
-        strategy:
-            fail-fast: false
-            matrix:
-                include:
-                    - name: macOS DMG (ad-hoc signed)
-                      os: macos-26
-                      script: build:mac
-                      assets: dist-electron/*.dmg
-
-                    - name: Linux packages
-                      os: ubuntu-24.04
-                      script: build:linux
-                      assets: dist-electron/*.AppImage dist-electron/*.deb dist-electron/*.rpm dist-electron/*.tar.gz
 
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -156,18 +159,17 @@ jobs:
             - uses: ./.github/actions/node-setup
 
             - name: Install rpm tooling
-              if: runner.os == 'Linux'
               run: sudo apt-get update && sudo apt-get install -y rpm
 
-            - name: Build installer
-              run: npm run ${{ matrix.script }}
+            - name: Build installers
+              run: npm run build:linux
 
             - name: Upload to draft release
               env:
                   GH_TOKEN: ${{ github.token }}
                   GH_REPO: ${{ github.repository }}
                   TAG: ${{ needs.version.outputs.tag }}
-                  ASSETS: ${{ matrix.assets }}
+                  ASSETS: dist-electron/*.AppImage dist-electron/*.deb dist-electron/*.rpm dist-electron/*.tar.gz
               run: |
                   set -euo pipefail
                   # shellcheck disable=SC2086

@@ -2,7 +2,7 @@
 
 ## Security Architecture
 
-Slate is a **local-first desktop application** for macOS and Linux with a fully offline architecture:
+Slate is a **local-first desktop application** for Linux (with macOS supported from source) and a fully offline architecture:
 
 - ✅ **No server-side code** — no backend, no accounts, no sign-in, no attack surface behind an API
 - ✅ **No network requests** — no data transmission, no telemetry, no tracking, no auto-update
@@ -26,8 +26,8 @@ them, as `.slate` files you can read, move, back up or delete with any file mana
 The one thing Slate writes on its own is a rotating diagnostic log, capped at 1 MB with a single
 backup:
 
-- **macOS:** `~/Library/Logs/Slate/main.log`
 - **Linux:** `~/.config/Slate/logs/main.log`
+- **macOS** (self-built): `~/Library/Logs/Slate/main.log`
 
 Your spreadsheet contents, formulas and charts never leave your device.
 
