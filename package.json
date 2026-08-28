@@ -23,6 +23,7 @@
         "url": "https://github.com/larrydarko1/slate.git"
     },
     "scripts": {
+        "predev": "install-electron",
         "dev": "electron-vite dev",
         "build": "vue-tsc -b && electron-vite build",
         "build:electron": "npm run build && electron-builder",
@@ -72,7 +73,7 @@
         "@vitest/eslint-plugin": "^1.6.27",
         "@vue/test-utils": "^2.5.0",
         "@vue/tsconfig": "^0.9.1",
-        "electron": "^40.0.0",
+        "electron": "^44.0.0",
         "electron-builder": "^26.4.0",
         "electron-vite": "^5.0.0",
         "eslint": "^10.0.3",
@@ -168,8 +169,7 @@
                 {
                     "target": "dmg",
                     "arch": [
-                        "arm64",
-                        "x64"
+                        "arm64"
                     ]
                 }
             ]

@@ -88,7 +88,7 @@ npm run build:linux
 
 Builds are output to the `dist-electron/` directory:
 
-- **macOS:** `.dmg` installer (arm64 and x64)
+- **macOS:** `.dmg` installer (Apple Silicon / arm64)
 - **Linux:** `.AppImage`, `.deb`, `.rpm`, and `.tar.gz`
 
 Building the `.rpm` needs the `rpm` tool on the build machine (`sudo apt-get install rpm`

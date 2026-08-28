@@ -112,10 +112,10 @@ jobs:
 
                       ## Installing
 
-                      Slate ships for macOS and Linux. These builds are not signed with a paid developer
+                      Slate ships for macOS (Apple Silicon) and Linux. These builds are not signed with a paid developer
                       certificate, so your OS will warn you the first time you open the app.
 
-                      - **macOS** — right-click the app → **Open**, then click **Open** in the dialog.
+                      - **macOS** (Apple Silicon) — right-click the app → **Open**, then click **Open** in the dialog.
                         If macOS calls the app "damaged", run: `xattr -cr /Applications/Slate.app`
                       - **Linux, AppImage** — `chmod +x` the file, then run it.
                       - **Linux, deb / rpm** — install with your package manager.
