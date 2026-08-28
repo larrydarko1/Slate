@@ -1,5 +1,5 @@
 /**
- * useClipboard — copy, cut, paste, and fill operations.
+ * createClipboard — copy, cut, paste, and fill operations.
  * Owns: internal clipboard buffer, copyCells, cutCells, pasteCells, fillCells.
  * Does NOT own: cell access (useCells.ts), formula shifting (useFormulaEngine.ts).
  */

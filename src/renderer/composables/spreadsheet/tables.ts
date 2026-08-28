@@ -1,5 +1,5 @@
 /**
- * useTables — table CRUD, row/column operations, and bulk selection operations.
+ * createTables — table CRUD, row/column operations, and bulk selection operations.
  * Owns: addTable, removeTable, renameTable, moveTable, row/col add/delete/insert, bulk delete.
  * Does NOT own: reordering (useTableReorder.ts), sorting (useTableSort.ts), cell access (useCells.ts).
  */

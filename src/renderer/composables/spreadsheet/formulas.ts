@@ -1,5 +1,5 @@
 /**
- * useFormulas — formula editing mode, token parsing, highlights, and cell reference insertion.
+ * createFormulas — formula editing mode, token parsing, highlights, and cell reference insertion.
  * Owns: toggleFormulaMode, insertCellReference, getFormulaTokens, getFormulaHighlights.
  * Does NOT own: recalculation (useFormulaEngine.ts), cell access (useCells.ts).
  */

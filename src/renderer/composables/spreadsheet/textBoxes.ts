@@ -1,5 +1,5 @@
 /**
- * useTextBoxes — textbox CRUD (add, remove, move, resize, update, select).
+ * createTextBoxes — textbox CRUD (add, remove, move, resize, update, select).
  * Owns: addTextBox, removeTextBox, moveTextBox, resizeTextBox, updateTextBox, selectTextBox.
  * Does NOT own: editing (useEditing.ts), charts (useCharts.ts).
  */

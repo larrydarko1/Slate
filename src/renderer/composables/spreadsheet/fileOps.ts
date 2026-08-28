@@ -1,5 +1,5 @@
 /**
- * useFileOps — file operations, serialization, deserialization, and migration.
+ * createFileOps — file operations, serialization, deserialization, and migration.
  * Owns: save, saveAs, open, loadFileFromPath, newFile, serialize/deserialize.
  * Does NOT own: reactive state (state.ts), recalculation (useFormulaEngine.ts).
  */

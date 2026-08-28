@@ -1,5 +1,5 @@
 /**
- * useCanvases — canvas CRUD, zoom controls, and tab reordering.
+ * createCanvases — canvas CRUD, zoom controls, and tab reordering.
  * Owns: addCanvas, removeCanvas, renameCanvas, switchCanvas, zoom, reorder.
  * Does NOT own: reactive state (state.ts), recalculation (useFormulaEngine.ts).
  */

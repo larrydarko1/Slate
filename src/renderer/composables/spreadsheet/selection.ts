@@ -1,5 +1,5 @@
 /**
- * useSelection — cell, row, column, and range selection with keyboard navigation.
+ * createSelection — cell, row, column, and range selection with keyboard navigation.
  * Owns: selectCell, selectRow/Col, extend selection, moveSelection.
  * Does NOT own: editing (useEditing.ts), helpers (helpers.ts).
  */

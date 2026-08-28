@@ -1,5 +1,5 @@
 /**
- * useFormulaEngine — formula recalculation, reference remapping, and name rewriting.
+ * createFormulaEngine — formula recalculation, reference remapping, and name rewriting.
  * Owns: recalculate(), formula reference shifting/remapping, table/canvas name rewrites.
  * Does NOT own: formula editing mode (useFormulas.ts), cell access (useCells.ts).
  */

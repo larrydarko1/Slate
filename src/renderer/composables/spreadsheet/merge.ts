@@ -1,5 +1,5 @@
 /**
- * useMerge — cell merge and unmerge operations.
+ * createMerge — cell merge and unmerge operations.
  * Owns: findMergedRegionAt, findMergeOrigin, isCellHiddenByMerge, merge/unmerge.
  * Does NOT own: cell access (useCells.ts), selection (helpers.ts).
  */

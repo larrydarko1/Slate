@@ -1,5 +1,5 @@
 /**
- * useTableReorder — row and column reorder operations.
+ * createTableReorder — row and column reorder operations.
  * Owns: reorderRow, reorderRows, reorderColumn, reorderColumns.
  * Does NOT own: CRUD (useTables.ts), sorting (useTableSort.ts).
  */

@@ -130,8 +130,13 @@
         "files": [
             "package.json",
             "build/icon.png",
-            "out/**/*",
-            "node_modules/**/*"
+            {
+                "from": "out",
+                "to": "out",
+                "filter": [
+                    "**/*"
+                ]
+            }
         ],
         "dmg": {
             "background": "build/dmg-background.png",
@@ -157,6 +162,8 @@
         },
         "mac": {
             "category": "public.app-category.productivity",
+            "identity": null,
+            "artifactName": "${productName}-${version}-${arch}.${ext}",
             "target": [
                 {
                     "target": "dmg",

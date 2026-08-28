@@ -43,8 +43,10 @@ Slate is a **free and open-source, canvas-based spreadsheet app** for desktop bu
 
 ### Prerequisites
 
-- Node.js (v18+ recommended)
-- npm
+- Node.js 24 or newer
+- npm 11 or newer
+
+Both are enforced by the `engines` field, and CI builds on the same major.
 
 ### Setup
 
@@ -97,8 +99,10 @@ on Debian/Ubuntu); the other Linux targets have no extra prerequisite.
 - **Desktop:** Electron 40, electron-vite 5
 - **Frontend:** Vue 3, TypeScript (strict), SCSS
 - **Charts:** [Chart.js](https://www.chartjs.org/) + [vue-chartjs](https://vue-chartjs.org/)
-- **Testing:** Vitest + jsdom
-- **Linting:** ESLint (flat config) + Prettier
+- **IPC validation:** [Zod](https://zod.dev/) — every channel argument is parsed before use
+- **Logging:** electron-log, rotating at 1 MB
+- **Testing:** Vitest + jsdom, 80% coverage enforced
+- **Linting:** ESLint (flat config, plus custom in-repo rules) + Prettier + Stylelint
 - **Git Hooks:** Husky + lint-staged + commitlint
 - **Build:** electron-vite + Electron Builder
 
@@ -110,17 +114,41 @@ slate/
 ├── vitest.config.ts               # Vitest config (node + jsdom projects)
 ├── eslint.config.js               # ESLint flat config (TS + Vue + Prettier)
 ├── commitlint.config.js           # Conventional commit enforcement
+├── eslint/                        # Custom in-repo ESLint rules, one file per concern
+├── scripts/
+│   ├── check/                     # The 14 quality gates run by `npm run ci:check`
+│   └── lib/                       # Shared helpers for the gates
 ├── src/
-│   ├── main/                      # Electron main process (TypeScript)
-│   │   ├── index.ts               #   BrowserWindow, IPC handlers, app lifecycle
-│   │   └── lib/
-│   │       └── validation.ts      #   Input validation (assertSafeFileName)
-│   ├── preload/                   # contextBridge — renderer ↔ main API surface
-│   │   └── index.ts
+│   ├── main/                      # Electron main process
+│   │   ├── index.ts               #   BrowserWindow, navigation & permission policy,
+│   │   │                          #   single-instance lock, IPC registration
+│   │   ├── lib/
+│   │   │   ├── config.ts          #   The only module that reads process.env
+│   │   │   └── logger.ts          #   electron-log wrapper, 1 MB rotation
+│   │   └── services/              #   One module per IPC domain; each owns its channels
+│   │       ├── file.ts            #   dialog:save/open, file:write/read — atomic writes
+│   │       ├── log.ts             #   log:error/warn/info/debug
+│   │       └── shell.ts           #   shell:openExternal — http/https only
+│   ├── preload/                   # contextBridge — the one renderer ↔ main bridge
+│   │   └── index.ts               #   Every channel a string literal, never a parameter
+│   ├── schemas/                   # The IPC wire contract, shared by preload and main
+│   │   ├── electron.d.ts          #   The contextBridge contract
+│   │   ├── file.ts                #   Path/traversal/extension/size rules (Zod)
+│   │   ├── log.ts                 #   Log entry shape
+│   │   └── shell.ts               #   External URL scheme allowlist
 │   └── renderer/                  # Vue 3 SPA
+│       ├── index.html             #   Document shell and the Content Security Policy
 │       ├── App.vue                #   Root component (provides spreadsheet state)
 │       ├── main.ts                #   Vue entry point
-│       ├── style.scss             #   Global styles & theme variables
+│       ├── styles/                #   SCSS design system
+│       │   ├── index.scss         #     Barrel — injected into every SFC by Vite
+│       │   ├── global.scss        #     Entry point — imported once by main.ts
+│       │   ├── _tokens.scss       #     Custom properties shared by every theme
+│       │   ├── _themes.scss       #     Per-theme palettes (light/dark)
+│       │   ├── _variables.scss    #     Typography, size, motion, depth, opacity scales
+│       │   ├── _mixins.scss       #     Multi-declaration patterns
+│       │   ├── _base.scss         #     Document typography, Electron drag regions
+│       │   └── components/        #     Shared button, canvas & placeholder styles
 │       ├── components/            #   Vue components
 │       │   ├── SpreadsheetTable.vue    # Table grid, cell editing, keyboard nav
 │       │   ├── CanvasWorkspace.vue     # Infinite canvas with pan/zoom
@@ -129,52 +157,83 @@ slate/
 │       │   ├── CanvasTabs.vue          # Multi-canvas tab bar & zoom controls
 │       │   ├── Toolbar.vue             # App & formatting toolbar
 │       │   ├── FormulaBar.vue          # Formula input with token coloring
-│       │   ├── TitleBar.vue            # Custom title bar
 │       │   ├── ContextMenu.vue         # Reusable right-click menu
-│       │   ├── chart/                  # Chart sub-components
-│       │   ├── table/                  # Table sub-components (notes, popups)
-│       │   └── toolbar/               # Toolbar sub-components (pickers, selectors)
+│       │   ├── canvas/                 # ResizeHandles
+│       │   ├── chart/                  # ChartConfigPanel
+│       │   ├── table/                  # NotePopup, NoteEditor
+│       │   └── toolbar/                # Color, font & cell-type pickers
 │       ├── composables/           #   Composable modules
 │       │   ├── useSpreadsheet.ts       # Orchestrator — wires all sub-composables
 │       │   ├── useChartData.ts         # Chart.js data binding & theme integration
-│       │   ├── useDragResize.ts        # Generic drag & resize handler
-│       │   ├── spreadsheet/            # Domain composables (state, cells, formulas, …)
-│       │   │   ├── state.ts            #   Centralized reactive state
-│       │   │   ├── helpers.ts          #   Finder functions & selection utilities
-│       │   │   ├── useCells.ts         #   Cell CRUD & formatting
-│       │   │   ├── useEditing.ts       #   Inline editing lifecycle
-│       │   │   ├── useSelection.ts     #   Cell & range selection
-│       │   │   ├── useCanvases.ts      #   Canvas CRUD & zoom
-│       │   │   ├── useTables.ts        #   Table CRUD, row/col operations
-│       │   │   ├── useMerge.ts         #   Cell merge/unmerge
-│       │   │   ├── useClipboard.ts     #   Copy/paste with formula shifting
-│       │   │   ├── useFormulas.ts      #   Formula bar integration
-│       │   │   ├── useCharts.ts        #   Chart CRUD & data selection
-│       │   │   ├── useTextBoxes.ts     #   Text box CRUD
-│       │   │   ├── useFileOps.ts       #   Save/open/new file operations
-│       │   │   ├── useFormulaEngine.ts #   Recalculation & reference rewriting
-│       │   │   ├── useUndoRedo.ts      #   Undo/redo stack management
-│       │   │   ├── useTableSort.ts     #   Column sorting
-│       │   │   ├── useTableReorder.ts  #   Row/column drag reordering
+│       │   ├── useDragResize.ts        # Shared drag-to-move & resize for canvas objects
+│       │   ├── spreadsheet/            # Domain factories — createX, see note below
+│       │   │   ├── state.ts            #   Shared reactive state
+│       │   │   ├── helpers.ts          #   Finders, z-index, selection & name patterns
+│       │   │   ├── cells.ts            #   Cell access, values, formatting, notes
+│       │   │   ├── editing.ts          #   Editing lifecycle — commit, cancel, clear
+│       │   │   ├── selection.ts        #   Cell/row/column/range selection & keyboard nav
+│       │   │   ├── canvases.ts         #   Canvas CRUD, zoom, tab reordering
+│       │   │   ├── tables.ts           #   Table CRUD, row/column & bulk operations
+│       │   │   ├── merge.ts            #   Cell merge/unmerge
+│       │   │   ├── clipboard.ts        #   Copy, cut, paste, fill
+│       │   │   ├── formulas.ts         #   Formula edit mode, tokens, reference insertion
+│       │   │   ├── charts.ts           #   Chart CRUD & data selection
+│       │   │   ├── textBoxes.ts        #   Text box CRUD
+│       │   │   ├── fileOps.ts          #   Serialization, deserialization, migration
+│       │   │   ├── formulaEngine.ts    #   Recalculation, reference & name rewriting
+│       │   │   ├── undoRedo.ts         #   Undo/redo stack, auto-nesting, batching
+│       │   │   ├── tableSort.ts        #   Column sorting
+│       │   │   ├── tableReorder.ts     #   Row/column reordering
 │       │   │   └── engine/             #   Formula engine (pure functions)
 │       │   │       ├── tokenizer.ts    #     Lexer — formula string → tokens
 │       │   │       ├── parser.ts       #     Recursive-descent → AST
-│       │   │       ├── evaluator.ts    #     AST → computed value
+│       │   │       ├── evaluator.ts    #     AST → computed value (29 functions)
 │       │   │       ├── formula.ts      #     Public API (evaluate, extractRefs)
 │       │   │       └── cellTypes.ts    #     Type detection, parsing, formatting
-│       │   └── table/                  # Table-level composables
-│       │       ├── useFillHandle.ts    #   Fill-handle drag logic
-│       │       ├── useRowColReorder.ts #   Row/column drag reorder UI
-│       │       ├── useTableCellRendering.ts  # Cell classes, styles, merge helpers
-│       │       ├── useTableContextMenus.ts   # Right-click menu actions
+│       │   └── table/                  # Table-level UI composables
+│       │       ├── useFillHandle.ts          # Drag-to-fill (autofill)
+│       │       ├── useRowColReorder.ts       # Header selection & drag-to-reorder
+│       │       ├── useTableStructure.ts      # Table move, column resize, add row/col
+│       │       ├── useTableCellRendering.ts  # Cell class & style computation
+│       │       ├── useTableContextMenus.ts   # Right-click menu builders
 │       │       └── useTableNotes.ts          # Note popup & editor state
 │       └── types/                 #   TypeScript definitions
 │           ├── spreadsheet.ts         # Data types, factory functions, constants
-│           └── electron.d.ts          # Preload API type declarations
+│           └── contextMenu.ts         # Right-click menu shape
 ├── tests/                         # Mirrors src/ — Vitest + jsdom
 ├── public/                        # Static assets
-└── build/                         # App icons (.icns, .ico, .png)
+└── build/                         # App icons and DMG background
 ```
+
+> **Naming note:** the two `composables/` subtrees follow different conventions on
+> purpose. Modules under `spreadsheet/` are **factories** — they export `createCells`,
+> `createTables`, … and are instantiated once by `useSpreadsheet.ts`, closing over the
+> shared `state.ts`. Modules under `table/` (and the three at the top level) are true
+> **composables** — they export `useFillHandle`, `useTableNotes`, … and own their own
+> reactive state, so each is called per component instance. A file whose name starts
+> with `use` must export that exact name; `code:check` enforces it.
+
+## Quality Gates
+
+Beyond lint and tests, the repo enforces its own architecture. `npm run ci:check` runs
+the same list CI does, so a red check is always reproducible locally:
+
+| Script            | Enforces                                                            |
+| ----------------- | ------------------------------------------------------------------- |
+| `audit:check`     | No high/critical production advisories outside a reasoned allowlist |
+| `pkg:check`       | Manifest metadata, semver ranges, field order, `os` ↔ build parity  |
+| `pipeline:check`  | Job timeouts, SHA-pinned actions, least-privilege workflow tokens   |
+| `code:check`      | Casing, file-length ratchet, SFC block order, comment formats       |
+| `declorder:check` | Canonical declaration order within every module                     |
+| `html:check`      | Document shell, CSP directives, no remote subresources              |
+| `scss:check`      | Token parity across themes, the style barrel, no remote assets      |
+| `refactor:check`  | No stray deferral markers                                           |
+| `ipc:check`       | Every channel documented, reachable, validated, and bridged         |
+| `security:check`  | Electron process model, navigation, permissions, HTML sinks         |
+| `error:check`     | IPC handlers contain their failures; no silent swallows             |
+| `dup:check`       | Copy-paste duplication                                              |
+| `dead:check`      | Unused files, exports and dependencies                              |
+| `test:check`      | Test layout, naming and coverage thresholds                         |
 
 ## Contributing
 

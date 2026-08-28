@@ -269,9 +269,6 @@ watch(
     white-space: nowrap;
     margin-right: $space-5;
     flex-shrink: 0;
-
-    /* Unitless, because the badge's box height is fixed: 1.7778 × the 9px
-    $font-size-2xs is the 16px the pill was drawn at. */
     line-height: 1.7778;
     background: $bg-tertiary;
     color: $text-muted;

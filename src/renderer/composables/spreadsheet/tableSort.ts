@@ -1,5 +1,5 @@
 /**
- * useTableSort — column sorting for tables.
+ * createTableSort — column sorting for tables.
  * Owns: sortColumn, getSortValue, compareValues.
  * Does NOT own: CRUD (useTables.ts), reordering (useTableReorder.ts).
  */

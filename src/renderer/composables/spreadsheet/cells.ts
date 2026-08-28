@@ -1,5 +1,5 @@
 /**
- * useCells — cell access, value setting, formatting, type management, and notes.
+ * createCells — cell access, value setting, formatting, type management, and notes.
  * Owns: findCell, setCellValue, display/raw values, type/format ops, cell notes.
  * Does NOT own: editing state (useEditing.ts), selection (useSelection.ts).
  */

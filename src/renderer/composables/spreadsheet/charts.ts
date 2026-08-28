@@ -1,5 +1,5 @@
 /**
- * useCharts — chart CRUD, data selection (Apple Numbers–style), and reference resolution.
+ * createCharts — chart CRUD, data selection (Apple Numbers–style), and reference resolution.
  * Owns: addChart, removeChart, moveChart, resizeChart, updateChart, selectChart,
  * chart data selection mode, ref building/resolving/highlighting.
  * Does NOT own: cell access (useCells.ts), formula engine (useFormulaEngine.ts).

@@ -1,5 +1,5 @@
 /**
- * useUndoRedo — undo/redo stack management with auto-nesting and batch support.
+ * createUndoRedo — undo/redo stack management with auto-nesting and batch support.
  * Owns: undo/redo stacks, snapshot/restore, canUndo/canRedo updates.
  * Does NOT own: reactive state (state.ts), recalculation (useFormulaEngine.ts).
  */

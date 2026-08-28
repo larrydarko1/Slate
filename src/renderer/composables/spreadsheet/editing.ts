@@ -1,5 +1,5 @@
 /**
- * useEditing — editing lifecycle, commit, cancel, and active cell clearing.
+ * createEditing — editing lifecycle, commit, cancel, and active cell clearing.
  * Owns: startEditing, commitEdit, cancelEdit, clearActiveCell.
  * Does NOT own: cell access/values (useCells.ts), selection (useSelection.ts).
  */
