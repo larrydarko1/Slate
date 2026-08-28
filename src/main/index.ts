@@ -169,7 +169,7 @@ app.on('open-file', (event, filePath) => {
     }
 });
 
-// ─── Windows/Linux: Check CLI args for .slate file ───────────────────────────
+// ─── Linux: Check CLI args for .slate file ───────────────────────────────────
 
 if (cliFile !== undefined) fileToOpen = cliFile;
 

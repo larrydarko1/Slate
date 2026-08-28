@@ -5,7 +5,6 @@
  * Renderer:      window.electronAPI.log.*
  * Logs are written to rotating files in the OS-standard location:
  *   macOS  — ~/Library/Logs/Slate/main.log
- *   Win    — %USERPROFILE%\AppData\Roaming\Slate\logs\main.log
  *   Linux  — ~/.config/Slate/logs/main.log
  */
 import baseLog from 'electron-log/main';

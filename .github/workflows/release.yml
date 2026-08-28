@@ -106,20 +106,23 @@ jobs:
                   body: |
                       ## Slate does not update itself
 
-                      Nothing phones home and nothing installs behind your back — which also means ZenGarden
+                      Nothing phones home and nothing installs behind your back — which also means Slate
                       will never tell you a new version exists. To upgrade, download from this page and
                       replace your copy. Watch this repository if you want to hear about new releases.
 
                       ## Installing
 
-                      These builds are not signed with a paid developer certificate, so your OS will warn
-                      you the first time you open the app.
+                      Slate ships for macOS and Linux. These builds are not signed with a paid developer
+                      certificate, so your OS will warn you the first time you open the app.
 
                       - **macOS** — right-click the app → **Open**, then click **Open** in the dialog.
-                        If macOS calls the app "damaged", run: `xattr -cr /Applications/ZenGarden.app`
+                        If macOS calls the app "damaged", run: `xattr -cr /Applications/Slate.app`
                       - **Linux, AppImage** — `chmod +x` the file, then run it.
                       - **Linux, deb / rpm** — install with your package manager.
-                      - **Linux, tar.gz** — extract anywhere and run the `zen-garden` binary inside.
+                      - **Linux, tar.gz** — extract anywhere and run the `slate` binary inside.
+
+                      Opening a `.slate` file by double-clicking works once the app is installed; the deb
+                      and rpm packages register the file association, the AppImage and tar.gz do not.
 
     # ── Installers, one job per platform ──────────────────
     build:

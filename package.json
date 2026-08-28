@@ -27,7 +27,6 @@
         "build": "vue-tsc -b && electron-vite build",
         "build:electron": "npm run build && electron-builder",
         "build:mac": "npm run build && electron-builder --mac --publish never",
-        "build:win": "npm run build && electron-builder --win --publish never",
         "build:linux": "npm run build && electron-builder --linux --publish never",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
@@ -108,8 +107,7 @@
     },
     "os": [
         "darwin",
-        "linux",
-        "win32"
+        "linux"
     ],
     "private": true,
     "packageManager": "npm@11.11.0",
@@ -169,16 +167,18 @@
                 }
             ]
         },
-        "win": {
-            "target": [
-                "nsis"
-            ]
-        },
         "linux": {
             "target": [
-                "AppImage"
+                "AppImage",
+                "deb",
+                "rpm",
+                "tar.gz"
             ],
-            "category": "Utility"
+            "category": "Office",
+            "maintainer": "Lorenzo Mazzola",
+            "vendor": "Lorenzo Mazzola",
+            "synopsis": "A free, canvas-based spreadsheet app. Tables, charts and text boxes on an infinite canvas, saved as local .slate files.",
+            "syncDesktopName": true
         }
     },
     "lint-staged": {

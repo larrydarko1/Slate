@@ -6,7 +6,7 @@
 
 Slate is a **free and open-source, canvas-based spreadsheet app** for desktop built with **Electron**, **Vue 3**, and TypeScript. Inspired by Apple Numbers, Slate brings a design-forward, layout-first spreadsheet experience to every platform — tables, charts, and text boxes arranged freely on an infinite canvas.
 
-> **Note:** This app runs natively on **Desktop** (macOS, Windows, Linux). All files are saved as `.slate` files on your local machine.
+> **Note:** This app runs natively on **Desktop** (macOS and Linux). All files are saved as `.slate` files on your local machine.
 
 # Demo
 
@@ -37,7 +37,7 @@ Slate is a **free and open-source, canvas-based spreadsheet app** for desktop bu
 ### Files
 
 - **Native file format** — `.slate` files (JSON-based, versioned)
-- **Cross-platform** — macOS, Windows, and Linux builds
+- **Cross-platform** — macOS and Linux builds
 
 ## Getting Started
 
@@ -80,18 +80,17 @@ npm run test:watch  # watch mode
 # Build for macOS
 npm run build:mac
 
-# Build for Windows
-npm run build:win
-
 # Build for Linux
 npm run build:linux
 ```
 
 Builds are output to the `dist-electron/` directory:
 
-- **macOS:** `.dmg` installer
-- **Windows:** `.exe` installer (NSIS)
-- **Linux:** `.AppImage` file
+- **macOS:** `.dmg` installer (arm64 and x64)
+- **Linux:** `.AppImage`, `.deb`, `.rpm`, and `.tar.gz`
+
+Building the `.rpm` needs the `rpm` tool on the build machine (`sudo apt-get install rpm`
+on Debian/Ubuntu); the other Linux targets have no extra prerequisite.
 
 ## Tech Stack
 
