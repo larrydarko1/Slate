@@ -1,0 +1,28 @@
+// Mixins reachable from every SFC through the injected barrel.
+// Owns: the multi-declaration patterns that were being retyped by hand.
+// Does NOT own: tokens (_variables.scss) or any rule that emits on its own —
+// a mixin produces nothing until a component `@include`s it, which is the
+// property that lets this file sit behind the barrel.
+
+// Single-line text that ends in an ellipsis rather than wrapping or clipping.
+// All three declarations are load-bearing: without `white-space: nowrap` the
+// text wraps and `text-overflow` never fires, which is the silent half of this
+// pattern and the reason it is worth a mixin rather than three lines.
+// The caller still owns the width constraint — a truncating element needs a
+// `max-width`, a `width`, or a flex parent, or there is nothing to overflow.
+@mixin truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// Dark-theme override for the rule this is included in.
+// The selector is written once here because the app had already drifted into
+// two spellings of it — `[data-theme='dark'] &` and `:root[data-theme='dark'] &`
+// — which match the same element at different specificities. That difference
+// only shows up when some third rule lands between them.
+@mixin dark {
+    :root[data-theme='dark'] & {
+        @content;
+    }
+}

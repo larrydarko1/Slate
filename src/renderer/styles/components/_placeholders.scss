@@ -1,0 +1,54 @@
+// Placeholders shared by two or more sibling partials in this folder.
+// A placeholder is not a class: it emits nothing until something @extends it,
+// so an unused one costs no bytes. Anything a TEMPLATE names belongs in one of
+// the sibling files as a real class instead.
+
+@use '@/renderer/styles/variables' as *;
+
+// Strips the UA button chrome without deciding anything about appearance.
+%bare-button {
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+// The transition every interactive control shares. Named properties only —
+// `transition: all` interpolates whatever happened to change, layout properties
+// included, and forces a style recalc per frame for the privilege.
+%interactive {
+    transition:
+        background $transition-fast,
+        color $transition-fast;
+}
+
+// A small round badge pinned outside its parent's top-right corner. Used for
+// the delete affordance on every free-floating canvas object.
+%corner-badge {
+    position: absolute;
+    top: -$size-8;
+    right: -$size-8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: $size-13;
+    height: $size-13;
+    border: $border-width-thin $border-color;
+    border-radius: $border-radius-round;
+    background: $bg-primary;
+    color: $text-muted;
+    font-size: $font-size-lg;
+    line-height: $line-height-none;
+    cursor: pointer;
+    box-shadow: $shadow-sm;
+    z-index: $z-sticky-high;
+
+    &:hover {
+        background: $danger-color-alpha;
+        border-color: $danger-color;
+        color: $danger-color;
+    }
+}

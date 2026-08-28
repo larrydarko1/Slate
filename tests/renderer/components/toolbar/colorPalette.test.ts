@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { colorPalette } from '../../../../src/renderer/components/toolbar/colorPalette';
+import { colorPalette } from '@/renderer/components/toolbar/colorPalette';
 
 describe('colorPalette', () => {
     it('has 70 colors', () => {

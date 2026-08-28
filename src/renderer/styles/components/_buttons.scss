@@ -1,0 +1,91 @@
+// The toolbar button — the most repeated shape in the app.
+// `.tb` was declared identically in four SFCs (Toolbar, ColorPicker,
+// ToolbarFontPicker, ToolbarTypeSelector), which is what `dup:check` was
+// pointing at. Scoped styles hid the duplication rather than preventing it:
+// four private copies of one control, each free to drift.
+// Per-component modifiers (.color-btn, .decimal-btn, .tb-border-select) stay in
+// their own SFCs — they are one component's variation on this shape, not a
+// second shape.
+
+@use '@/renderer/styles/variables' as *;
+@use '@/renderer/styles/components/placeholders' as *;
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: $space-0;
+}
+
+.tb {
+    @extend %bare-button;
+    @extend %interactive;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: $space-4;
+    min-width: $size-18;
+    height: $size-18;
+    padding: 0 $space-6;
+    border-radius: $border-radius-md;
+    background: transparent;
+    color: $text-muted;
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+
+    // The toolbar is the window's drag handle, so its own controls have to opt
+    // back out or a mousedown on one moves the window instead of pressing it.
+    -webkit-app-region: no-drag;
+
+    svg {
+        flex-shrink: 0;
+    }
+
+    &:hover {
+        background: $bg-hover;
+        color: $text-primary;
+    }
+
+    &:active {
+        background: $bg-selected;
+    }
+
+    // Extra room on the trailing side, where the label sits.
+    &.has-label {
+        padding: 0 $space-9 0 $space-6;
+
+        span {
+            font-size: $font-size-base;
+            font-weight: $font-weight-medium;
+            letter-spacing: $letter-spacing-tight;
+        }
+    }
+}
+
+// The pressed state for a toggle — bold, italic, alignment.
+// A separate class rather than `.tb.tb-active` because the templates apply it
+// on its own, and the two selectors would then need different specificities to
+// beat `.tb:hover`. Matching that hover specificity (0,2,0) here is what
+// replaced the pair of `!important`s this rule used to carry.
+.tb.tb-active,
+.tb-active.tb {
+    background: $accent-color-alpha;
+    color: $accent-color;
+}
+
+// Custom-colour footer, shared by the ColorPicker dropdown and the Toolbar
+// border-colour row that reuses its slot.
+.color-custom-row {
+    display: flex;
+    align-items: center;
+    gap: $space-7;
+    margin-top: $space-5;
+    padding-top: $space-5;
+    border-top: $border-width-thin $border-color;
+}
+
+.color-custom-label {
+    font-size: $font-size-sm;
+    color: $text-muted;
+    font-weight: $font-weight-medium;
+}

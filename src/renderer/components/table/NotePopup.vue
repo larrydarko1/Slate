@@ -14,9 +14,13 @@ defineEmits<{
 
 <template>
     <Teleport to="body">
+        <!-- A hover tooltip: the handlers only keep it open while the pointer
+             is over it. `role="tooltip"` is what a reader should see. -->
+        <!-- eslint-disable-next-line a11y/mouse-events-have-key-events, a11y/no-static-element-interactions -->
         <div
             v-if="visible"
             class="note-popup"
+            role="tooltip"
             :style="{ left: x + 'px', top: y + 'px' }"
             @mouseenter="$emit('mouseenter')"
             @mouseleave="$emit('mouseleave')">
@@ -25,31 +29,25 @@ defineEmits<{
     </Teleport>
 </template>
 
-<style lang="scss">
+<style scoped lang="scss">
 .note-popup {
     position: fixed;
-    z-index: 10002;
-    max-width: 260px;
-    min-width: 100px;
-    padding: 8px 12px;
-    background: #fef9e7;
-    color: #3d3100;
-    border: 1px solid #f0d96c;
-    border-radius: 8px;
+    z-index: $z-tooltip;
+    max-width: $size-26;
+    min-width: $size-22;
+    padding: $space-7 $space-11;
+    background: $note-bg;
+    color: $note-text;
+    border: $border-width-thin $note-border;
+    border-radius: $border-radius-lg;
     box-shadow:
-        0 4px 16px rgba(0, 0, 0, 0.12),
-        0 0 0 1px rgba(0, 0, 0, 0.04);
-    font-size: 12px;
-    line-height: 1.5;
+        0 4px 16px $scrim-medium,
+        0 0 0 1px $scrim-faint;
+    font-size: $font-size-base;
+    line-height: $line-height-base;
     pointer-events: auto;
-    word-wrap: break-word;
+    overflow-wrap: break-word;
     white-space: pre-wrap;
-
-    :root[data-theme='dark'] & {
-        background: #3d3100;
-        color: #fef3c7;
-        border-color: #78600a;
-    }
 }
 
 .note-popup-text {

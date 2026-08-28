@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import { computed, inject, nextTick, ref, type PropType } from 'vue';
-import type { TextBox } from '../types/spreadsheet';
-import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';
-import { useDragResize, type ResizeDir } from '../composables/useDragResize';
+import { computed, nextTick, ref } from 'vue';
+import type { TextBox } from '@/renderer/types/spreadsheet';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import { useDragResize, type ResizeDir } from '@/renderer/composables/useDragResize';
+import ResizeHandles from '@/renderer/components/canvas/ResizeHandles.vue';
 
-const props = defineProps({
-    textBox: { type: Object as PropType<TextBox>, required: true },
-});
+const props = defineProps<{ textBox: TextBox }>();
 
-const ss = inject(SPREADSHEET_KEY)!;
+const ss = injectSpreadsheet();
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 const isTextEditing = ref(false);
 
-const isActive = computed(() => ss.activeTextBoxId.value === props.textBox.id);
+const isActive = computed((): boolean => ss.activeTextBoxId.value === props.textBox.id);
 
 const boxStyle = computed(() => ({
     left: props.textBox.x + 'px',
@@ -20,22 +19,22 @@ const boxStyle = computed(() => ({
     width: props.textBox.width + 'px',
     height: props.textBox.height + 'px',
     zIndex: props.textBox.zIndex,
-    backgroundColor: props.textBox.bgColor || undefined,
-    borderColor: props.textBox.borderColor || undefined,
-    borderWidth: props.textBox.borderWidth ? props.textBox.borderWidth + 'px' : undefined,
-    borderStyle: props.textBox.borderWidth ? 'solid' : undefined,
+    backgroundColor: props.textBox.bgColor !== '' ? props.textBox.bgColor : undefined,
+    borderColor: props.textBox.borderColor !== '' ? props.textBox.borderColor : undefined,
+    borderWidth: props.textBox.borderWidth !== 0 ? props.textBox.borderWidth + 'px' : undefined,
+    borderStyle: props.textBox.borderWidth !== 0 ? 'solid' : undefined,
     borderRadius: props.textBox.borderRadius + 'px',
 }));
 
 const textStyle = computed(() => ({
     fontSize: props.textBox.fontSize + 'px',
     fontFamily:
-        props.textBox.fontFamily && props.textBox.fontFamily !== 'System Default'
+        props.textBox.fontFamily !== '' && props.textBox.fontFamily !== 'System Default'
             ? props.textBox.fontFamily
             : undefined,
     fontWeight: props.textBox.fontWeight,
     fontStyle: props.textBox.fontStyle,
-    color: props.textBox.textColor || 'var(--text-primary)',
+    color: props.textBox.textColor !== '' ? props.textBox.textColor : 'var(--text-primary)',
     textAlign: props.textBox.align,
 }));
 
@@ -45,52 +44,55 @@ const { startDrag, startResize } = useDragResize({
     zoom: ss.canvasZoom,
     minWidth: 60,
     minHeight: 30,
-    onMove: (x, y) => ss.moveTextBox(props.textBox.id, x, y),
-    onResize: (w, h) => ss.resizeTextBox(props.textBox.id, w, h),
-    onEnd: () => ss.endUndoBatch(),
+    onMove: (x, y): void => ss.moveTextBox(props.textBox.id, x, y),
+    onResize: (w, h): void => ss.resizeTextBox(props.textBox.id, w, h),
+    onEnd: (): void => ss.endUndoBatch(),
 });
 
 // ── Click / Select ──
 
-function onMouseDown(e: MouseEvent) {
+function onMouseDown(e: MouseEvent): void {
     ss.selectTextBox(props.textBox.id);
     if (!isTextEditing.value) {
         startDrag(e, props.textBox);
     }
 }
 
-function onResizeStart(dir: ResizeDir, e: MouseEvent) {
+function onResizeStart(dir: ResizeDir, e: MouseEvent): void {
     startResize(dir, e, props.textBox);
 }
 
 // ── Inline text editing ──
 
-function startTextEdit() {
+function startTextEdit(): void {
     if (isTextEditing.value) return;
     ss.selectTextBox(props.textBox.id);
     isTextEditing.value = true;
-    nextTick(() => {
+    void nextTick((): void => {
         const ta = textareaRef.value;
-        if (ta) {
+        if (ta !== null) {
             ta.focus();
             ta.setSelectionRange(ta.value.length, ta.value.length);
         }
     });
 }
 
-function onInput(e: Event) {
+function onInput(e: Event): void {
     const val = (e.target as HTMLTextAreaElement).value;
     ss.updateTextBox(props.textBox.id, { text: val });
 }
 
-function finishTextEdit() {
+function finishTextEdit(): void {
     isTextEditing.value = false;
 }
 </script>
 
 <template>
+    <!-- Drag-to-move and double-click-to-edit are pointer gestures with no
+         keyboard equivalent; the textarea below is the focusable control. -->
+    <!-- eslint-disable-next-line a11y/no-static-element-interactions -->
     <div
-        class="canvas-textbox"
+        class="canvas-object canvas-textbox"
         :class="{ active: isActive, editing: isTextEditing }"
         :style="boxStyle"
         @mousedown.stop="onMouseDown"
@@ -106,7 +108,9 @@ function finishTextEdit() {
         <!-- Edit mode -->
         <textarea
             v-if="isTextEditing"
+            id="textbox-editor"
             ref="textareaRef"
+            aria-label="Text box content"
             class="textbox-editor"
             :style="textStyle"
             :value="textBox.text"
@@ -123,38 +127,14 @@ function finishTextEdit() {
             Type something…
         </div>
 
-        <!-- Resize handles (only when active) -->
-        <template v-if="isActive && !isTextEditing">
-            <div
-                class="resize-handle rh-e"
-                @mousedown.stop.prevent="onResizeStart('e', $event)"></div>
-            <div
-                class="resize-handle rh-s"
-                @mousedown.stop.prevent="onResizeStart('s', $event)"></div>
-            <div
-                class="resize-handle rh-se"
-                @mousedown.stop.prevent="onResizeStart('se', $event)"></div>
-            <div
-                class="resize-handle rh-w"
-                @mousedown.stop.prevent="onResizeStart('w', $event)"></div>
-            <div
-                class="resize-handle rh-n"
-                @mousedown.stop.prevent="onResizeStart('n', $event)"></div>
-            <div
-                class="resize-handle rh-nw"
-                @mousedown.stop.prevent="onResizeStart('nw', $event)"></div>
-            <div
-                class="resize-handle rh-ne"
-                @mousedown.stop.prevent="onResizeStart('ne', $event)"></div>
-            <div
-                class="resize-handle rh-sw"
-                @mousedown.stop.prevent="onResizeStart('sw', $event)"></div>
-        </template>
+        <ResizeHandles
+            v-if="isActive && !isTextEditing"
+            @start="onResizeStart" />
 
         <!-- Delete button -->
         <button
             v-if="isActive && !isTextEditing"
-            class="textbox-delete"
+            class="canvas-delete"
             title="Delete text box"
             @click.stop="ss.removeTextBox(textBox.id)"
             @mousedown.stop>
@@ -165,22 +145,11 @@ function finishTextEdit() {
 
 <style scoped lang="scss">
 .canvas-textbox {
-    position: absolute;
-    cursor: default;
-    user-select: none;
     outline: none;
-    border: 1px solid transparent;
-    transition:
-        border-color 0.15s,
-        box-shadow 0.15s;
+    border: $border-width-thin transparent;
 
     &:hover:not(.active) {
         border-color: $border-color;
-    }
-
-    &.active {
-        border-color: $accent-color;
-        box-shadow: 0 0 0 1px $accent-color;
     }
 
     &.editing {
@@ -191,135 +160,40 @@ function finishTextEdit() {
 .textbox-display {
     width: 100%;
     height: 100%;
-    padding: 8px 10px;
+    padding: $space-7 $space-9;
     white-space: pre-wrap;
-    word-wrap: break-word;
+    overflow-wrap: break-word;
     overflow: hidden;
     font-family: inherit;
-    line-height: 1.5;
+    line-height: $line-height-base;
     color: $text-primary;
 }
 
 .textbox-placeholder {
     position: absolute;
     inset: 0;
-    padding: 8px 10px;
-    font-size: 14px;
+    padding: $space-7 $space-9;
+    font-size: $font-size-lg;
     color: $text-muted;
-    opacity: 0.5;
+    opacity: $opacity-mid;
     pointer-events: none;
-    line-height: 1.5;
+    line-height: $line-height-base;
 }
 
 .textbox-editor {
     width: 100%;
     height: 100%;
-    padding: 8px 10px;
+    padding: $space-7 $space-9;
     border: none;
     outline: none;
     background: transparent;
     resize: none;
     font-family: inherit;
-    line-height: 1.5;
+    line-height: $line-height-base;
     white-space: pre-wrap;
-    word-wrap: break-word;
+    overflow-wrap: break-word;
     color: $text-primary;
 }
 
-/* Resize handles */
-.resize-handle {
-    position: absolute;
-    z-index: 10;
-}
-
-.rh-e {
-    right: -3px;
-    top: 0;
-    bottom: 0;
-    width: 6px;
-    cursor: e-resize;
-}
-.rh-w {
-    left: -3px;
-    top: 0;
-    bottom: 0;
-    width: 6px;
-    cursor: w-resize;
-}
-.rh-s {
-    bottom: -3px;
-    left: 0;
-    right: 0;
-    height: 6px;
-    cursor: s-resize;
-}
-.rh-n {
-    top: -3px;
-    left: 0;
-    right: 0;
-    height: 6px;
-    cursor: n-resize;
-}
-.rh-se {
-    right: -4px;
-    bottom: -4px;
-    width: 8px;
-    height: 8px;
-    cursor: se-resize;
-    border-radius: 50%;
-    background: $accent-color;
-}
-.rh-ne {
-    right: -4px;
-    top: -4px;
-    width: 8px;
-    height: 8px;
-    cursor: ne-resize;
-    border-radius: 50%;
-    background: $accent-color;
-}
-.rh-nw {
-    left: -4px;
-    top: -4px;
-    width: 8px;
-    height: 8px;
-    cursor: nw-resize;
-    border-radius: 50%;
-    background: $accent-color;
-}
-.rh-sw {
-    left: -4px;
-    bottom: -4px;
-    width: 8px;
-    height: 8px;
-    cursor: sw-resize;
-    border-radius: 50%;
-    background: $accent-color;
-}
-
-.textbox-delete {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 1px solid $border-color;
-    background: $bg-primary;
-    color: $text-muted;
-    font-size: 14px;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 11;
-    box-shadow: $shadow-sm;
-
-    &:hover {
-        background: $danger-color-alpha;
-        color: $danger-color;
-        border-color: $danger-color;
-    }
-}
+/* ––––– Resize handles ––––– */
 </style>

@@ -11,7 +11,7 @@ import {
     getTypeLabel,
     coerceToType,
     type CellDataType,
-} from '../../../../../src/renderer/composables/spreadsheet/engine/cellTypes';
+} from '@/renderer/composables/spreadsheet/engine/cellTypes';
 
 // ── detectType ───────────────────────────────────────────────────────────────
 

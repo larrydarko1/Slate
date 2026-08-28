@@ -1,12 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import {
-    tokenize,
-    type Token,
-    type TokenType,
-} from '../../../../../src/renderer/composables/spreadsheet/engine/tokenizer';
+import { tokenize, type TokenType } from '@/renderer/composables/spreadsheet/engine/tokenizer';
 
 /** Extract just the type and value from tokens (ignoring EOF) for easy assertions. */
-function tokenTypes(src: string): Array<{ type: TokenType; value: string }> {
+function tokenTypes(src: string): { type: TokenType; value: string }[] {
     return tokenize(src)
         .filter((t) => t.type !== 'EOF')
         .map(({ type, value }) => ({ type, value }));

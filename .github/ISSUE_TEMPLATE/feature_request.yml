@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest something Slate should do
+labels: ['enhancement']
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Slate is local-first and offline by default. Anything that would send note content off the
+              device or add telemetry is out of scope no matter how well argued.
+
+    - type: textarea
+      id: problem
+      attributes:
+          label: What are you trying to do
+          description: The problem, not the solution. What you are doing today and where it breaks down.
+      validations:
+          required: true
+
+    - type: textarea
+      id: proposal
+      attributes:
+          label: What you have in mind
+          description: Roughly how it would work. A sketch is fine; an exact spec is not expected.
+      validations:
+          required: true
+
+    - type: textarea
+      id: alternatives
+      attributes:
+          label: What you tried instead
+          description: Existing features, workarounds, other apps. If a workaround is good enough, that is worth knowing too.
+      validations:
+          required: false

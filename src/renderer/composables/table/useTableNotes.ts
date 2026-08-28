@@ -3,22 +3,42 @@
  * Owns: popup visibility/position, editor form state, save/delete/cancel actions.
  * Does NOT own: note storage (useSpreadsheet), context menu integration.
  */
-
 import { nextTick, ref, type Ref } from 'vue';
-import type { SpreadsheetTable } from '../../types/spreadsheet';
-import type { SpreadsheetState } from '../useSpreadsheet';
+import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 
-export function useTableNotes(table: Ref<SpreadsheetTable>, ss: SpreadsheetState) {
+export type TableNotes = {
+    notePopup: Ref<
+        { visible: boolean; x: number; y: number; text: string },
+        { visible: boolean; x: number; y: number; text: string }
+    >;
+    noteEditor: Ref<
+        { visible: boolean; x: number; y: number; text: string; col: number; row: number; hasExisting: boolean },
+        { visible: boolean; x: number; y: number; text: string; col: number; row: number; hasExisting: boolean }
+    >;
+    noteTextareaRef: Ref<HTMLTextAreaElement | null, HTMLTextAreaElement | null>;
+    showNotePopup: (ci: number, ri: number, e: Event) => void;
+    hideNotePopup: () => void;
+    onNotePopupEnter: () => void;
+    onNotePopupLeave: () => void;
+    openNoteEditor: (ci: number, ri: number, e?: MouseEvent) => void;
+    saveNoteFromEditor: () => void;
+    deleteNoteFromEditor: () => void;
+    cancelNoteEdit: () => void;
+};
+
+export function useTableNotes(table: Ref<SpreadsheetTable>, ss: SpreadsheetState): TableNotes {
     // ── Note popup (hover) ───────────────────────────────────────────────────
 
     const notePopup = ref({ visible: false, x: 0, y: 0, text: '' });
     const notePopupHovered = ref(false);
     let notePopupTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    function showNotePopup(ci: number, ri: number, e: MouseEvent): void {
+    // Takes a plain Event: the indicator opens the popup on hover and on focus.
+    function showNotePopup(ci: number, ri: number, e: Event): void {
         const text = ss.getCellNote(table.value.id, ci, ri);
-        if (!text) return;
-        if (notePopupTimeout) clearTimeout(notePopupTimeout);
+        if (text === '') return;
+        if (notePopupTimeout !== null) clearTimeout(notePopupTimeout);
         const rect = (e.target as HTMLElement).getBoundingClientRect();
         notePopup.value = {
             visible: true,
@@ -29,7 +49,7 @@ export function useTableNotes(table: Ref<SpreadsheetTable>, ss: SpreadsheetState
     }
 
     function hideNotePopup(): void {
-        notePopupTimeout = setTimeout(() => {
+        notePopupTimeout = setTimeout((): void => {
             if (!notePopupHovered.value) notePopup.value.visible = false;
         }, 150);
     }
@@ -50,26 +70,26 @@ export function useTableNotes(table: Ref<SpreadsheetTable>, ss: SpreadsheetState
 
     function openNoteEditor(ci: number, ri: number, e?: MouseEvent): void {
         const existing = ss.getCellNote(table.value.id, ci, ri);
-        let x = e ? e.clientX : window.innerWidth / 2 - 120;
-        let y = e ? e.clientY + 8 : window.innerHeight / 2 - 60;
+        let posX = e !== undefined ? e.clientX : window.innerWidth / 2 - 120;
+        let posY = e !== undefined ? e.clientY + 8 : window.innerHeight / 2 - 60;
         // Keep within viewport
-        x = Math.min(x, window.innerWidth - 280);
-        y = Math.min(y, window.innerHeight - 180);
+        posX = Math.min(posX, window.innerWidth - 280);
+        posY = Math.min(posY, window.innerHeight - 180);
         noteEditor.value = {
             visible: true,
-            x,
-            y,
+            x: posX,
+            y: posY,
             text: existing,
             col: ci,
             row: ri,
-            hasExisting: !!existing,
+            hasExisting: existing !== '',
         };
-        nextTick(() => noteTextareaRef.value?.focus());
+        void nextTick((): void => noteTextareaRef.value?.focus());
     }
 
     function saveNoteFromEditor(): void {
         const { col, row, text } = noteEditor.value;
-        if (text.trim()) {
+        if (text.trim() !== '') {
             ss.setCellNote(table.value.id, col, row, text.trim());
         } else {
             ss.removeCellNote(table.value.id, col, row);

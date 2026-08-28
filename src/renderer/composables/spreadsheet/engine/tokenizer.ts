@@ -32,58 +32,65 @@ export type TokenType =
     | 'DOUBLE_COLON'
     | 'EOF';
 
-export interface Token {
+export type Token = {
     type: TokenType;
     value: string;
     num?: number;
-}
+};
 
 // ── Tokenizer ────────────────────────────────────────────────────────────────
 
 export function tokenize(src: string): Token[] {
     const tokens: Token[] = [];
-    let i = 0;
+    let pos = 0;
 
-    while (i < src.length) {
+    /** Consumes the run of digits at `pos`, if any, and returns it. */
+    function takeDigits(): string {
+        let digits = '';
+        while (pos < src.length && /\d/.test(src[pos])) digits += src[pos++];
+        return digits;
+    }
+
+    while (pos < src.length) {
         // whitespace
-        if (/\s/.test(src[i])) {
-            i++;
+        if (/\s/.test(src[pos])) {
+            pos++;
             continue;
         }
 
         // number
-        if (/\d/.test(src[i])) {
-            let n = '';
-            while (i < src.length && /[\d.]/.test(src[i])) n += src[i++];
-            tokens.push({ type: 'NUMBER', value: n, num: parseFloat(n) });
+        if (/\d/.test(src[pos])) {
+            let digits = '';
+            while (pos < src.length && /[\d.]/.test(src[pos])) digits += src[pos++];
+            tokens.push({ type: 'NUMBER', value: digits, num: parseFloat(digits) });
             continue;
         }
 
         // string
-        if (src[i] === '"') {
-            i++;
-            let s = '';
-            while (i < src.length && src[i] !== '"') s += src[i++];
-            i++; // closing "
-            tokens.push({ type: 'STRING', value: s });
+        if (src[pos] === '"') {
+            pos++;
+            let text = '';
+            while (pos < src.length && src[pos] !== '"') text += src[pos++];
+            pos++; // closing "
+            tokens.push({ type: 'STRING', value: text });
             continue;
         }
 
         // single-quoted name (for table/canvas references like 'Table 1')
-        if (src[i] === "'") {
-            i++;
-            let s = '';
-            while (i < src.length && src[i] !== "'") s += src[i++];
-            i++; // closing '
-            tokens.push({ type: 'QUOTED_NAME', value: s });
+        if (src[pos] === "'") {
+            pos++;
+            let quoted = '';
+            while (pos < src.length && src[pos] !== "'") quoted += src[pos++];
+            pos++; // closing '
+            tokens.push({ type: 'QUOTED_NAME', value: quoted });
             continue;
         }
 
         // word (cell ref, identifier, boolean)
-        if (/[A-Za-z_]/.test(src[i])) {
-            let w = '';
-            while (i < src.length && /[A-Za-z_]/.test(src[i])) w += src[i++];
-            const up = w.toUpperCase();
+        if (/[A-Za-z_]/.test(src[pos])) {
+            let word = '';
+            while (pos < src.length && /[A-Za-z_]/.test(src[pos])) word += src[pos++];
+            const up = word.toUpperCase();
 
             if (up === 'TRUE' || up === 'FALSE') {
                 tokens.push({ type: 'BOOLEAN', value: up });
@@ -91,9 +98,8 @@ export function tokenize(src: string): Token[] {
             }
 
             // If followed by digits → cell reference (e.g. AB23)
-            if (i < src.length && /\d/.test(src[i])) {
-                let digits = '';
-                while (i < src.length && /\d/.test(src[i])) digits += src[i++];
+            const digits = takeDigits();
+            if (digits !== '') {
                 tokens.push({ type: 'CELL_REF', value: up + digits });
                 continue;
             }
@@ -103,65 +109,65 @@ export function tokenize(src: string): Token[] {
         }
 
         // operators & punctuation
-        const c = src[i];
-        switch (c) {
+        const char = src[pos];
+        switch (char) {
             case '+':
-                tokens.push({ type: 'PLUS', value: c });
+                tokens.push({ type: 'PLUS', value: char });
                 break;
             case '-':
-                tokens.push({ type: 'MINUS', value: c });
+                tokens.push({ type: 'MINUS', value: char });
                 break;
             case '*':
-                tokens.push({ type: 'STAR', value: c });
+                tokens.push({ type: 'STAR', value: char });
                 break;
             case '/':
-                tokens.push({ type: 'SLASH', value: c });
+                tokens.push({ type: 'SLASH', value: char });
                 break;
             case '^':
-                tokens.push({ type: 'CARET', value: c });
+                tokens.push({ type: 'CARET', value: char });
                 break;
             case '&':
-                tokens.push({ type: 'AMP', value: c });
+                tokens.push({ type: 'AMP', value: char });
                 break;
             case '(':
-                tokens.push({ type: 'LPAREN', value: c });
+                tokens.push({ type: 'LPAREN', value: char });
                 break;
             case ')':
-                tokens.push({ type: 'RPAREN', value: c });
+                tokens.push({ type: 'RPAREN', value: char });
                 break;
             case ',':
-                tokens.push({ type: 'COMMA', value: c });
+                tokens.push({ type: 'COMMA', value: char });
                 break;
             case ':':
-                if (src[i + 1] === ':') {
+                if (src[pos + 1] === ':') {
                     tokens.push({ type: 'DOUBLE_COLON', value: '::' });
-                    i++; // skip second colon
+                    pos++; // skip second colon
                 } else {
-                    tokens.push({ type: 'COLON', value: c });
+                    tokens.push({ type: 'COLON', value: char });
                 }
                 break;
             case '=':
-                tokens.push({ type: 'EQ', value: c });
+                tokens.push({ type: 'EQ', value: char });
                 break;
             case '<':
-                if (src[i + 1] === '>') {
+                if (src[pos + 1] === '>') {
                     tokens.push({ type: 'NEQ', value: '<>' });
-                    i++;
-                } else if (src[i + 1] === '=') {
+                    pos++;
+                } else if (src[pos + 1] === '=') {
                     tokens.push({ type: 'LTE', value: '<=' });
-                    i++;
+                    pos++;
                 } else tokens.push({ type: 'LT', value: '<' });
                 break;
             case '>':
-                if (src[i + 1] === '=') {
+                if (src[pos + 1] === '=') {
                     tokens.push({ type: 'GTE', value: '>=' });
-                    i++;
+                    pos++;
                 } else tokens.push({ type: 'GT', value: '>' });
                 break;
             default:
-                throw new Error(`Unexpected character: ${c}`);
+                throw new Error(`Unexpected character: ${char}`);
         }
-        i++;
+        pos++;
     }
 
     tokens.push({ type: 'EOF', value: '' });

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { tokenize } from '../../../../../src/renderer/composables/spreadsheet/engine/tokenizer';
-import { Parser, parseCellRef, type ASTNode } from '../../../../../src/renderer/composables/spreadsheet/engine/parser';
+import { tokenize } from '@/renderer/composables/spreadsheet/engine/tokenizer';
+import { Parser, parseCellRef, type ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

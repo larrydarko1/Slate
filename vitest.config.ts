@@ -1,27 +1,34 @@
-import { defineConfig, configDefaults } from 'vitest/config';
+import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
+import { fileURLToPath } from 'url';
 
 export default defineConfig({
     plugins: [vue()],
+    resolve: {
+        alias: {
+            '@/main': fileURLToPath(new URL('./src/main', import.meta.url)),
+            '@/renderer': fileURLToPath(new URL('./src/renderer', import.meta.url)),
+            '@/schemas': fileURLToPath(new URL('./src/schemas', import.meta.url)),
+            '@/preload': fileURLToPath(new URL('./src/preload', import.meta.url)),
+            '@test-utils': fileURLToPath(new URL('./tests/renderer/test-utils', import.meta.url)),
+        },
+    },
+    esbuild: { tsconfigRaw: { compilerOptions: { target: 'ESNext' } } },
     test: {
         globals: true,
-        exclude: [...configDefaults.exclude],
-        projects: [
-            {
-                test: {
-                    name: 'renderer',
-                    environment: 'jsdom',
-                    include: ['tests/**/*.test.ts'],
-                    exclude: ['tests/main/**'],
-                },
+        environment: 'jsdom',
+        include: ['tests/**/*.test.ts'],
+        coverage: {
+            provider: 'v8',
+            include: ['src/**/*.{ts,vue}'],
+            exclude: ['src/renderer/main.ts', 'src/main/index.ts', 'src/**/*.d.ts', 'src/**/*.html'],
+            reporter: ['text', 'text-summary', 'html', 'json-summary'],
+            thresholds: {
+                statements: 80,
+                branches: 80,
+                functions: 80,
+                lines: 80,
             },
-            {
-                test: {
-                    name: 'main',
-                    environment: 'node',
-                    include: ['tests/main/**/*.test.ts'],
-                },
-            },
-        ],
+        },
     },
 });

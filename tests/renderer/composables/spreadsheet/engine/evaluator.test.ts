@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { toNumber, evaluate, evaluateVal } from '../../../../../src/renderer/composables/spreadsheet/engine/evaluator';
-import type { FormulaContext } from '../../../../../src/renderer/composables/spreadsheet/engine/formula';
-import type { CellDataType } from '../../../../../src/renderer/composables/spreadsheet/engine/cellTypes';
-import type { CellValue } from '../../../../../src/renderer/types/spreadsheet';
-import type { ASTNode } from '../../../../../src/renderer/composables/spreadsheet/engine/parser';
+import { toNumber, evaluate, evaluateVal } from '@/renderer/composables/spreadsheet/engine/evaluator';
+import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
+import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import type { CellValue } from '@/renderer/types/spreadsheet';
+import type { ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
 
 // ── Test helpers ─────────────────────────────────────────────────────────────
 

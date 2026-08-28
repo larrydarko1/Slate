@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue';
-import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';
-import SpreadsheetTable from './SpreadsheetTable.vue';
-import CanvasTextBox from './CanvasTextBox.vue';
-import CanvasChart from './CanvasChart.vue';
+import { computed, ref } from 'vue';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import SpreadsheetTable from '@/renderer/components/SpreadsheetTable.vue';
+import CanvasTextBox from '@/renderer/components/CanvasTextBox.vue';
+import CanvasChart from '@/renderer/components/CanvasChart.vue';
 
-const ss = inject(SPREADSHEET_KEY)!;
+const ss = injectSpreadsheet();
 const canvasRef = ref<HTMLElement | null>(null);
 
-const contentStyle = computed(() => ({
+const contentStyle = computed((): { transform: string; transformOrigin: string } => ({
     transform: `translate(${ss.canvasOffset.value.x}px, ${ss.canvasOffset.value.y}px) scale(${ss.canvasZoom.value})`,
     transformOrigin: '0 0',
 }));
 
-const bgStyle = computed(() => {
+const bgStyle = computed((): { backgroundPosition: string; backgroundSize: string } => {
     const zoom = ss.canvasZoom.value;
     const size = 24 * zoom;
     return {
@@ -26,7 +26,7 @@ const bgStyle = computed(() => {
 
 let panState: { startX: number; startY: number; origX: number; origY: number } | null = null;
 
-function onCanvasMouseDown(e: MouseEvent) {
+function onCanvasMouseDown(e: MouseEvent): void {
     // Only pan when clicking directly on the canvas background
     if (e.target !== canvasRef.value && !(e.target as HTMLElement)?.classList?.contains('canvas-bg')) return;
     if (e.button !== 0) return;
@@ -48,15 +48,15 @@ function onCanvasMouseDown(e: MouseEvent) {
     document.addEventListener('mouseup', onPanEnd);
 }
 
-function onPanMove(e: MouseEvent) {
-    if (!panState) return;
+function onPanMove(e: MouseEvent): void {
+    if (panState === null) return;
     ss.canvasOffset.value = {
         x: panState.origX + (e.clientX - panState.startX),
         y: panState.origY + (e.clientY - panState.startY),
     };
 }
 
-function onPanEnd() {
+function onPanEnd(): void {
     panState = null;
     document.removeEventListener('mousemove', onPanMove);
     document.removeEventListener('mouseup', onPanEnd);
@@ -64,18 +64,19 @@ function onPanEnd() {
 
 // ── Wheel to pan / zoom ──
 
-function onWheel(e: WheelEvent) {
+function onWheel(e: WheelEvent): void {
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
     const modifier = isMac ? e.metaKey : e.ctrlKey;
 
     if (modifier || e.ctrlKey) {
         // Zoom – pinch gesture or Cmd/Ctrl + scroll
         e.preventDefault();
-        const rect = canvasRef.value!.getBoundingClientRect();
+        const rect = canvasRef.value?.getBoundingClientRect();
+        if (rect === undefined) return;
         const cursorX = e.clientX - rect.left;
         const cursorY = e.clientY - rect.top;
         const delta = -e.deltaY * 0.005;
-        ss.setZoom(ss.canvasZoom.value + delta, cursorX, cursorY);
+        ss.setZoom(ss.canvasZoom.value + delta, { x: cursorX, y: cursorY });
     } else {
         // Pan
         ss.canvasOffset.value = {
@@ -87,6 +88,9 @@ function onWheel(e: WheelEvent) {
 </script>
 
 <template>
+    <!-- Pan and pinch-zoom are pointer gestures on the canvas surface; the
+         keyboard equivalents live on the zoom controls in CanvasTabs. -->
+    <!-- eslint-disable-next-line a11y/no-static-element-interactions -->
     <div
         ref="canvasRef"
         class="canvas-workspace"
@@ -147,8 +151,7 @@ function onWheel(e: WheelEvent) {
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 1;
-    /* No width/height – children are absolutely positioned */
+    z-index: $z-base;
 }
 
 .canvas-empty {
@@ -164,14 +167,14 @@ function onWheel(e: WheelEvent) {
 }
 
 .empty-title {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-semibold;
     color: $text-muted;
-    margin: 0 0 4px;
+    margin: 0 0 $space-3;
 }
 
 .empty-sub {
-    font-size: 13px;
+    font-size: $font-size-md;
     color: $text3;
     margin: 0;
 }

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, inject } from 'vue';
-import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';
-import type { TextBox } from '../types/spreadsheet';
-import ColorPicker from './toolbar/ColorPicker.vue';
-import ToolbarTypeSelector from './toolbar/ToolbarTypeSelector.vue';
-import ToolbarFontPicker from './toolbar/ToolbarFontPicker.vue';
-import { colorPalette } from './toolbar/colorPalette';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import type { TextBox } from '@/renderer/types/spreadsheet';
+import ColorPicker from '@/renderer/components/toolbar/ColorPicker.vue';
+import ToolbarTypeSelector from '@/renderer/components/toolbar/ToolbarTypeSelector.vue';
+import ToolbarFontPicker from '@/renderer/components/toolbar/ToolbarFontPicker.vue';
+import { colorPalette } from '@/renderer/components/toolbar/colorPalette';
 
 defineEmits<{
     addTable: [];
@@ -18,15 +18,15 @@ defineEmits<{
     unmergeCells: [];
 }>();
 
-const ss = inject(SPREADSHEET_KEY)!;
+const ss = injectSpreadsheet();
 
 // ── TextBox formatting ──––––––––––––––––––––––––––––––––––––––––––––––––––––––
 
-const hasActiveTextBox = computed(() => !!ss.activeTextBoxId.value);
+const hasActiveTextBox = computed((): boolean => ss.activeTextBoxId.value !== null);
 
-const activeTextBoxData = computed(() => {
-    if (!ss.activeTextBoxId.value) return null;
-    return ss.findTextBox(ss.activeTextBoxId.value) ?? null;
+const activeTextBoxData = computed((): TextBox | null => {
+    if (ss.activeTextBoxId.value === null) return null;
+    return ss.findTextBox(ss.activeTextBoxId.value);
 });
 
 const tbColorMenuType = ref<'tbText' | 'tbFill' | 'tbBorder' | null>(null);
@@ -36,27 +36,27 @@ const tbLastBorderColor = ref('#CCCCCC');
 
 // ── Unified formatting (works for both cells and text boxes) ──––––––––––––––––––
 
-const fmtIsBold = computed(() => {
+const fmtIsBold = computed((): boolean => {
     if (hasActiveTextBox.value) return activeTextBoxData.value?.fontWeight === 'bold';
-    const fmt = ss.getActiveCellFormat();
+    const fmt = ss.findActiveCellFormat();
     return fmt?.bold ?? false;
 });
 
-const fmtIsItalic = computed(() => {
+const fmtIsItalic = computed((): boolean => {
     if (hasActiveTextBox.value) return activeTextBoxData.value?.fontStyle === 'italic';
-    const fmt = ss.getActiveCellFormat();
+    const fmt = ss.findActiveCellFormat();
     return fmt?.italic ?? false;
 });
 
-const fmtAlign = computed<'left' | 'center' | 'right'>(() => {
+const fmtAlign = computed<'left' | 'center' | 'right'>((): 'left' | 'center' | 'right' => {
     if (hasActiveTextBox.value) return activeTextBoxData.value?.align ?? 'left';
-    const fmt = ss.getActiveCellFormat();
+    const fmt = ss.findActiveCellFormat();
     return fmt?.align ?? 'left';
 });
 
 // ── Type selector ──––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 
-const hasActiveCell = computed(() => !!ss.activeCell.value);
+const hasActiveCell = computed((): boolean => !(ss.activeCell.value === null));
 
 // ── Cell coloring ──––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 
@@ -65,21 +65,136 @@ const lastTextColor = ref('#000000');
 const lastFillColor = ref('#FFEB3B');
 const isDark = ref(false);
 
-const currentTextColor = computed(() => {
-    const fmt = ss.getActiveCellFormat();
+const currentTextColor = computed((): string | null => {
+    const fmt = ss.findActiveCellFormat();
     return fmt?.textColor ?? null;
 });
 
-const currentFillColor = computed(() => {
-    const fmt = ss.getActiveCellFormat();
+const currentFillColor = computed((): string | null => {
+    const fmt = ss.findActiveCellFormat();
     return fmt?.bgColor ?? null;
 });
 
+function applyTextColor(color: string): void {
+    ss.setSelectionFormat({ textColor: color });
+    lastTextColor.value = color;
+    colorMenuType.value = null;
+}
+
+function applyFillColor(color: string): void {
+    ss.setSelectionFormat({ bgColor: color });
+    lastFillColor.value = color;
+    colorMenuType.value = null;
+}
+
+function clearTextColor(): void {
+    ss.setSelectionFormat({ textColor: undefined });
+    colorMenuType.value = null;
+}
+
+function clearFillColor(): void {
+    ss.setSelectionFormat({ bgColor: undefined });
+    colorMenuType.value = null;
+}
+
+function onClickOutside(): void {
+    // ColorPicker uses @click.stop internally, so any click reaching here is outside
+    colorMenuType.value = null;
+    tbColorMenuType.value = null;
+}
+
+function toggleTheme(): void {
+    isDark.value = !isDark.value;
+    applyTheme();
+    localStorage.setItem('slate-theme', isDark.value ? 'dark' : 'light');
+}
+
+function applyTheme(): void {
+    document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light');
+}
+
+function tbUpdateProp<TKey extends keyof TextBox>(prop: TKey, value: TextBox[TKey]): void {
+    const id = ss.activeTextBoxId.value;
+    if (id === null) return;
+    ss.updateTextBox(id, { [prop]: value });
+}
+
+function tbToggleBold(): void {
+    const current = activeTextBoxData.value?.fontWeight ?? 'normal';
+    tbUpdateProp('fontWeight', current === 'bold' ? 'normal' : 'bold');
+}
+
+function tbToggleItalic(): void {
+    const current = activeTextBoxData.value?.fontStyle ?? 'normal';
+    tbUpdateProp('fontStyle', current === 'italic' ? 'normal' : 'italic');
+}
+
+function tbSetAlign(a: 'left' | 'center' | 'right'): void {
+    tbUpdateProp('align', a);
+}
+
+function tbIncreaseFontSize(): void {
+    const size = activeTextBoxData.value?.fontSize ?? 14;
+    tbUpdateProp('fontSize', Math.min(size + 2, 120));
+}
+
+function tbDecreaseFontSize(): void {
+    const size = activeTextBoxData.value?.fontSize ?? 14;
+    tbUpdateProp('fontSize', Math.max(size - 2, 8));
+}
+
+function tbApplyTextColor(color: string): void {
+    tbUpdateProp('textColor', color);
+    if (color !== '') tbLastTextColor.value = color;
+    tbColorMenuType.value = null;
+}
+
+function tbApplyFillColor(color: string): void {
+    tbUpdateProp('bgColor', color);
+    if (color !== '') tbLastFillColor.value = color;
+    tbColorMenuType.value = null;
+}
+
+function tbApplyBorderColor(color: string): void {
+    tbUpdateProp('borderColor', color);
+    if (color !== '') {
+        tbLastBorderColor.value = color;
+        // auto-set borderWidth to 1 if not set
+        if ((activeTextBoxData.value?.borderWidth ?? 0) === 0) tbUpdateProp('borderWidth', 1);
+    }
+    tbColorMenuType.value = null;
+}
+
+function fmtToggleBold(): void {
+    if (hasActiveTextBox.value) {
+        tbToggleBold();
+    } else if (hasActiveCell.value) {
+        const current = ss.findActiveCellFormat()?.bold ?? false;
+        ss.setSelectionFormat({ bold: !current });
+    }
+}
+
+function fmtToggleItalic(): void {
+    if (hasActiveTextBox.value) {
+        tbToggleItalic();
+    } else if (hasActiveCell.value) {
+        const current = ss.findActiveCellFormat()?.italic ?? false;
+        ss.setSelectionFormat({ italic: !current });
+    }
+}
+
+function fmtSetAlign(a: 'left' | 'center' | 'right'): void {
+    if (hasActiveTextBox.value) {
+        tbSetAlign(a);
+    } else if (hasActiveCell.value) {
+        ss.setSelectionFormat({ align: a });
+    }
+}
 // ── Theme ──–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––-
 
-onMounted(() => {
+onMounted((): void => {
     const saved = localStorage.getItem('slate-theme');
-    if (saved) {
+    if (saved !== null) {
         isDark.value = saved === 'dark';
     } else {
         isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -88,125 +203,9 @@ onMounted(() => {
     document.addEventListener('click', onClickOutside);
 });
 
-onBeforeUnmount(() => {
+onBeforeUnmount((): void => {
     document.removeEventListener('click', onClickOutside);
 });
-
-function applyTextColor(color: string) {
-    ss.setSelectionFormat({ textColor: color });
-    lastTextColor.value = color;
-    colorMenuType.value = null;
-}
-
-function applyFillColor(color: string) {
-    ss.setSelectionFormat({ bgColor: color });
-    lastFillColor.value = color;
-    colorMenuType.value = null;
-}
-
-function clearTextColor() {
-    ss.setSelectionFormat({ textColor: undefined });
-    colorMenuType.value = null;
-}
-
-function clearFillColor() {
-    ss.setSelectionFormat({ bgColor: undefined });
-    colorMenuType.value = null;
-}
-
-function onClickOutside() {
-    // ColorPicker uses @click.stop internally, so any click reaching here is outside
-    colorMenuType.value = null;
-    tbColorMenuType.value = null;
-}
-
-function toggleTheme() {
-    isDark.value = !isDark.value;
-    applyTheme();
-    localStorage.setItem('slate-theme', isDark.value ? 'dark' : 'light');
-}
-
-function applyTheme() {
-    document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light');
-}
-
-function tbUpdateProp<K extends keyof TextBox>(prop: K, value: TextBox[K]) {
-    const id = ss.activeTextBoxId.value;
-    if (!id) return;
-    ss.updateTextBox(id, { [prop]: value } as Partial<TextBox>);
-}
-
-function tbToggleBold() {
-    const current = activeTextBoxData.value?.fontWeight ?? 'normal';
-    tbUpdateProp('fontWeight', current === 'bold' ? 'normal' : 'bold');
-}
-
-function tbToggleItalic() {
-    const current = activeTextBoxData.value?.fontStyle ?? 'normal';
-    tbUpdateProp('fontStyle', current === 'italic' ? 'normal' : 'italic');
-}
-
-function tbSetAlign(a: 'left' | 'center' | 'right') {
-    tbUpdateProp('align', a);
-}
-
-function tbIncreaseFontSize() {
-    const size = activeTextBoxData.value?.fontSize ?? 14;
-    tbUpdateProp('fontSize', Math.min(size + 2, 120));
-}
-
-function tbDecreaseFontSize() {
-    const size = activeTextBoxData.value?.fontSize ?? 14;
-    tbUpdateProp('fontSize', Math.max(size - 2, 8));
-}
-
-function tbApplyTextColor(color: string) {
-    tbUpdateProp('textColor', color);
-    if (color) tbLastTextColor.value = color;
-    tbColorMenuType.value = null;
-}
-
-function tbApplyFillColor(color: string) {
-    tbUpdateProp('bgColor', color);
-    if (color) tbLastFillColor.value = color;
-    tbColorMenuType.value = null;
-}
-
-function tbApplyBorderColor(color: string) {
-    tbUpdateProp('borderColor', color);
-    if (color) {
-        tbLastBorderColor.value = color;
-        // auto-set borderWidth to 1 if not set
-        if (!activeTextBoxData.value?.borderWidth) tbUpdateProp('borderWidth', 1);
-    }
-    tbColorMenuType.value = null;
-}
-
-function fmtToggleBold() {
-    if (hasActiveTextBox.value) {
-        tbToggleBold();
-    } else if (hasActiveCell.value) {
-        const current = ss.getActiveCellFormat()?.bold ?? false;
-        ss.setSelectionFormat({ bold: !current });
-    }
-}
-
-function fmtToggleItalic() {
-    if (hasActiveTextBox.value) {
-        tbToggleItalic();
-    } else if (hasActiveCell.value) {
-        const current = ss.getActiveCellFormat()?.italic ?? false;
-        ss.setSelectionFormat({ italic: !current });
-    }
-}
-
-function fmtSetAlign(a: 'left' | 'center' | 'right') {
-    if (hasActiveTextBox.value) {
-        tbSetAlign(a);
-    } else if (hasActiveCell.value) {
-        ss.setSelectionFormat({ align: a });
-    }
-}
 </script>
 
 <template>
@@ -828,8 +827,13 @@ function fmtSetAlign(a: 'left' | 'center' | 'right') {
                         </template>
                         <template #extra>
                             <div class="color-custom-row">
-                                <label class="color-custom-label">Width:</label>
+                                <label
+                                    class="color-custom-label"
+                                    for="tb-border-width"
+                                    >Width:</label
+                                >
                                 <select
+                                    id="tb-border-width"
                                     class="tb-border-select"
                                     :value="activeTextBoxData?.borderWidth ?? 0"
                                     @change="
@@ -843,8 +847,13 @@ function fmtSetAlign(a: 'left' | 'center' | 'right') {
                                 </select>
                             </div>
                             <div class="color-custom-row">
-                                <label class="color-custom-label">Radius:</label>
+                                <label
+                                    class="color-custom-label"
+                                    for="tb-border-radius"
+                                    >Radius:</label
+                                >
                                 <select
+                                    id="tb-border-radius"
                                     class="tb-border-select"
                                     :value="activeTextBoxData?.borderRadius ?? 0"
                                     @change="
@@ -911,29 +920,23 @@ function fmtSetAlign(a: 'left' | 'center' | 'right') {
 .toolbar {
     display: flex;
     align-items: center;
-    height: 40px;
-    padding: 0 10px;
+    height: $size-21;
+    padding: 0 $space-9;
     background: $bg-primary;
-    border-bottom: 1px solid $border-color;
+    border-bottom: $border-width-thin $border-color;
     user-select: none;
     flex-shrink: 0;
-    gap: 2px;
+    gap: $space-1;
     overflow: visible;
     position: relative;
-    z-index: 50;
-}
-
-.toolbar-group {
-    display: flex;
-    align-items: center;
-    gap: 1px;
+    z-index: $z-dropdown;
 }
 
 .toolbar-sep {
-    width: 1px;
-    height: 16px;
+    width: $size-0;
+    height: $size-11;
     background: $border-color;
-    margin: 0 6px;
+    margin: 0 $space-5;
     flex-shrink: 0;
 }
 
@@ -941,121 +944,52 @@ function fmtSetAlign(a: 'left' | 'center' | 'right') {
     flex: 1;
 }
 
-/* ── Logo ── */
+/* ––––– Logo ––––– */
 
 .toolbar-logo {
     display: flex;
     align-items: center;
-    padding: 0 4px;
+    padding: 0 $space-3;
     flex-shrink: 0;
     color: $text-primary;
-    opacity: 0.5;
+    opacity: $opacity-mid;
     -webkit-app-region: no-drag;
 
     svg {
-        height: 40px;
+        height: $size-21;
         width: auto;
         display: block;
     }
 }
 
-/* ── Toolbar button ── */
+/* ––––– Toolbar button ––––– */
 
-.tb {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    height: 30px;
-    min-width: 30px;
-    padding: 0 7px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: $text-muted;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition:
-        background 0.12s,
-        color 0.12s;
-    -webkit-app-region: no-drag;
-
-    svg {
-        flex-shrink: 0;
-    }
-
-    &:hover {
-        background: $bg-hover;
-        color: $text-primary;
-    }
-
-    &:active {
-        background: $bg-selected;
-    }
-
-    &.has-label {
-        padding: 0 10px 0 7px;
-
-        span {
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 0.01em;
-        }
-    }
-
-    &.theme-toggle {
-        margin-left: 2px;
-    }
-}
-
-/* ── TextBox toolbar extras ── */
-
-.tb-active {
-    background: var(--accent-color-alpha, rgba(66, 133, 244, 0.12)) !important;
-    color: $accent-color !important;
-}
+/* ––––– TextBox toolbar extras ––––– */
 
 .tb-font-size {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 28px;
-    height: 26px;
-    font-size: 12px;
-    font-weight: 600;
+    min-width: $size-17;
+    height: $size-16;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
     color: $text-primary;
     background: $bg-tertiary;
-    border-radius: 4px;
-    padding: 0 4px;
+    border-radius: $border-radius-sm;
+    padding: 0 $space-3;
     user-select: none;
-}
-
-// Slot content inside ColorPicker inherits parent scope
-.color-custom-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 6px;
-    padding-top: 6px;
-    border-top: 1px solid $border-color;
-}
-
-.color-custom-label {
-    font-size: 11px;
-    color: $text-muted;
-    font-weight: 500;
 }
 
 .tb-border-select {
     flex: 1;
-    height: 22px;
-    border: 1px solid $border-color;
-    border-radius: 4px;
+    height: $size-14;
+    border: $border-width-thin $border-color;
+    border-radius: $border-radius-sm;
     background: $bg-primary;
     color: $text-primary;
-    font-size: 11px;
-    padding: 0 4px;
+    font-size: $font-size-sm;
+    padding: 0 $space-3;
     cursor: pointer;
     outline: none;
 

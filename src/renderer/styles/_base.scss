@@ -1,0 +1,141 @@
+// Global reset and element defaults.
+// Owns: box-sizing, the document-level typography, the Electron drag regions,
+// the scrollbar, and the focus/selection treatment.
+// Does NOT own: the palette it paints with (_themes.scss) or anything scoped
+// to a single component.
+// Reached only through global.scss, which main.ts imports exactly once. Every
+// rule below is unscoped, so a second import would emit all of it twice.
+
+@use '@/renderer/styles/variables' as *;
+
+// ── Universal box-sizing ──────────────────────────────────────────────────────
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+// ── Root ──────────────────────────────────────────────────────────────────────
+
+:root {
+    font-family: $font-family;
+    line-height: $line-height-base;
+    font-weight: $font-weight-normal;
+    color: $text1;
+    background-color: $bg-primary;
+    font-synthesis: none;
+    text-rendering: optimizelegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+// ── Html, Body, App ───────────────────────────────────────────────────────────
+
+html {
+    scroll-behavior: smooth;
+
+    @media (prefers-reduced-motion: reduce) {
+        scroll-behavior: auto;
+    }
+
+    @media (width <= $breakpoint-md) {
+        text-size-adjust: 100%;
+    }
+}
+
+// The app fills the window and never scrolls as a document — the canvas and the
+// sheet manage their own scrolling, and a document-level scrollbar on top of
+// that would move the whole chrome with it.
+body,
+html,
+#app {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+}
+
+// ── Reduced motion ────────────────────────────────────────────────────────────
+
+// The single opt-out for every transition and animation in the app. SFCs declare
+// motion freely; this is what makes all of it answer to the OS setting in one
+// place, instead of each component remembering to ask.
+@media (prefers-reduced-motion: reduce) {
+    // stylelint-disable declaration-no-important -- a global override has to beat the scoped SFC rules it is overriding, and specificity alone cannot reach them.
+    *,
+    *::before,
+    *::after {
+        animation-duration: $duration-none !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: $duration-none !important;
+        scroll-behavior: auto !important;
+    }
+    // stylelint-enable declaration-no-important
+}
+
+// ── Electron drag regions ─────────────────────────────────────────────────────
+
+// These do not make anything draggable; they make it NOT draggable. The window
+// declares its own drag handle in the toolbar, and anything the user is meant
+// to click has to opt out or the mousedown starts a window drag instead of
+// reaching the element.
+button,
+input,
+textarea,
+select,
+a,
+[role='button'],
+.clickable {
+    -webkit-app-region: no-drag;
+    cursor: pointer;
+}
+
+// Scrollable content containers, matched by the class patterns they share.
+[class*='content'],
+[class*='list'],
+[class*='body'],
+[class*='container'],
+[class*='wrapper'],
+[class*='entries'],
+[class*='items'],
+.modal,
+.popup,
+.dropdown-menu {
+    -webkit-app-region: no-drag;
+}
+
+// ── Scrollbar ─────────────────────────────────────────────────────────────────
+
+::-webkit-scrollbar {
+    width: $size-5;
+    height: $size-5;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: $scrollbar-thumb;
+    border-radius: $border-radius-xs;
+    transition: background $transition-slow;
+
+    &:hover {
+        background: $scrollbar-thumb-hover;
+    }
+}
+
+// ── Focus & Selection ─────────────────────────────────────────────────────────
+
+:focus-visible {
+    outline: $border-width-thick $accent-color;
+    outline-offset: -$size-1;
+    border-radius: $border-radius-sm;
+}
+
+::selection {
+    background: $accent-color-alpha;
+    color: $text1;
+}

@@ -4,24 +4,62 @@
  * Does NOT own: any business logic (delegated to sub-composables in ./spreadsheet/).
  */
 
-import { type InjectionKey } from 'vue';
-import { createState } from './spreadsheet/state';
-import { createHelpers } from './spreadsheet/helpers';
-import { createFormulaEngine } from './spreadsheet/useFormulaEngine';
-import { createUndoRedo } from './spreadsheet/useUndoRedo';
-import { createCells } from './spreadsheet/useCells';
-import { createEditing } from './spreadsheet/useEditing';
-import { createSelection } from './spreadsheet/useSelection';
-import { createCanvases } from './spreadsheet/useCanvases';
-import { createTables } from './spreadsheet/useTables';
-import { createMerge } from './spreadsheet/useMerge';
-import { createClipboard } from './spreadsheet/useClipboard';
-import { createFormulas } from './spreadsheet/useFormulas';
-import { createCharts } from './spreadsheet/useCharts';
-import { createTextBoxes } from './spreadsheet/useTextBoxes';
-import { createFileOps } from './spreadsheet/useFileOps';
+import { inject, type InjectionKey } from 'vue';
+import { createState, type SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
+import { createHelpers, type SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import { createFormulaEngine, type SpreadsheetFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
+import { createUndoRedo, type SpreadsheetUndoRedo } from '@/renderer/composables/spreadsheet/undoRedo';
+import { createCells, type SpreadsheetCells } from '@/renderer/composables/spreadsheet/cells';
+import { createEditing, type SpreadsheetEditing } from '@/renderer/composables/spreadsheet/editing';
+import { createSelection, type SpreadsheetSelection } from '@/renderer/composables/spreadsheet/selection';
+import { createCanvases, type SpreadsheetCanvases } from '@/renderer/composables/spreadsheet/canvases';
+import { createTables, type SpreadsheetTables } from '@/renderer/composables/spreadsheet/tables';
+import { createMerge, type SpreadsheetMerge } from '@/renderer/composables/spreadsheet/merge';
+import { createClipboard, type SpreadsheetClipboard } from '@/renderer/composables/spreadsheet/clipboard';
+import { createFormulas, type SpreadsheetFormulas } from '@/renderer/composables/spreadsheet/formulas';
+import { createCharts, type SpreadsheetCharts } from '@/renderer/composables/spreadsheet/charts';
+import { createTextBoxes, type SpreadsheetTextBoxes } from '@/renderer/composables/spreadsheet/textBoxes';
+import { createFileOps, type SpreadsheetFileOps } from '@/renderer/composables/spreadsheet/fileOps';
 
-export function useSpreadsheet() {
+/**
+ * The whole spreadsheet API, as one injectable value. Written as an
+ * intersection of the sub-composable types rather than inferred, so it mirrors
+ * the spreads in `useSpreadsheet`'s return statement line for line: adding a
+ * member to a sub-composable publishes it here, and the `Pick`s below are the
+ * exact list of helpers and engine calls components are allowed to reach.
+ */
+export type SpreadsheetState = Omit<SpreadsheetCoreState, 'counters'> &
+    SpreadsheetCanvases &
+    SpreadsheetTables &
+    SpreadsheetCells &
+    SpreadsheetSelection &
+    SpreadsheetEditing &
+    SpreadsheetMerge &
+    SpreadsheetClipboard &
+    SpreadsheetFormulas &
+    SpreadsheetCharts &
+    SpreadsheetTextBoxes &
+    SpreadsheetFileOps &
+    SpreadsheetUndoRedo &
+    Pick<
+        SpreadsheetHelpers,
+        | 'findNormalizedSelection'
+        | 'isInSelection'
+        | 'isRowInSelection'
+        | 'isColInSelection'
+        | 'isEntireTableSelected'
+        | 'hasMultiCellSelection'
+        | 'findTable'
+        | 'findTableGlobal'
+        | 'findTextBox'
+        | 'findChart'
+        | 'bringToFront'
+        | 'bringToFrontById'
+    > &
+    Pick<SpreadsheetFormulaEngine, 'recalculate' | 'shiftFormulaReferences'>;
+export const SPREADSHEET_KEY = Symbol('spreadsheet') as InjectionKey<SpreadsheetState>;
+
+export function useSpreadsheet(): SpreadsheetState {
     // ── Foundation layer ─────────────────────────────────────────────────────
     const state = createState();
     const helpers = createHelpers(state);
@@ -35,14 +73,14 @@ export function useSpreadsheet() {
     // ── Core domain layer ────────────────────────────────────────────────────
     const cells = createCells(state, {
         findTable: helpers.findTable,
-        getNormalizedSelection: helpers.getNormalizedSelection,
+        findNormalizedSelection: helpers.findNormalizedSelection,
         pushUndo: undoRedo.pushUndo,
         recalculate: formulaEngine.recalculate,
     });
     const editing = createEditing(state, {
         findTableGlobal: helpers.findTableGlobal,
         recalculateMaxZ: helpers.recalculateMaxZ,
-        getNormalizedSelection: helpers.getNormalizedSelection,
+        findNormalizedSelection: helpers.findNormalizedSelection,
         setCellValue: cells.setCellValue,
         getRawValue: cells.getRawValue,
         pushUndo: undoRedo.pushUndo,
@@ -63,7 +101,7 @@ export function useSpreadsheet() {
     });
     const tables = createTables(state, {
         findTable: helpers.findTable,
-        getNormalizedSelection: helpers.getNormalizedSelection,
+        findNormalizedSelection: helpers.findNormalizedSelection,
         pushUndo: undoRedo.pushUndo,
         startUndoBatch: undoRedo.startUndoBatch,
         recalculate: formulaEngine.recalculate,
@@ -74,14 +112,14 @@ export function useSpreadsheet() {
     });
     const merge = createMerge(state, {
         findTable: helpers.findTable,
-        getNormalizedSelection: helpers.getNormalizedSelection,
+        findNormalizedSelection: helpers.findNormalizedSelection,
         pushUndo: undoRedo.pushUndo,
     });
     const clipboard = createClipboard(state, {
         findTable: helpers.findTable,
-        getNormalizedSelection: helpers.getNormalizedSelection,
+        findNormalizedSelection: helpers.findNormalizedSelection,
         pushUndo: undoRedo.pushUndo,
-        getCell: cells.getCell,
+        findCell: cells.findCell,
         setCellValue: cells.setCellValue,
         getDisplayValue: cells.getDisplayValue,
         getRawValue: cells.getRawValue,
@@ -92,7 +130,7 @@ export function useSpreadsheet() {
     const formulas = createFormulas(state, {
         findTableGlobal: helpers.findTableGlobal,
         findTableByName: helpers.findTableByName,
-        getCell: cells.getCell,
+        findCell: cells.findCell,
         startEditing: editing.startEditing,
     });
     const charts = createCharts(state, {
@@ -154,7 +192,7 @@ export function useSpreadsheet() {
 
         // Selection
         ...selection,
-        getNormalizedSelection: helpers.getNormalizedSelection,
+        findNormalizedSelection: helpers.findNormalizedSelection,
         isInSelection: helpers.isInSelection,
         isRowInSelection: helpers.isRowInSelection,
         isColInSelection: helpers.isColInSelection,
@@ -197,5 +235,14 @@ export function useSpreadsheet() {
     };
 }
 
-export type SpreadsheetState = ReturnType<typeof useSpreadsheet>;
-export const SPREADSHEET_KEY = Symbol('spreadsheet') as InjectionKey<SpreadsheetState>;
+/**
+ * Reads the spreadsheet App.vue provides. Throws rather than returning
+ * `undefined`, because every component that calls this renders inside App and a
+ * missing provider is a wiring bug, not a state a caller can handle.
+ */
+export function injectSpreadsheet(): SpreadsheetState {
+    const ss = inject(SPREADSHEET_KEY);
+    if (ss === undefined)
+        throw new Error('useSpreadsheet: no spreadsheet provided — is this component mounted inside App.vue?');
+    return ss;
+}

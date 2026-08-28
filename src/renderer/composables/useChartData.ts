@@ -4,15 +4,28 @@
  * Does NOT own: chart CRUD (useCharts.ts), drag/resize (useDragResize.ts).
  */
 
-import { computed, ref, onMounted, onBeforeUnmount, type Ref } from 'vue';
-import type { ChartObject } from '../types/spreadsheet';
-import type { SpreadsheetState } from './useSpreadsheet';
-import type { ChartOptions, TooltipItem, ChartTypeRegistry } from 'chart.js';
+import { computed, ref, onMounted, onBeforeUnmount, type Component, type ComputedRef, type Ref } from 'vue';
+import type { ChartObject } from '@/renderer/types/spreadsheet';
+import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+import type { ChartData, ChartOptions, TooltipItem, ChartTypeRegistry } from 'chart.js';
 import { Bar, Line, Pie, Doughnut, Scatter, Radar } from 'vue-chartjs';
+
+// ── Composable ──────────────────────────────────────────────────────────────
+
+/**
+ * Everything CanvasChart.vue needs to render one chart. Chart.js's own
+ * `ChartData`/`ChartOptions` are used rather than the inferred literal shapes,
+ * which spell out every per-chart-type branch and leak Chart.js internals.
+ */
+export type ChartRendering = {
+    chartComponent: ComputedRef<Component>;
+    chartData: ComputedRef<ChartData | null>;
+    chartOptions: ComputedRef<ChartOptions>;
+};
 
 // ── Chart component mapping ─────────────────────────────────────────────────
 
-const CHART_COMPONENTS: Record<string, unknown> = {
+const CHART_COMPONENTS: Record<string, Component> = {
     bar: Bar,
     line: Line,
     area: Line,
@@ -22,9 +35,7 @@ const CHART_COMPONENTS: Record<string, unknown> = {
     radar: Radar,
 };
 
-// ── Composable ──────────────────────────────────────────────────────────────
-
-export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState) {
+export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): ChartRendering {
     // Reactive theme tracking
     // Chart.js renders to <canvas> and can't use CSS variables, so we resolve
     // them to actual color values. A MutationObserver watches for data-theme
@@ -32,8 +43,8 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState) {
     const themeKey = ref(0);
     let themeObserver: MutationObserver | null = null;
 
-    onMounted(() => {
-        themeObserver = new MutationObserver(() => {
+    onMounted((): void => {
+        themeObserver = new MutationObserver((): void => {
             themeKey.value++;
         });
         themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -44,13 +55,13 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState) {
 
     // Chart component
 
-    const chartComponent = computed(() => CHART_COMPONENTS[chart.value.chartType] ?? Bar);
+    const chartComponent = computed((): Component => CHART_COMPONENTS[chart.value.chartType] ?? Bar);
 
     // Chart data
 
-    const chartData = computed(() => {
+    const chartData = computed((): ChartData | null => {
         const ds = chart.value.dataSource;
-        if (!ds || ds.seriesRefs.length === 0) return null;
+        if (ds === null || ds.seriesRefs.length === 0) return null;
 
         const useHeader = ds.useHeader;
         const chartType = chart.value.chartType;
@@ -58,29 +69,29 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState) {
 
         // Resolve labels
         let labels: string[] = [];
-        if (ds.labelRef && ds.labelRef.refString) {
+        if (ds.labelRef !== null && ds.labelRef.refString !== '') {
             const vals = ss.getChartRefValues(ds.labelRef.refString);
             labels =
                 useHeader && vals.length > 0
-                    ? vals.slice(1).map((v) => (v != null ? String(v) : ''))
-                    : vals.map((v) => (v != null ? String(v) : ''));
+                    ? vals.slice(1).map((v) => (v !== null ? String(v) : ''))
+                    : vals.map((v) => (v !== null ? String(v) : ''));
         }
 
         // Resolve series
-        interface SeriesEntry {
+        type SeriesEntry = {
             name: string;
             data: number[];
             idx: number;
-        }
+        };
         const seriesEntries: SeriesEntry[] = ds.seriesRefs
-            .filter((sref) => sref.refString)
+            .filter((sref) => sref.refString !== '')
             .map((sref, seriesIdx) => {
                 const vals = ss.getChartRefValues(sref.refString);
                 let name = 'Series ' + (seriesIdx + 1);
                 let dataVals: unknown[];
 
                 if (useHeader && vals.length > 0) {
-                    name = vals[0] != null ? String(vals[0]) : name;
+                    name = vals[0] !== null ? String(vals[0]) : name;
                     dataVals = vals.slice(1);
                 } else {
                     dataVals = vals;
@@ -100,10 +111,13 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState) {
         // Scatter
         if (chartType === 'scatter') {
             const datasets = seriesEntries.map((entry) => {
-                const data = entry.data.map((v, i) => ({
-                    x: labels.length > i ? Number(labels[i]) || i : i,
-                    y: v,
-                }));
+                const data = entry.data.map((v, i) => {
+                    // A label that is not a usable number (or is 0) falls back
+                    // to the point's ordinal position on the x axis.
+                    const asNumber = labels.length > i ? Number(labels[i]) : Number.NaN;
+                    const usable = !Number.isNaN(asNumber) && asNumber !== 0;
+                    return { x: usable ? asNumber : i, y: v };
+                });
                 const color = chart.value.colorScheme[entry.idx % chart.value.colorScheme.length];
                 return { label: entry.name, data, backgroundColor: color, borderColor: color, borderWidth: 1 };
             });
@@ -222,10 +236,10 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState) {
                 title: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: (ctx: TooltipItem<keyof ChartTypeRegistry>) => {
+                        label: (ctx: TooltipItem<keyof ChartTypeRegistry>): string => {
                             const label = ctx.dataset?.label ?? '';
                             const val = isScatter ? `(${ctx.parsed?.x}, ${ctx.parsed?.y})` : ctx.formattedValue;
-                            return label ? `${label}: ${val}` : String(val);
+                            return label !== '' ? `${label}: ${val}` : String(val);
                         },
                     },
                 },
@@ -257,8 +271,8 @@ function toChartNumber(v: unknown): number {
         // USD: $1,234.56 → 1234.56
         if (cleaned.includes('$')) {
             cleaned = cleaned.replace(/[$,]/g, '');
-            const n = parseFloat(cleaned);
-            if (!isNaN(n)) return n;
+            const parsed = parseFloat(cleaned);
+            if (!isNaN(parsed)) return parsed;
         }
 
         // EUR: €1.234,56 → 1234.56
@@ -269,8 +283,8 @@ function toChartNumber(v: unknown): number {
             } else if (cleaned.includes(',')) {
                 cleaned = cleaned.replace(',', '.');
             }
-            const n = parseFloat(cleaned);
-            if (!isNaN(n)) return n;
+            const parsed = parseFloat(cleaned);
+            if (!isNaN(parsed)) return parsed;
         }
 
         // General fallback

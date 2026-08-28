@@ -3,9 +3,9 @@ import {
     evaluateFormula,
     evaluateFormulaTyped,
     type FormulaContext,
-} from '../../../../../src/renderer/composables/spreadsheet/engine/formula';
-import type { CellDataType } from '../../../../../src/renderer/composables/spreadsheet/engine/cellTypes';
-import type { CellValue } from '../../../../../src/renderer/types/spreadsheet';
+} from '@/renderer/composables/spreadsheet/engine/formula';
+import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import type { CellValue } from '@/renderer/types/spreadsheet';
 
 // ── Test helpers ─────────────────────────────────────────────────────────────
 

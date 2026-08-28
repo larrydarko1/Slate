@@ -1,7 +1,11 @@
-.github
-.husky
-.vscode
-build
-design
 node_modules
 out
+dist
+dist-electron
+build
+coverage
+.github
+.git
+.husky
+.vscode
+design

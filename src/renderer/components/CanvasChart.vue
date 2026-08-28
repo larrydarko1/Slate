@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, inject, toRef, type PropType } from 'vue';
-import type { ChartObject } from '../types/spreadsheet';
-import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';
-import { useDragResize, type ResizeDir } from '../composables/useDragResize';
-import { useChartData } from '../composables/useChartData';
+import { computed, toRef } from 'vue';
+import type { ChartObject } from '@/renderer/types/spreadsheet';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import { useDragResize, type ResizeDir } from '@/renderer/composables/useDragResize';
+import ResizeHandles from '@/renderer/components/canvas/ResizeHandles.vue';
+import { useChartData } from '@/renderer/composables/useChartData';
 import {
     Chart as ChartJS,
     Title,
@@ -18,31 +19,15 @@ import {
     RadialLinearScale,
     Filler,
 } from 'chart.js';
-import ChartConfigPanel from './chart/ChartConfigPanel.vue';
+import ChartConfigPanel from '@/renderer/components/chart/ChartConfigPanel.vue';
 
-ChartJS.register(
-    Title,
-    Tooltip,
-    Legend,
-    BarElement,
-    LineElement,
-    PointElement,
-    ArcElement,
-    CategoryScale,
-    LinearScale,
-    RadialLinearScale,
-    Filler,
-);
+const props = defineProps<{ chart: ChartObject }>();
 
-const props = defineProps({
-    chart: { type: Object as PropType<ChartObject>, required: true },
-});
+const ss = injectSpreadsheet();
 
-const ss = inject(SPREADSHEET_KEY)!;
+const isActive = computed((): boolean => ss.activeChartId.value === props.chart.id);
 
-const isActive = computed(() => ss.activeChartId.value === props.chart.id);
-
-const boxStyle = computed(() => ({
+const boxStyle = computed((): { left: string; top: string; width: string; height: string; zIndex: number } => ({
     left: props.chart.x + 'px',
     top: props.chart.y + 'px',
     width: props.chart.width + 'px',
@@ -61,9 +46,9 @@ const { startDrag, startResize } = useDragResize({
     zoom: ss.canvasZoom,
     minWidth: 200,
     minHeight: 150,
-    onMove: (x, y) => ss.moveChart(props.chart.id, x, y),
-    onResize: (w, h) => ss.resizeChart(props.chart.id, w, h),
-    onEnd: () => ss.endUndoBatch(),
+    onMove: (x, y): void => ss.moveChart(props.chart.id, x, y),
+    onResize: (w, h): void => ss.resizeChart(props.chart.id, w, h),
+    onEnd: (): void => ss.endUndoBatch(),
 });
 
 function onMouseDown(e: MouseEvent): void {
@@ -78,11 +63,27 @@ function onResizeStart(dir: ResizeDir, e: MouseEvent): void {
 function onTitleInput(e: Event): void {
     ss.updateChart(props.chart.id, { title: (e.target as HTMLInputElement).value });
 }
+ChartJS.register(
+    Title,
+    Tooltip,
+    Legend,
+    BarElement,
+    LineElement,
+    PointElement,
+    ArcElement,
+    CategoryScale,
+    LinearScale,
+    RadialLinearScale,
+    Filler,
+);
 </script>
 
 <template>
+    <!-- Drag-to-move is a pointer gesture with no keyboard equivalent; the
+         chart's own controls sit in the config panel. -->
+    <!-- eslint-disable-next-line a11y/no-static-element-interactions -->
     <div
-        class="canvas-chart"
+        class="canvas-object canvas-chart"
         :class="{ active: isActive }"
         :style="boxStyle"
         @mousedown.stop="onMouseDown">
@@ -126,38 +127,14 @@ function onTitleInput(e: Event): void {
             v-if="isActive"
             :chart="chart" />
 
-        <!-- Resize handles (only when active) -->
-        <template v-if="isActive">
-            <div
-                class="resize-handle rh-e"
-                @mousedown.stop.prevent="onResizeStart('e', $event)"></div>
-            <div
-                class="resize-handle rh-s"
-                @mousedown.stop.prevent="onResizeStart('s', $event)"></div>
-            <div
-                class="resize-handle rh-se"
-                @mousedown.stop.prevent="onResizeStart('se', $event)"></div>
-            <div
-                class="resize-handle rh-w"
-                @mousedown.stop.prevent="onResizeStart('w', $event)"></div>
-            <div
-                class="resize-handle rh-n"
-                @mousedown.stop.prevent="onResizeStart('n', $event)"></div>
-            <div
-                class="resize-handle rh-nw"
-                @mousedown.stop.prevent="onResizeStart('nw', $event)"></div>
-            <div
-                class="resize-handle rh-ne"
-                @mousedown.stop.prevent="onResizeStart('ne', $event)"></div>
-            <div
-                class="resize-handle rh-sw"
-                @mousedown.stop.prevent="onResizeStart('sw', $event)"></div>
-        </template>
+        <ResizeHandles
+            v-if="isActive"
+            @start="onResizeStart" />
 
         <!-- Delete button -->
         <button
             v-if="isActive"
-            class="chart-delete"
+            class="canvas-delete"
             title="Delete chart"
             @click.stop="ss.removeChart(chart.id)"
             @mousedown.stop>
@@ -168,37 +145,26 @@ function onTitleInput(e: Event): void {
 
 <style scoped lang="scss">
 .canvas-chart {
-    position: absolute;
-    cursor: default;
-    user-select: none;
-    background: $bg-primary;
-    border: 1px solid $border-color;
-    border-radius: 8px;
     display: flex;
     flex-direction: column;
     overflow: visible;
+    background: $bg-primary;
+    border: $border-width-thin $border-color;
+    border-radius: $border-radius-lg;
     box-shadow: $shadow-sm;
-    transition:
-        border-color 0.15s,
-        box-shadow 0.15s;
 
     &:hover:not(.active) {
         border-color: $text-muted;
-    }
-
-    &.active {
-        border-color: $accent-color;
-        box-shadow: 0 0 0 1px $accent-color;
     }
 }
 
 .chart-title-bar {
     flex: 0 0 auto;
-    padding: 6px 10px 0;
-    font-size: 13px;
-    font-weight: 600;
+    padding: $space-5 $space-9 0;
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
     color: $text-primary;
-    min-height: 28px;
+    min-height: $size-17;
 }
 
 .chart-title-input {
@@ -217,15 +183,14 @@ function onTitleInput(e: Event): void {
 
 .chart-title-text {
     display: block;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+
+    @include truncate;
 }
 
 .chart-body {
     flex: 1;
     min-height: 0;
-    padding: 4px 8px 8px;
+    padding: $space-3 $space-7 $space-7;
     position: relative;
 }
 
@@ -240,116 +205,21 @@ function onTitleInput(e: Event): void {
 }
 
 .chart-empty-icon {
-    font-size: 32px;
-    margin: 0 0 4px;
+    font-size: $font-size-4xl;
+    margin: 0 0 $space-3;
 }
 
 .chart-empty-text {
-    font-size: 13px;
-    font-weight: 600;
-    margin: 0 0 2px;
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    margin: 0 0 $space-1;
 }
 
 .chart-empty-sub {
-    font-size: 11px;
+    font-size: $font-size-sm;
     margin: 0;
-    opacity: 0.7;
+    opacity: $opacity-high;
 }
 
 // Resize handles
-.resize-handle {
-    position: absolute;
-    z-index: 10;
-}
-
-.rh-e {
-    right: -3px;
-    top: 0;
-    bottom: 0;
-    width: 6px;
-    cursor: e-resize;
-}
-.rh-w {
-    left: -3px;
-    top: 0;
-    bottom: 0;
-    width: 6px;
-    cursor: w-resize;
-}
-.rh-s {
-    bottom: -3px;
-    left: 0;
-    right: 0;
-    height: 6px;
-    cursor: s-resize;
-}
-.rh-n {
-    top: -3px;
-    left: 0;
-    right: 0;
-    height: 6px;
-    cursor: n-resize;
-}
-.rh-se {
-    right: -4px;
-    bottom: -4px;
-    width: 8px;
-    height: 8px;
-    cursor: se-resize;
-    border-radius: 50%;
-    background: $accent-color;
-}
-.rh-ne {
-    right: -4px;
-    top: -4px;
-    width: 8px;
-    height: 8px;
-    cursor: ne-resize;
-    border-radius: 50%;
-    background: $accent-color;
-}
-.rh-nw {
-    left: -4px;
-    top: -4px;
-    width: 8px;
-    height: 8px;
-    cursor: nw-resize;
-    border-radius: 50%;
-    background: $accent-color;
-}
-.rh-sw {
-    left: -4px;
-    bottom: -4px;
-    width: 8px;
-    height: 8px;
-    cursor: sw-resize;
-    border-radius: 50%;
-    background: $accent-color;
-}
-
-.chart-delete {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 1px solid $border-color;
-    background: $bg-primary;
-    color: $text-muted;
-    font-size: 14px;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 11;
-    box-shadow: $shadow-sm;
-
-    &:hover {
-        background: $danger-color-alpha;
-        color: $danger-color;
-        border-color: $danger-color;
-    }
-}
 </style>

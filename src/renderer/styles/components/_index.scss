@@ -1,0 +1,6 @@
+// Sub-barrel — this folder's table of contents. `@forward` only, no rules.
+// Reached from global.scss, never from the injected barrel: everything here
+// emits, so it must ship once rather than once per SFC.
+
+@forward '@/renderer/styles/components/buttons';
+@forward '@/renderer/styles/components/canvas';

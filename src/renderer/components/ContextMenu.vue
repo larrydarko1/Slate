@@ -1,53 +1,62 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import type { ContextMenuApi, MenuItem } from '@/renderer/types/contextMenu';
 
-export interface MenuItem {
-    label: string;
-    action?: () => void;
-    separator?: boolean;
-    danger?: boolean;
-}
+defineExpose<ContextMenuApi>({ open, close });
 
 const visible = ref(false);
 const pos = ref({ x: 0, y: 0 });
 const items = ref<MenuItem[]>([]);
 
-function open(x: number, y: number, menuItems: MenuItem[]) {
+function open(x: number, y: number, menuItems: MenuItem[]): void {
     pos.value = { x, y };
     items.value = menuItems;
     visible.value = true;
 }
 
-function close() {
+function close(): void {
     visible.value = false;
 }
 
-function onItemClick(item: MenuItem) {
-    if (item.separator) return;
+function onItemClick(item: MenuItem): void {
+    if (item.separator === true) return;
     item.action?.();
     close();
 }
-
-defineExpose({ open, close });
 </script>
 
 <template>
     <Teleport to="body">
+        <!-- Full-viewport backdrop whose only job is to catch the click that
+             dismisses the menu — nothing for a reader to announce. -->
         <div
             v-if="visible"
             class="context-menu-overlay"
+            role="presentation"
             @mousedown.self="close">
             <div
                 class="context-menu"
+                role="menu"
                 :style="{ left: pos.x + 'px', top: pos.y + 'px' }">
-                <div
+                <template
                     v-for="item in items"
-                    :key="item.label"
-                    class="context-menu-item"
-                    :class="{ separator: item.separator, danger: item.danger }"
-                    @click.stop="onItemClick(item)">
-                    <template v-if="!item.separator">{{ item.label }}</template>
-                </div>
+                    :key="item.label">
+                    <div
+                        v-if="item.separator === true"
+                        class="context-menu-item separator"
+                        role="separator"></div>
+                    <div
+                        v-else
+                        class="context-menu-item"
+                        :class="{ danger: item.danger }"
+                        role="menuitem"
+                        tabindex="-1"
+                        @click.stop="onItemClick(item)"
+                        @keydown.enter.prevent="onItemClick(item)"
+                        @keydown.space.prevent="onItemClick(item)">
+                        {{ item.label }}
+                    </div>
+                </template>
             </div>
         </div>
     </Teleport>
@@ -57,37 +66,37 @@ defineExpose({ open, close });
 .context-menu-overlay {
     position: fixed;
     inset: 0;
-    z-index: 10000;
+    z-index: $z-modal-raised;
 }
 
 .context-menu {
     position: absolute;
-    min-width: 180px;
+    min-width: $size-24;
     background: $bg-primary;
-    border: 1px solid $border-color;
-    border-radius: 10px;
-    padding: 4px;
+    border: $border-width-thin $border-color;
+    border-radius: $border-radius-xl;
+    padding: $space-3;
     box-shadow:
         $shadow-lg,
-        0 0 0 1px rgba(0, 0, 0, 0.04);
-    z-index: 10001;
+        0 0 0 1px $scrim-faint;
+    z-index: $z-modal-raised;
 }
 
 .context-menu-item {
-    padding: 6px 12px;
-    font-size: 12px;
+    padding: $space-5 $space-11;
+    font-size: $font-size-base;
     color: $text-primary;
     cursor: pointer;
     user-select: none;
-    border-radius: 6px;
+    border-radius: $border-radius-md;
 
     &:hover:not(.separator) {
         background: $bg-hover;
     }
 
     &.separator {
-        height: 1px;
-        margin: 3px 6px;
+        height: $size-0;
+        margin: $space-2 $space-5;
         padding: 0;
         background: $border-color;
         cursor: default;

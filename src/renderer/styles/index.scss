@@ -1,0 +1,22 @@
+// Style barrel — injected into every Vue SFC by electron.vite.config.ts
+// (css.preprocessorOptions.scss.additionalData), so a component can reach
+// `$bg-primary` or `@include truncate` with no import line of its own.
+
+// ── Architecture ──────────────────────────────────────────────────────────────
+// index.scss     → this barrel; `@forward` only, emits nothing
+//   _variables.scss → design tokens and the theme aliases
+//   _mixins.scss    → mixins SFCs include from their own scoped blocks
+// global.scss    → the rules that EMIT, imported once in main.ts
+//   _themes.scss    → theme palettes, as CSS custom properties
+//   _base.scss      → reset, element defaults, drag regions, scrollbar
+
+// ── Why the split ─────────────────────────────────────────────────────────────
+// Each SFC `<style>` block is its own Sass compilation, and this barrel is
+// prepended to all 15 of them. So anything reachable from here that emits a
+// rule ships once PER COMPONENT rather than once per app. Restricting the
+// barrel to `@forward`s of variables and mixins is what makes the injection
+// free: neither produces a byte until something references it. Everything that
+// emits lives behind global.scss, which has exactly one importer.
+
+@forward '@/renderer/styles/variables';
+@forward '@/renderer/styles/mixins';

@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createState } from '../../../../src/renderer/composables/spreadsheet/state';
-import { createUndoRedo } from '../../../../src/renderer/composables/spreadsheet/useUndoRedo';
-import { createFileOps } from '../../../../src/renderer/composables/spreadsheet/useFileOps';
-import { createFormulaEngine } from '../../../../src/renderer/composables/spreadsheet/useFormulaEngine';
-import type { SpreadsheetCoreState } from '../../../../src/renderer/composables/spreadsheet/state';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createState } from '@/renderer/composables/spreadsheet/state';
+import { createUndoRedo } from '@/renderer/composables/spreadsheet/undoRedo';
+import { createFileOps } from '@/renderer/composables/spreadsheet/fileOps';
+import { createFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 
 // ── Test setup ────────────────────────────────────────────────────────────────
 
@@ -65,23 +65,6 @@ describe('isDirty state management', () => {
         // Simulate unsaved state
         undoRedo.pushUndo();
         expect(state.isDirty.value).toBe(true);
-
-        // Create a minimal valid state JSON
-        const validJson = JSON.stringify({
-            version: '2.0',
-            canvases: [
-                {
-                    id: 'canvas-1',
-                    name: 'Canvas 1',
-                    canvasOffset: { x: 0, y: 0 },
-                    canvasZoom: 1,
-                    tables: [],
-                    textBoxes: [],
-                    charts: [],
-                },
-            ],
-            activeCanvasId: 'canvas-1',
-        });
 
         // Mock window.electronAPI to avoid dependency on Electron IPC
         const originalAPI = (window as any).electronAPI;

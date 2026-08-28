@@ -13,7 +13,7 @@ import {
     ZOOM_STEP,
     ZOOM_PRESETS,
     MAX_CANVASES,
-} from '../../../src/renderer/types/spreadsheet';
+} from '@/renderer/types/spreadsheet';
 
 // ── generateId ───────────────────────────────────────────────────────────────
 

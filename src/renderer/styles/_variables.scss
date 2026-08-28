@@ -1,0 +1,254 @@
+// Design tokens — every `$`-name the app is allowed to use.
+// Owns: the typography, size, motion, depth and opacity scales, plus the SCSS
+// aliases that point at the theme custom properties.
+// Does NOT own: the palettes themselves (_themes.scss), which are the only part
+// of the design system that changes at runtime.
+// Nothing here emits a byte of CSS, which is what makes it safe for the barrel
+// to be injected into all 15 SFC compilations.
+
+// ── Typography ────────────────────────────────────────────────────────────────
+
+$font-family: -apple-system, blinkmacsystemfont, 'Inter', 'Segoe UI', roboto, oxygen, ubuntu, cantarell, sans-serif;
+$font-family-mono: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// rem, not em: these are the sizes em is measured AGAINST, so anchoring them to
+// the element's own font-size would make each one depend on its parent's.
+$font-size-2xs: 0.5625rem; // 9px
+$font-size-xs: 0.625rem; // 10px
+$font-size-sm: 0.6875rem; // 11px
+$font-size-base: 0.75rem; // 12px — the app's working size, not the browser's
+$font-size-md: 0.8125rem; // 13px
+$font-size-lg: 0.875rem; // 14px
+$font-size-xl: 1rem; // 16px
+$font-size-2xl: 1.125rem; // 18px
+$font-size-4xl: 2rem; // 32px
+
+$line-height-none: 1;
+$line-height-base: 1.5;
+
+$letter-spacing-tight: 0.01em;
+$letter-spacing-wide: 0.02em;
+
+// ── Sizes ─────────────────────────────────────────────────────────────────────
+
+// A flat px ladder for the properties that are genuinely pixel geometry:
+// widths, heights, offsets, hairlines. These are the dimensions of a UI that
+// sits alongside a canvas grid drawn in device pixels, so they do not scale
+// with text — a 6px resize handle is 6px because that is the target size a
+// pointer needs, not because of the font it sits next to.
+$size-0: 1px;
+$size-1: 2px;
+$size-2: 3px;
+$size-3: 4px;
+$size-4: 5px;
+$size-5: 6px;
+$size-6: 7px;
+$size-7: 8px;
+$size-8: 10px;
+$size-9: 12px;
+$size-10: 14px;
+$size-11: 16px;
+$size-12: 18px;
+$size-13: 20px;
+$size-14: 22px;
+$size-15: 24px;
+$size-16: 26px;
+$size-17: 28px;
+$size-18: 30px;
+$size-19: 32px;
+$size-20: 36px;
+$size-21: 40px;
+$size-22: 80px;
+$size-23: 100px;
+$size-24: 110px;
+$size-25: 120px;
+$size-26: 140px;
+$size-27: 150px;
+$size-28: 180px;
+$size-29: 200px;
+$size-30: 230px;
+$size-31: 240px;
+$size-32: 260px;
+$size-33: 300px;
+$size-34: 320px;
+$size-35: 480px;
+
+$border-width-thin: $size-0 solid;
+$border-width-thick: $size-1 solid;
+
+// ── Spacing ───────────────────────────────────────────────────────────────────
+
+// rem, so one anchor governs the whole app. `em` would tie a control's padding
+// to its own label — and Slate's chrome runs at 11-12px beside a canvas grid
+// drawn in device pixels, so font-relative geometry would drift out of step
+// with the sheet it sits next to. See the note in .stylelintrc.mjs.
+// The ladder is 1px-granular because it was derived from the values already in
+// the components rather than imposed on them; collapsing the thin rungs
+// ($space-6, -8, -10) is a design pass, not a mechanical one.
+$space-0: 0.0625rem; // 1px
+$space-1: 0.125rem; // 2px
+$space-2: 0.1875rem; // 3px
+$space-3: 0.25rem; // 4px
+$space-4: 0.3125rem; // 5px
+$space-5: 0.375rem; // 6px
+$space-6: 0.4375rem; // 7px
+$space-7: 0.5rem; // 8px
+$space-8: 0.5625rem; // 9px
+$space-9: 0.625rem; // 10px
+$space-10: 0.6875rem; // 11px
+$space-11: 0.75rem; // 12px
+$space-12: 1rem; // 16px
+
+// ── Radius ────────────────────────────────────────────────────────────────────
+
+$border-radius-hairline: 0.0625rem; // 1px
+$border-radius-2xs: 0.125rem; // 2px
+$border-radius-xs: 0.1875rem; // 3px
+$border-radius-sm: 0.25rem; // 4px
+$border-radius: 0.3125rem; // 5px
+$border-radius-md: 0.375rem; // 6px
+$border-radius-lg: 0.5rem; // 8px
+$border-radius-xl: 0.625rem; // 10px
+$border-radius-2xl: 0.75rem; // 12px
+$border-radius-3xl: 0.6875rem; // 11px
+
+// Every element that reached for `border-radius: 50%` is square, so a pill
+// radius renders identically — and unlike 50% it stays a capsule rather than
+// becoming an ellipse if the element is ever given a different aspect.
+$border-radius-round: 9999rem;
+
+// ── Breakpoints ───────────────────────────────────────────────────────────────
+
+// One rung. Slate is a desktop app; this exists only so the text-inflation
+// guard in _base.scss has a name to point at rather than a bare 768.
+$breakpoint-md: 768px;
+
+// ── Motion ────────────────────────────────────────────────────────────────────
+
+// Not zero: keeping a hair of duration means transitionend/animationend still
+// fire, so anything waiting on one finishes instead of hanging, and every
+// animation still lands on its final keyframe rather than never starting.
+$duration-none: 0.01ms;
+
+$duration-quick: 0.1s;
+$duration-fast: 0.12s;
+$duration-base: 0.15s;
+$duration-slow: 0.2s;
+
+$transition-quick: $duration-quick ease;
+$transition-fast: $duration-fast ease;
+$transition-base: $duration-base ease;
+$transition-slow: $duration-slow ease;
+
+// ── Opacity ───────────────────────────────────────────────────────────────────
+
+$opacity-none: 0;
+$opacity-subtle: 0.35;
+$opacity-low: 0.4;
+$opacity-mid: 0.5;
+$opacity-high: 0.7;
+$opacity-higher: 0.85;
+$opacity-full: 1;
+
+// ── Depth ─────────────────────────────────────────────────────────────────────
+
+// Three bands, and the gaps between them are the point: local stacking inside a
+// component, chrome that floats over the sheet, and overlays that own the
+// screen. The literals these replaced ran 1, 2, 3, 10, 11, 200, 9999, 10000,
+// 10001, 10002, 10003 — a ladder with no rungs, where the only way to sit above
+// something was to outbid it.
+$z-base: 1;
+$z-raised: 2;
+$z-raised-high: 3;
+$z-sticky: 10;
+$z-sticky-high: 11;
+$z-canvas-chrome: 20;
+$z-dropdown: 50;
+$z-overlay: 100;
+$z-popover: 200;
+$z-modal: 1000;
+$z-modal-raised: 1001;
+$z-tooltip: 1002;
+$z-tooltip-raised: 1003;
+
+// ── Theme aliases ─────────────────────────────────────────────────────────────
+
+// Each one is a `var()` reference, not a colour. That is deliberate: it is what
+// lets a component write `$bg-primary` and still repaint on a theme switch.
+// The consequence is that these must NEVER be passed to a SCSS colour function
+// (`rgba`, `darken`, `color.adjust`) — Sass sees the literal text `var(--…)`
+// and fails. Use CSS `color-mix()` instead:
+//   color-mix(in srgb, $accent-color 12%, transparent)
+
+$text1: var(--text1);
+$text2: var(--text2);
+$text3: var(--text3);
+$text-primary: var(--text-primary);
+$text-muted: var(--text-muted);
+$base1: var(--base1);
+$base2: var(--base2);
+$base3: var(--base3);
+$base4: var(--base4);
+$bg-primary: var(--bg-primary);
+$bg-secondary: var(--bg-secondary);
+$bg-tertiary: var(--bg-tertiary);
+$bg-hover: var(--bg-hover);
+$bg-selected: var(--bg-selected);
+$border-color: var(--border-color);
+$accent-color: var(--accent-color);
+$accent-color-alpha: var(--accent-color-alpha);
+$danger-color: var(--danger-color);
+$danger-color-alpha: var(--danger-color-alpha);
+$scrollbar-thumb: var(--scrollbar-thumb);
+$scrollbar-thumb-hover: var(--scrollbar-thumb-hover);
+$shadow-sm: var(--shadow-sm);
+$shadow-md: var(--shadow-md);
+$shadow-lg: var(--shadow-lg);
+
+// Sticky notes — their own paper palette, not the surface tokens.
+$note-bg: var(--note-bg);
+$note-border: var(--note-border);
+$note-text: var(--note-text);
+$note-placeholder: var(--note-placeholder);
+$note-accent: var(--note-accent);
+$note-accent-hover: var(--note-accent-hover);
+$note-on-accent: var(--note-on-accent);
+$note-muted: var(--note-muted);
+
+// Cell value types — the swatch a formula result or a cell format is tagged
+// with. Fixed hues rather than theme colours: they encode meaning, and the
+// meaning does not change with the theme.
+$type-text: var(--type-text);
+$type-text-alpha: var(--type-text-alpha);
+$type-number: var(--type-number);
+$type-number-alpha: var(--type-number-alpha);
+$type-currency: var(--type-currency);
+$type-currency-alpha: var(--type-currency-alpha);
+$type-percent: var(--type-percent);
+$type-percent-alpha: var(--type-percent-alpha);
+$type-date: var(--type-date);
+$type-date-alpha: var(--type-date-alpha);
+$type-boolean: var(--type-boolean);
+$type-boolean-alpha: var(--type-boolean-alpha);
+
+// Overlay scrims and the fills painted over the sheet's own surface.
+$scrim-faint: var(--scrim-faint);
+$scrim-soft: var(--scrim-soft);
+$scrim-medium: var(--scrim-medium);
+$scrim-heavy: var(--scrim-heavy);
+$scrim-strong: var(--scrim-strong);
+$on-accent: var(--on-accent);
+$glass-soft: var(--glass-soft);
+$glass: var(--glass);
+$glass-strong: var(--glass-strong);
+
+// Formula-mode badge on the canvas tab strip.
+$formula-bg: var(--formula-bg);
+$formula-border: var(--formula-border);
+$formula-text: var(--formula-text);
+$formula-dot: var(--formula-dot);

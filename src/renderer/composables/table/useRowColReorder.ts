@@ -5,12 +5,64 @@
  */
 
 import { nextTick, ref, type Ref } from 'vue';
-import type { SpreadsheetTable } from '../../types/spreadsheet';
-import type { SpreadsheetState } from '../useSpreadsheet';
+import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+
+export type RowColReorder = {
+    reorderRowState: Ref<
+        {
+            active: boolean;
+            fromStart: number;
+            fromEnd: number;
+            toIdx: number;
+            startY: number;
+            startX: number;
+            didMove: boolean;
+        },
+        {
+            active: boolean;
+            fromStart: number;
+            fromEnd: number;
+            toIdx: number;
+            startY: number;
+            startX: number;
+            didMove: boolean;
+        }
+    >;
+    reorderColState: Ref<
+        {
+            active: boolean;
+            fromStart: number;
+            fromEnd: number;
+            toIdx: number;
+            startX: number;
+            startY: number;
+            didMove: boolean;
+        },
+        {
+            active: boolean;
+            fromStart: number;
+            fromEnd: number;
+            toIdx: number;
+            startX: number;
+            startY: number;
+            didMove: boolean;
+        }
+    >;
+    onRowHeaderMouseDown: (ri: number, e: MouseEvent) => void;
+    onRowHeaderMouseOver: (ri: number) => void;
+    onColHeaderMouseDown: (ci: number, e: MouseEvent) => void;
+    onColHeaderMouseOver: (ci: number) => void;
+    resetDragFlags: () => void;
+};
 
 const REORDER_DRAG_THRESHOLD = 5;
 
-export function useRowColReorder(table: Ref<SpreadsheetTable>, ss: SpreadsheetState, tableEl: Ref<HTMLElement | null>) {
+export function useRowColReorder(
+    table: Ref<SpreadsheetTable>,
+    ss: SpreadsheetState,
+    tableEl: Ref<HTMLElement | null>,
+): RowColReorder {
     let isDraggingRows = false;
     let isDraggingCols = false;
 
@@ -41,24 +93,24 @@ export function useRowColReorder(table: Ref<SpreadsheetTable>, ss: SpreadsheetSt
         if (e.button === 2 && ss.isRowInSelection(table.value.id, ri)) return;
         if (e.shiftKey) {
             ss.extendRowSelection(table.value.id, ri);
-            nextTick(() => tableEl.value?.focus());
+            void nextTick((): void => tableEl.value?.focus());
             return;
         }
 
-        const sr = ss.getNormalizedSelection();
-        const t = table.value;
+        const sr = ss.findNormalizedSelection();
+        const currentTable = table.value;
         const isMultiRowSelected =
-            sr &&
-            sr.tableId === t.id &&
+            sr !== null &&
+            sr.tableId === currentTable.id &&
             sr.startCol === 0 &&
-            sr.endCol === t.columns.length - 1 &&
+            sr.endCol === currentTable.columns.length - 1 &&
             sr.endRow > sr.startRow;
-        const clickedInSelection = isMultiRowSelected && ri >= sr!.startRow && ri <= sr!.endRow;
+        const clickedInSelection = isMultiRowSelected && ri >= sr.startRow && ri <= sr.endRow;
 
         let fromStart: number, fromEnd: number;
         if (clickedInSelection) {
-            fromStart = sr!.startRow;
-            fromEnd = sr!.endRow;
+            fromStart = sr.startRow;
+            fromEnd = sr.endRow;
         } else {
             ss.selectRow(table.value.id, ri);
             fromStart = ri;
@@ -77,7 +129,7 @@ export function useRowColReorder(table: Ref<SpreadsheetTable>, ss: SpreadsheetSt
         };
         document.addEventListener('mousemove', onRowReorderMove);
         document.addEventListener('mouseup', onRowReorderEnd);
-        nextTick(() => tableEl.value?.focus());
+        void nextTick((): void => tableEl.value?.focus());
     }
 
     function onRowReorderMove(e: MouseEvent): void {
@@ -92,12 +144,12 @@ export function useRowColReorder(table: Ref<SpreadsheetTable>, ss: SpreadsheetSt
         if (!st.active) return;
 
         const gridWrapper = tableEl.value?.querySelector('.table-grid-wrapper');
-        if (!gridWrapper) return;
+        if (gridWrapper == null) return;
         const rows = gridWrapper.querySelectorAll('tbody tr');
         let targetIdx = st.fromStart;
         for (let i = 0; i < table.value.rows.length; i++) {
             const rect = rows[i]?.getBoundingClientRect();
-            if (rect) {
+            if (rect !== undefined) {
                 const midY = rect.top + rect.height / 2;
                 if (e.clientY < midY) {
                     targetIdx = i;
@@ -143,24 +195,24 @@ export function useRowColReorder(table: Ref<SpreadsheetTable>, ss: SpreadsheetSt
         if (e.button === 2 && ss.isColInSelection(table.value.id, ci)) return;
         if (e.shiftKey) {
             ss.extendColumnSelection(table.value.id, ci);
-            nextTick(() => tableEl.value?.focus());
+            void nextTick((): void => tableEl.value?.focus());
             return;
         }
 
-        const sr = ss.getNormalizedSelection();
-        const t = table.value;
+        const sr = ss.findNormalizedSelection();
+        const currentTable = table.value;
         const isMultiColSelected =
-            sr &&
-            sr.tableId === t.id &&
+            sr !== null &&
+            sr.tableId === currentTable.id &&
             sr.startRow === 0 &&
-            sr.endRow === t.rows.length - 1 &&
+            sr.endRow === currentTable.rows.length - 1 &&
             sr.endCol > sr.startCol;
-        const clickedInSelection = isMultiColSelected && ci >= sr!.startCol && ci <= sr!.endCol;
+        const clickedInSelection = isMultiColSelected && ci >= sr.startCol && ci <= sr.endCol;
 
         let fromStart: number, fromEnd: number;
         if (clickedInSelection) {
-            fromStart = sr!.startCol;
-            fromEnd = sr!.endCol;
+            fromStart = sr.startCol;
+            fromEnd = sr.endCol;
         } else {
             ss.selectColumn(table.value.id, ci);
             fromStart = ci;
@@ -179,7 +231,7 @@ export function useRowColReorder(table: Ref<SpreadsheetTable>, ss: SpreadsheetSt
         };
         document.addEventListener('mousemove', onColReorderMove);
         document.addEventListener('mouseup', onColReorderEnd);
-        nextTick(() => tableEl.value?.focus());
+        void nextTick((): void => tableEl.value?.focus());
     }
 
     function onColReorderMove(e: MouseEvent): void {
@@ -194,12 +246,12 @@ export function useRowColReorder(table: Ref<SpreadsheetTable>, ss: SpreadsheetSt
         if (!st.active) return;
 
         const gridWrapper = tableEl.value?.querySelector('.table-grid-wrapper');
-        if (!gridWrapper) return;
+        if (gridWrapper == null) return;
         const headerCells = gridWrapper.querySelectorAll('thead th.col-header');
         let targetIdx = st.fromStart;
         for (let i = 0; i < headerCells.length; i++) {
             const rect = headerCells[i]?.getBoundingClientRect();
-            if (rect) {
+            if (rect !== undefined) {
                 const midX = rect.left + rect.width / 2;
                 if (e.clientX < midX) {
                     targetIdx = i;

@@ -1,21 +1,22 @@
 <script setup lang="ts">
-import { computed, inject, ref, watch } from 'vue';
-import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';
-import { indexToColumnLetter } from '../types/spreadsheet';
-import { getTypeLabel } from '../composables/spreadsheet/engine/cellTypes';
+import { computed, ref, watch } from 'vue';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import { indexToColumnLetter } from '@/renderer/types/spreadsheet';
+import { getTypeLabel, type CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import type { FormulaToken } from '@/renderer/composables/spreadsheet/formulas';
 
-const ss = inject(SPREADSHEET_KEY)!;
+const ss = injectSpreadsheet();
 const inputRef = ref<HTMLInputElement | null>(null);
 
-const activeCell = computed(() => ss.activeCell.value);
+const activeCell = computed((): { tableId: string; col: number; row: number } | null => ss.activeCell.value);
 
-const cellRefLabel = computed(() => {
-    if (!activeCell.value) return '';
+const cellRefLabel = computed((): string => {
+    if (activeCell.value === null) return '';
     const tableInfo = ss.findTableGlobal(activeCell.value.tableId);
     const colLetter = indexToColumnLetter(activeCell.value.col);
     const rowNum = activeCell.value.row + 1;
     const cellAddr = `${colLetter}${rowNum}`;
-    if (!tableInfo) return cellAddr;
+    if (tableInfo === null) return cellAddr;
     // If the formula cell is on a different canvas, show canvas name for clarity
     if (tableInfo.canvas.id !== ss.activeCanvasId.value) {
         return `${tableInfo.canvas.name} › ${tableInfo.table.name} · ${cellAddr}`;
@@ -23,14 +24,14 @@ const cellRefLabel = computed(() => {
     return `${tableInfo.table.name} · ${cellAddr}`;
 });
 
-const currentCellType = computed(() => {
-    if (!activeCell.value) return 'empty';
+const currentCellType = computed((): CellDataType => {
+    if (activeCell.value === null) return 'empty';
     return ss.getCellType(activeCell.value.tableId, activeCell.value.col, activeCell.value.row);
 });
 
-const typeLabel = computed(() => getTypeLabel(currentCellType.value));
+const typeLabel = computed((): string => getTypeLabel(currentCellType.value));
 
-const typeShortLabel = computed(() => {
+const typeShortLabel = computed((): 'INT' | 'DEC' | '€' | '$' | 'ABC' | 'T/F' | '—' => {
     switch (currentCellType.value) {
         case 'integer':
             return 'INT';
@@ -55,56 +56,46 @@ const typeBadgeClass = computed(() => ({
     [`type-${currentCellType.value.replace('_', '-')}`]: true,
 }));
 
-const hasFormula = computed(() => {
-    if (!activeCell.value) return false;
-    const cell = ss.getCell(activeCell.value.tableId, activeCell.value.col, activeCell.value.row);
-    return cell?.formula != null;
+const hasFormula = computed((): boolean => {
+    if (activeCell.value === null) return false;
+    const cell = ss.findCell(activeCell.value.tableId, activeCell.value.col, activeCell.value.row);
+    return cell?.formula !== undefined;
 });
 
-const displayText = computed(() => {
+const displayText = computed((): string => {
     if (ss.isEditing.value) return ss.editValue.value;
-    if (!activeCell.value) return '';
+    if (activeCell.value === null) return '';
     return ss.getRawValue(activeCell.value.tableId, activeCell.value.col, activeCell.value.row);
 });
 
-const formulaTokens = computed(() => {
+const formulaTokens = computed((): FormulaToken[] => {
     if (ss.isEditing.value) return ss.getFormulaTokens();
     // When not editing, parse the stored formula of the selected cell
-    if (activeCell.value && hasFormula.value) {
-        const cell = ss.getCell(activeCell.value.tableId, activeCell.value.col, activeCell.value.row);
-        if (cell?.formula) return ss.getFormulaTokens('=' + cell.formula);
+    if (activeCell.value !== null && hasFormula.value) {
+        const cell = ss.findCell(activeCell.value.tableId, activeCell.value.col, activeCell.value.row);
+        if (cell?.formula !== undefined) return ss.getFormulaTokens('=' + cell.formula);
     }
     return [];
 });
 
-const showRichOverlay = computed(() => {
+const showRichOverlay = computed((): boolean => {
     // Show colored badges when editing a formula OR when viewing a formula cell
-    if (ss.isEditing.value && ss.editValue.value.startsWith('=') && formulaTokens.value.some((t) => t.isRef)) {
+    if (ss.isEditing.value && ss.editValue.value.startsWith('=') && formulaTokens.value.some((t): boolean => t.isRef)) {
         return true;
     }
     // Show overlay for selected formula cells (not editing)
-    if (!ss.isEditing.value && hasFormula.value && formulaTokens.value.some((t) => t.isRef)) {
+    if (!ss.isEditing.value && hasFormula.value && formulaTokens.value.some((t): boolean => t.isRef)) {
         return true;
     }
     return false;
 });
 
-// Focus the input when editing is triggered from a cell
-watch(
-    () => ss.isEditing.value,
-    (editing) => {
-        if (editing && document.activeElement !== inputRef.value) {
-            // Don't steal focus from inline cell editing
-        }
-    },
-);
-
-function onFocus() {
-    if (!activeCell.value) return;
+function onFocus(): void {
+    if (activeCell.value === null) return;
     if (!ss.isEditing.value) ss.startEditing();
 }
 
-function onInput(e: Event) {
+function onInput(e: Event): void {
     const val = (e.target as HTMLInputElement).value;
     ss.editValue.value = val;
     if (!ss.isEditing.value) ss.isEditing.value = true;
@@ -118,21 +109,30 @@ function onInput(e: Event) {
     }
 }
 
-function onEnter() {
+function onEnter(): void {
     ss.commitEdit();
     ss.moveSelection(0, 1);
     inputRef.value?.blur();
 }
 
-function onEscape() {
+function onEscape(): void {
     ss.cancelEdit();
     inputRef.value?.blur();
 }
 
-function onTab() {
+function onTab(): void {
     ss.commitEdit();
     ss.moveSelection(1, 0);
 }
+// Focus the input when editing is triggered from a cell
+watch(
+    (): boolean => ss.isEditing.value,
+    (editing): void => {
+        if (editing && document.activeElement !== inputRef.value) {
+            // Don't steal focus from inline cell editing
+        }
+    },
+);
 </script>
 
 <template>
@@ -235,25 +235,25 @@ function onTab() {
 .formula-bar {
     display: flex;
     align-items: center;
-    height: 32px;
-    padding: 0 12px;
+    height: $size-19;
+    padding: 0 $space-11;
     background: $bg-secondary;
-    border-bottom: 1px solid $border-color;
+    border-bottom: $border-width-thin $border-color;
     flex-shrink: 0;
     -webkit-app-region: no-drag;
 }
 
 .cell-ref {
-    min-width: 120px;
-    max-width: 180px;
-    font-size: 11px;
-    font-weight: 600;
+    min-width: $size-25;
+    max-width: $size-24;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
     color: $text-muted;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-right: 8px;
-    letter-spacing: 0.01em;
+
+    @include truncate;
+
+    padding-right: $space-7;
+    letter-spacing: $letter-spacing-tight;
 }
 
 .cell-ref-empty {
@@ -261,49 +261,57 @@ function onTab() {
 }
 
 .type-badge {
-    font-size: 9px;
-    font-weight: 700;
+    font-size: $font-size-2xs;
+    font-weight: $font-weight-bold;
     letter-spacing: 0.03em;
-    padding: 1px 5px;
-    border-radius: 3px;
+    padding: $space-0 $space-4;
+    border-radius: $border-radius-xs;
     white-space: nowrap;
-    margin-right: 6px;
+    margin-right: $space-5;
     flex-shrink: 0;
-    line-height: 16px;
+
+    /* Unitless, because the badge's box height is fixed: 1.7778 × the 9px
+    $font-size-2xs is the 16px the pill was drawn at. */
+    line-height: 1.7778;
     background: $bg-tertiary;
     color: $text-muted;
 
     &.type-integer {
-        background: rgba(59, 130, 246, 0.12);
-        color: rgb(59, 130, 246);
+        background: $type-text-alpha;
+        color: $type-text;
     }
+
     &.type-float {
-        background: rgba(99, 102, 241, 0.12);
-        color: rgb(99, 102, 241);
+        background: $type-number-alpha;
+        color: $type-number;
     }
+
     &.type-currency-eur {
-        background: rgba(16, 185, 129, 0.12);
-        color: rgb(16, 185, 129);
+        background: $type-currency-alpha;
+        color: $type-currency;
     }
+
     &.type-currency-usd {
-        background: rgba(34, 197, 94, 0.12);
-        color: rgb(34, 197, 94);
+        background: $type-percent-alpha;
+        color: $type-percent;
     }
+
     &.type-text {
-        background: rgba(245, 158, 11, 0.12);
-        color: rgb(245, 158, 11);
+        background: $type-date-alpha;
+        color: $type-date;
     }
+
     &.type-boolean {
-        background: rgba(139, 92, 246, 0.12);
-        color: rgb(139, 92, 246);
+        background: $type-boolean-alpha;
+        color: $type-boolean;
     }
 }
 
 .formula-separator {
-    width: 1px;
-    height: 16px;
+    width: $size-0;
+    height: $size-11;
     background: $border-color;
-    margin-right: 8px;
+    margin-right: $space-7;
     flex-shrink: 0;
 }
 
@@ -311,15 +319,15 @@ function onTab() {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: $space-5;
 }
 
 .fx-label {
-    font-size: 11px;
-    font-weight: 700;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
     color: $accent-color;
     flex-shrink: 0;
-    opacity: 0.85;
+    opacity: $opacity-higher;
 }
 
 .formula-input-container {
@@ -334,12 +342,12 @@ function onTab() {
     border: none;
     outline: none;
     background: transparent;
-    font-size: 12px;
+    font-size: $font-size-base;
     font-family: $font-family;
     color: $text-primary;
-    padding: 2px 0;
+    padding: $space-1 0;
     position: relative;
-    z-index: 1;
+    z-index: $z-base;
 
     &.has-rich-overlay {
         color: transparent;
@@ -357,16 +365,13 @@ function onTab() {
 
 .formula-rich-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     display: flex;
     align-items: center;
     pointer-events: none;
-    font-size: 12px;
-    font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
-    padding: 2px 0;
+    font-size: $font-size-base;
+    font-family: $font-family-mono;
+    padding: $space-1 0;
     white-space: nowrap;
     overflow: hidden;
     z-index: 0;
@@ -382,10 +387,10 @@ function onTab() {
 
 .ref-badge {
     display: inline;
-    border-radius: 3px;
-    box-shadow: inset 0 0 0 1px;
-    font-weight: 600;
-    font-size: 12px;
+    border-radius: $border-radius-xs;
+    box-shadow: inset 0 0 0 $size-0;
+    font-weight: $font-weight-semibold;
+    font-size: $font-size-base;
     line-height: inherit;
     letter-spacing: 0;
 }
@@ -394,15 +399,15 @@ function onTab() {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 22px;
-    border: 1px solid $border-color;
-    border-radius: 5px;
+    width: $size-16;
+    height: $size-14;
+    border: $border-width-thin $border-color;
+    border-radius: $border-radius;
     background: $bg-tertiary;
     color: $text-muted;
     cursor: pointer;
     flex-shrink: 0;
-    transition: all 0.15s;
+    transition: all $duration-base;
 
     &:hover:not(:disabled) {
         background: $bg-hover;
@@ -412,11 +417,11 @@ function onTab() {
     &.active {
         background: $accent-color;
         border-color: $accent-color;
-        color: #fff;
+        color: $on-accent;
     }
 
     &:disabled {
-        opacity: 0.4;
+        opacity: $opacity-low;
         cursor: default;
     }
 }

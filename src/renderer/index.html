@@ -1,14 +1,48 @@
 <!doctype html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <!-- Desktop-only app - not designed for web browsers -->
+        <!--
+            Content Security Policy. A packaged build loads over file://, where no
+            server sends a CSP header, so this tag is the entire policy. It also
+            silences Electron's "Insecure Content-Security-Policy" warning.
 
-<head>
-  <meta charset="UTF-8" />
-  <!-- Desktop-only app - not designed for web browsers -->
-</head>
+            Slate ships every asset it uses and talks to nothing, so the only
+            allowances beyond 'self' are:
+              - style-src 'unsafe-inline'  → Vue :style bindings. The canvas
+                transform, the zoom background and every cell format are computed
+                per render, so they cannot become static classes.
+              - connect-src ws://localhost:3000 → the Vite HMR socket. Dev only;
+                it cannot resolve in a packaged build.
 
-<body>
-  <div id="app"></div>
-  <script type="module" src="./main.ts"></script>
-</body>
+            No 'unsafe-eval': SFCs are precompiled and the formula engine has its
+            own parser rather than deferring to the JavaScript one.
+            No blob:, no data:, no worker-src: nothing here creates any of them —
+            charts draw straight onto a <canvas>.
+        -->
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="
+                default-src 'self';
+                script-src 'self';
+                style-src 'self' 'unsafe-inline';
+                img-src 'self';
+                font-src 'self';
+                connect-src 'self' ws://localhost:3000 ws://127.0.0.1:3000;
+                media-src 'none';
+                worker-src 'none';
+                frame-src 'none';
+                object-src 'none';
+                base-uri 'none';
+                form-action 'none'
+            " />
+    </head>
 
+    <body>
+        <div id="app"></div>
+        <script
+            type="module"
+            src="./main.ts"></script>
+    </body>
 </html>

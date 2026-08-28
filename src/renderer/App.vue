@@ -1,23 +1,26 @@
 <script setup lang="ts">
-import { provide, onMounted } from 'vue';
-import { useSpreadsheet, SPREADSHEET_KEY } from './composables/useSpreadsheet';
-import Toolbar from './components/Toolbar.vue';
-import FormulaBar from './components/FormulaBar.vue';
-import CanvasWorkspace from './components/CanvasWorkspace.vue';
-import CanvasTabs from './components/CanvasTabs.vue';
+import { provide, onMounted, onBeforeUnmount } from 'vue';
+import { useSpreadsheet, SPREADSHEET_KEY } from '@/renderer/composables/useSpreadsheet';
+import Toolbar from '@/renderer/components/Toolbar.vue';
+import FormulaBar from '@/renderer/components/FormulaBar.vue';
+import CanvasWorkspace from '@/renderer/components/CanvasWorkspace.vue';
+import CanvasTabs from '@/renderer/components/CanvasTabs.vue';
 
 const ss = useSpreadsheet();
-provide(SPREADSHEET_KEY, ss);
 
 // Handle new file with confirmation
-const handleNewFile = () => {
+const handleNewFile = (): void => {
     if (confirm('Create a new file? Any unsaved changes will be lost.')) {
         ss.newFile();
     }
 };
 
-// Handle keyboard shortcuts for file operations
-const handleKeydown = (e: KeyboardEvent) => {
+/**
+ * File and zoom shortcuts. Bound to `window` rather than to the shell element:
+ * these are application-wide accelerators, and a listener on a `<div>` only
+ * fires while focus happens to be inside it.
+ */
+const handleKeydown = (e: KeyboardEvent): void => {
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
     const modifier = isMac ? e.metaKey : e.ctrlKey;
 
@@ -27,14 +30,14 @@ const handleKeydown = (e: KeyboardEvent) => {
         case 's':
             e.preventDefault();
             if (e.shiftKey) {
-                ss.saveAsFile();
+                void ss.saveAsFile();
             } else {
-                ss.saveFile();
+                void ss.saveFile();
             }
             break;
         case 'o':
             e.preventDefault();
-            ss.openFile();
+            void ss.openFile();
             break;
         case 'n':
             e.preventDefault();
@@ -64,23 +67,29 @@ const handleKeydown = (e: KeyboardEvent) => {
     }
 };
 
-// Add one table on startup if none exist
-onMounted(() => {
+provide(SPREADSHEET_KEY, ss);
+
+onMounted((): void => {
+    // A blank canvas with nothing on it gives the user nowhere to start.
     if (ss.tables.value.length === 0) {
         ss.addTable();
     }
 
     // Listen for files opened via OS file association (double-click .slate)
-    window.electronAPI?.onOpenFile((filePath: string) => {
-        ss.loadFileFromPath(filePath);
+    window.electronAPI?.onOpenFile((filePath: string): void => {
+        void ss.loadFileFromPath(filePath);
     });
+
+    window.addEventListener('keydown', handleKeydown);
+});
+
+onBeforeUnmount((): void => {
+    window.removeEventListener('keydown', handleKeydown);
 });
 </script>
 
 <template>
-    <div
-        class="app-shell"
-        @keydown="handleKeydown">
+    <div class="app-shell">
         <Toolbar
             @add-table="ss.addTable()"
             @add-text-box="ss.addTextBox()"

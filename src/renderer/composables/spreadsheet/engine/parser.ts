@@ -3,11 +3,8 @@
  * Owns: ASTNode, parseCellRef, Parser class.
  * Does NOT own: tokenization (tokenizer.ts), evaluation (evaluator.ts).
  */
-
-import type { Token, TokenType } from './tokenizer';
-import { columnLetterToIndex } from '../../../types/spreadsheet';
-
-// ── AST ──────────────────────────────────────────────────────────────────────
+import type { Token, TokenType } from '@/renderer/composables/spreadsheet/engine/tokenizer';
+import { columnLetterToIndex } from '@/renderer/types/spreadsheet';
 
 export type ASTNode =
     | { type: 'number'; value: number }
@@ -190,7 +187,7 @@ export class Parser {
         switch (tok.type) {
             case 'NUMBER':
                 this.advance();
-                return { type: 'number', value: tok.num! };
+                return { type: 'number', value: tok.num ?? Number(tok.value) };
 
             case 'STRING':
                 this.advance();
@@ -261,7 +258,7 @@ export class Parser {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 export function parseCellRef(ref: string): { col: number; row: number } {
-    const m = ref.match(/^([A-Z]+)(\d+)$/);
-    if (!m) throw new Error(`Invalid cell reference: ${ref}`);
-    return { col: columnLetterToIndex(m[1]), row: parseInt(m[2]) - 1 };
+    const match = ref.match(/^([A-Z]+)(\d+)$/);
+    if (match === null) throw new Error(`Invalid cell reference: ${ref}`);
+    return { col: columnLetterToIndex(match[1]), row: parseInt(match[2]) - 1 };
 }

@@ -4,25 +4,25 @@
  *  Does NOT own: tokenization (tokenizer.ts), parsing (parser.ts), public API (formula.ts).
  */
 
-import type { CellValue } from '../../../types/spreadsheet';
-import type { CellDataType } from './cellTypes';
-import { resolveType, resolveTypeList, isNumericType } from './cellTypes';
-import type { FormulaContext } from './formula';
-import type { ASTNode } from './parser';
+import type { CellValue } from '@/renderer/types/spreadsheet';
+import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { resolveType, resolveTypeList, isNumericType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
+import type { ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
 
 // ── Type helpers ─────────────────────────────────────────────────────────────
 
-export interface TypedCellValue {
+export type TypedCellValue = {
     value: CellValue;
     type: CellDataType;
-}
+};
 
 export function toNumber(v: CellValue): number {
     if (v === null || v === '') return 0;
     if (typeof v === 'boolean') return v ? 1 : 0;
     if (typeof v === 'number') return v;
-    const n = Number(v);
-    return isNaN(n) ? 0 : n;
+    const parsed = Number(v);
+    return isNaN(parsed) ? 0 : parsed;
 }
 
 // ── Main evaluator (type-aware) ──────────────────────────────────────────────
@@ -38,7 +38,7 @@ export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
         case 'cell_ref':
             return { value: ctx.getCellValue(node.col, node.row), type: ctx.getCellType(node.col, node.row) };
         case 'external_cell_ref': {
-            if (!ctx.resolveExternalCellValue || !ctx.resolveExternalCellType)
+            if (ctx.resolveExternalCellValue === undefined || ctx.resolveExternalCellType === undefined)
                 throw new Error('Cross-table references not supported in this context');
             return {
                 value: ctx.resolveExternalCellValue(node.canvasName, node.tableName, node.col, node.row),
@@ -72,48 +72,48 @@ export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
                     type: 'text',
                 };
             }
-            const l = evaluate(node.left, ctx);
-            const r = evaluate(node.right, ctx);
+            const left = evaluate(node.left, ctx);
+            const right = evaluate(node.right, ctx);
 
             // Propagate error values (e.g. #REF!, #CIRCULAR!, #ERROR!)
-            if (typeof l.value === 'string' && l.value.startsWith('#')) return l;
-            if (typeof r.value === 'string' && r.value.startsWith('#')) return r;
+            if (typeof left.value === 'string' && left.value.startsWith('#')) return left;
+            if (typeof right.value === 'string' && right.value.startsWith('#')) return right;
 
             // Comparison operators
             if (['=', '<>', '<', '>', '<=', '>='].includes(node.op)) {
                 switch (node.op) {
                     case '=':
-                        return { value: l.value === r.value, type: 'boolean' };
+                        return { value: left.value === right.value, type: 'boolean' };
                     case '<>':
-                        return { value: l.value !== r.value, type: 'boolean' };
+                        return { value: left.value !== right.value, type: 'boolean' };
                     case '<':
-                        return { value: toNumber(l.value) < toNumber(r.value), type: 'boolean' };
+                        return { value: toNumber(left.value) < toNumber(right.value), type: 'boolean' };
                     case '>':
-                        return { value: toNumber(l.value) > toNumber(r.value), type: 'boolean' };
+                        return { value: toNumber(left.value) > toNumber(right.value), type: 'boolean' };
                     case '<=':
-                        return { value: toNumber(l.value) <= toNumber(r.value), type: 'boolean' };
+                        return { value: toNumber(left.value) <= toNumber(right.value), type: 'boolean' };
                     case '>=':
-                        return { value: toNumber(l.value) >= toNumber(r.value), type: 'boolean' };
+                        return { value: toNumber(left.value) >= toNumber(right.value), type: 'boolean' };
                 }
             }
 
             // Arithmetic: check type compatibility
-            const resolvedType = resolveType(l.type, r.type);
+            const resolvedType = resolveType(left.type, right.type);
 
             // Text in arithmetic → #N/A
             if (resolvedType === null) {
                 // One is text and the other is numeric
                 if (
-                    (l.type === 'text' && l.value !== null && l.value !== '') ||
-                    (r.type === 'text' && r.value !== null && r.value !== '')
+                    (left.type === 'text' && left.value !== null && left.value !== '') ||
+                    (right.type === 'text' && right.value !== null && right.value !== '')
                 ) {
                     return { value: '#N/A', type: 'text' };
                 }
                 // Both empty or compatible, fall through
             }
 
-            const lNum = toNumber(l.value);
-            const rNum = toNumber(r.value);
+            const lNum = toNumber(left.value);
+            const rNum = toNumber(right.value);
 
             switch (node.op) {
                 case '+':
@@ -121,13 +121,15 @@ export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
                 case '-':
                     return { value: lNum - rNum, type: resolvedType ?? 'float' };
                 case '*': {
-                    // Multiplying currency by integer/float keeps currency
-                    const multType =
-                        isNumericType(l.type) && (r.type === 'integer' || r.type === 'float')
-                            ? l.type
-                            : isNumericType(r.type) && (l.type === 'integer' || l.type === 'float')
-                              ? r.type
-                              : (resolvedType ?? 'float');
+                    // Multiplying currency by a plain integer/float keeps the currency —
+                    // whichever side carries it. Neither side carrying it falls through to
+                    // the type both operands agreed on.
+                    const scalesLeft = isNumericType(left.type) && (right.type === 'integer' || right.type === 'float');
+                    const scalesRight = isNumericType(right.type) && (left.type === 'integer' || left.type === 'float');
+                    let multType: CellDataType;
+                    if (scalesLeft) multType = left.type;
+                    else if (scalesRight) multType = right.type;
+                    else multType = resolvedType ?? 'float';
                     return { value: lNum * rNum, type: multType };
                 }
                 case '/': {
@@ -135,8 +137,8 @@ export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
                     // Dividing currency by number keeps currency; currency / currency → float
                     let divType = resolvedType ?? 'float';
                     if (
-                        (l.type === 'currency_eur' || l.type === 'currency_usd') &&
-                        (r.type === 'currency_eur' || r.type === 'currency_usd')
+                        (left.type === 'currency_eur' || left.type === 'currency_usd') &&
+                        (right.type === 'currency_eur' || right.type === 'currency_usd')
                     ) {
                         divType = 'float'; // currency / currency = ratio
                     }
@@ -161,16 +163,28 @@ export function evaluateVal(node: ASTNode, ctx: FormulaContext): CellValue {
 
 // ── Argument flattening ──────────────────────────────────────────────────────
 
+/**
+ * Spreadsheet truthiness: a blank cell, `0`, an empty string and `FALSE` all
+ * read as false, which is what `IF`, `AND`, `OR` and `NOT` expect.
+ */
+function isTruthy(v: CellValue): boolean {
+    if (v === null || v === false) return false;
+    if (typeof v === 'number') return v !== 0;
+    if (typeof v === 'string') return v !== '';
+    return true;
+}
+
 function flattenArgs(args: ASTNode[], ctx: FormulaContext): CellValue[] {
     const out: CellValue[] = [];
-    for (const a of args) {
-        if (a.type === 'range') {
-            out.push(...ctx.getCellRange(a.sc, a.sr, a.ec, a.er));
-        } else if (a.type === 'external_range') {
-            if (!ctx.resolveExternalCellRange) throw new Error('Cross-table references not supported in this context');
-            out.push(...ctx.resolveExternalCellRange(a.canvasName, a.tableName, a.sc, a.sr, a.ec, a.er));
+    for (const arg of args) {
+        if (arg.type === 'range') {
+            out.push(...ctx.getCellRange(arg.sc, arg.sr, arg.ec, arg.er));
+        } else if (arg.type === 'external_range') {
+            if (ctx.resolveExternalCellRange === undefined)
+                throw new Error('Cross-table references not supported in this context');
+            out.push(...ctx.resolveExternalCellRange(arg.canvasName, arg.tableName, arg.sc, arg.sr, arg.ec, arg.er));
         } else {
-            out.push(evaluateVal(a, ctx));
+            out.push(evaluateVal(arg, ctx));
         }
     }
     return out;
@@ -178,24 +192,31 @@ function flattenArgs(args: ASTNode[], ctx: FormulaContext): CellValue[] {
 
 function flattenTypedArgs(args: ASTNode[], ctx: FormulaContext): TypedCellValue[] {
     const out: TypedCellValue[] = [];
-    for (const a of args) {
-        if (a.type === 'range') {
-            const vals = ctx.getCellRange(a.sc, a.sr, a.ec, a.er);
-            const types = ctx.getCellRangeTypes(a.sc, a.sr, a.ec, a.er);
+    for (const arg of args) {
+        if (arg.type === 'range') {
+            const vals = ctx.getCellRange(arg.sc, arg.sr, arg.ec, arg.er);
+            const types = ctx.getCellRangeTypes(arg.sc, arg.sr, arg.ec, arg.er);
             for (let i = 0; i < vals.length; i++) {
                 out.push({ value: vals[i], type: types[i] ?? 'empty' });
             }
-        } else if (a.type === 'external_range') {
-            if (!ctx.resolveExternalCellRange || !ctx.resolveExternalCellRangeTypes)
+        } else if (arg.type === 'external_range') {
+            if (ctx.resolveExternalCellRange === undefined || ctx.resolveExternalCellRangeTypes === undefined)
                 throw new Error('Cross-table references not supported in this context');
-            const vals = ctx.resolveExternalCellRange(a.canvasName, a.tableName, a.sc, a.sr, a.ec, a.er);
-            const types = ctx.resolveExternalCellRangeTypes(a.canvasName, a.tableName, a.sc, a.sr, a.ec, a.er);
+            const vals = ctx.resolveExternalCellRange(arg.canvasName, arg.tableName, arg.sc, arg.sr, arg.ec, arg.er);
+            const types = ctx.resolveExternalCellRangeTypes(
+                arg.canvasName,
+                arg.tableName,
+                arg.sc,
+                arg.sr,
+                arg.ec,
+                arg.er,
+            );
             for (let i = 0; i < vals.length; i++) {
                 out.push({ value: vals[i], type: types[i] ?? 'empty' });
             }
         } else {
-            const r = evaluate(a, ctx);
-            out.push(r);
+            const result = evaluate(arg, ctx);
+            out.push(result);
         }
     }
     return out;
@@ -208,11 +229,11 @@ function numericValues(vals: CellValue[]): number[] {
 function numericTypedValues(vals: TypedCellValue[]): { nums: number[]; types: CellDataType[] } {
     const nums: number[] = [];
     const types: CellDataType[] = [];
-    for (const v of vals) {
-        if (v.value === null || v.value === '' || v.type === 'text') continue;
-        const n = toNumber(v.value);
-        nums.push(n);
-        types.push(v.type);
+    for (const entry of vals) {
+        if (entry.value === null || entry.value === '' || entry.type === 'text') continue;
+        const num = toNumber(entry.value);
+        nums.push(num);
+        types.push(entry.type);
     }
     return { nums, types };
 }
@@ -223,8 +244,8 @@ function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): Typed
     switch (name) {
         case 'SUM': {
             const typed = flattenTypedArgs(args, ctx);
-            const errCell = typed.find((v) => typeof v.value === 'string' && (v.value as string).startsWith('#'));
-            if (errCell) return errCell;
+            const errCell = typed.find((v) => typeof v.value === 'string' && v.value.startsWith('#'));
+            if (errCell !== undefined) return errCell;
             const { nums, types } = numericTypedValues(typed);
             const hasText = typed.some((v) => v.type === 'text' && v.value !== null && v.value !== '');
             if (hasText) return { value: '#N/A', type: 'text' };
@@ -233,8 +254,8 @@ function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): Typed
         }
         case 'AVERAGE': {
             const typed = flattenTypedArgs(args, ctx);
-            const errCellAvg = typed.find((v) => typeof v.value === 'string' && (v.value as string).startsWith('#'));
-            if (errCellAvg) return errCellAvg;
+            const errCellAvg = typed.find((v) => typeof v.value === 'string' && v.value.startsWith('#'));
+            if (errCellAvg !== undefined) return errCellAvg;
             const { nums, types } = numericTypedValues(typed);
             const hasText = typed.some((v) => v.type === 'text' && v.value !== null && v.value !== '');
             if (hasText) return { value: '#N/A', type: 'text' };
@@ -246,19 +267,19 @@ function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): Typed
         }
         case 'MIN': {
             const typed = flattenTypedArgs(args, ctx);
-            const errMin = typed.find((v) => typeof v.value === 'string' && (v.value as string).startsWith('#'));
-            if (errMin) return errMin;
+            const errMin = typed.find((v) => typeof v.value === 'string' && v.value.startsWith('#'));
+            if (errMin !== undefined) return errMin;
             const { nums, types } = numericTypedValues(typed);
             const resultType = resolveTypeList(types) ?? 'integer';
-            return { value: nums.length ? Math.min(...nums) : 0, type: resultType };
+            return { value: nums.length > 0 ? Math.min(...nums) : 0, type: resultType };
         }
         case 'MAX': {
             const typed = flattenTypedArgs(args, ctx);
-            const errMax = typed.find((v) => typeof v.value === 'string' && (v.value as string).startsWith('#'));
-            if (errMax) return errMax;
+            const errMax = typed.find((v) => typeof v.value === 'string' && v.value.startsWith('#'));
+            if (errMax !== undefined) return errMax;
             const { nums, types } = numericTypedValues(typed);
             const resultType = resolveTypeList(types) ?? 'integer';
-            return { value: nums.length ? Math.max(...nums) : 0, type: resultType };
+            return { value: nums.length > 0 ? Math.max(...nums) : 0, type: resultType };
         }
         case 'COUNT': {
             return { value: numericValues(flattenArgs(args, ctx)).length, type: 'integer' };
@@ -270,16 +291,13 @@ function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): Typed
             const valR = evaluate(args[0], ctx);
             const val = toNumber(valR.value);
             const digits = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 0;
-            const f = Math.pow(10, digits);
-            const rounded = Math.round(val * f) / f;
-            const resultType =
-                digits === 0
-                    ? isNumericType(valR.type)
-                        ? valR.type
-                        : 'integer'
-                    : isNumericType(valR.type)
-                      ? valR.type
-                      : 'float';
+            const factor = Math.pow(10, digits);
+            const rounded = Math.round(val * factor) / factor;
+            // A rounded value keeps its own numeric type. When it has none, the digit
+            // count decides: rounding to 0 places yields a whole number, anything else
+            // keeps a fractional part.
+            const fallbackType = digits === 0 ? 'integer' : 'float';
+            const resultType = isNumericType(valR.type) ? valR.type : fallbackType;
             return { value: rounded, type: resultType === 'integer' && digits > 0 ? 'float' : resultType };
         }
         case 'ABS': {
@@ -288,17 +306,17 @@ function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): Typed
         }
         case 'SQRT': {
             const valS = evaluate(args[0], ctx);
-            const v = toNumber(valS.value);
-            return { value: v < 0 ? '#NUM!' : Math.sqrt(v), type: v < 0 ? 'text' : 'float' };
+            const num = toNumber(valS.value);
+            return { value: num < 0 ? '#NUM!' : Math.sqrt(num), type: num < 0 ? 'text' : 'float' };
         }
         case 'POWER': {
             const base = evaluate(args[0], ctx);
             return { value: Math.pow(toNumber(base.value), toNumber(evaluateVal(args[1], ctx))), type: 'float' };
         }
         case 'MOD': {
-            const a = toNumber(evaluateVal(args[0], ctx));
-            const b = toNumber(evaluateVal(args[1], ctx));
-            return { value: b === 0 ? '#DIV/0!' : a % b, type: b === 0 ? 'text' : 'integer' };
+            const left = toNumber(evaluateVal(args[0], ctx));
+            const right = toNumber(evaluateVal(args[1], ctx));
+            return { value: right === 0 ? '#DIV/0!' : left % right, type: right === 0 ? 'text' : 'integer' };
         }
         case 'INT': {
             const valI = evaluate(args[0], ctx);
@@ -318,19 +336,19 @@ function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): Typed
         // Logic
         case 'IF': {
             const cond = evaluateVal(args[0], ctx);
-            const truthy = cond && cond !== 0 && cond !== '#ERROR!';
+            const truthy = isTruthy(cond) && cond !== '#ERROR!';
             return evaluate(truthy ? args[1] : (args[2] ?? { type: 'boolean', value: false }), ctx);
         }
         case 'AND': {
             const vals = flattenArgs(args, ctx);
-            return { value: vals.every((v) => v && v !== 0) ? true : false, type: 'boolean' };
+            return { value: vals.every(isTruthy), type: 'boolean' };
         }
         case 'OR': {
             const vals = flattenArgs(args, ctx);
-            return { value: vals.some((v) => v && v !== 0) ? true : false, type: 'boolean' };
+            return { value: vals.some(isTruthy), type: 'boolean' };
         }
         case 'NOT':
-            return { value: !evaluateVal(args[0], ctx) ? true : false, type: 'boolean' };
+            return { value: !isTruthy(evaluateVal(args[0], ctx)), type: 'boolean' };
 
         // Text
         case 'CONCAT': {
@@ -350,20 +368,20 @@ function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): Typed
         case 'TRIM':
             return { value: String(evaluateVal(args[0], ctx) ?? '').trim(), type: 'text' };
         case 'LEFT': {
-            const s = String(evaluateVal(args[0], ctx) ?? '');
-            const n = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 1;
-            return { value: s.substring(0, n), type: 'text' };
+            const text = String(evaluateVal(args[0], ctx) ?? '');
+            const count = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 1;
+            return { value: text.substring(0, count), type: 'text' };
         }
         case 'RIGHT': {
-            const s = String(evaluateVal(args[0], ctx) ?? '');
-            const n = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 1;
-            return { value: s.substring(s.length - n), type: 'text' };
+            const text = String(evaluateVal(args[0], ctx) ?? '');
+            const count = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 1;
+            return { value: text.substring(text.length - count), type: 'text' };
         }
         case 'MID': {
-            const s = String(evaluateVal(args[0], ctx) ?? '');
+            const text = String(evaluateVal(args[0], ctx) ?? '');
             const start = toNumber(evaluateVal(args[1], ctx)) - 1;
             const len = toNumber(evaluateVal(args[2], ctx));
-            return { value: s.substring(start, start + len), type: 'text' };
+            return { value: text.substring(start, start + len), type: 'text' };
         }
 
         // Constants / Date

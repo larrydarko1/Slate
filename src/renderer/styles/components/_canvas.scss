@@ -1,0 +1,117 @@
+// Free-floating canvas objects — charts and text boxes.
+// The two components render different content inside an identical frame: same
+// selection treatment, same eight resize handles, same delete badge. All of it
+// was declared twice, which is the 333-token clone `dup:check` reports.
+
+@use '@/renderer/styles/variables' as *;
+@use '@/renderer/styles/components/placeholders' as *;
+
+// ── Selection frame ───────────────────────────────────────────────────────────
+
+// The transition is on the border and never on the box — animating geometry
+// here would drag the eight handles out of step with the object they are
+// pinned to.
+// The hover tint is deliberately NOT here: a chart darkens to $text-muted
+// against its own filled surface, a text box to $border-color against the
+// sheet. Same gesture, different starting point, so each keeps its own.
+.canvas-object {
+    position: absolute;
+    cursor: default;
+    user-select: none;
+    transition:
+        border-color $transition-base,
+        box-shadow $transition-base;
+
+    // The ring is a box-shadow rather than a thicker border: a border would
+    // resize the object every time it was selected.
+    &.active {
+        border-color: $accent-color;
+        box-shadow: 0 0 0 $size-0 $accent-color;
+    }
+}
+
+// ── Resize handles ────────────────────────────────────────────────────────────
+
+// Each handle is pulled half its own size outside the frame so the grab target
+// straddles the edge instead of sitting inside it. That is why every offset is
+// the negative half of the width or height below it.
+.resize-handle {
+    position: absolute;
+    z-index: $z-sticky;
+}
+
+.rh-e,
+.rh-w {
+    top: 0;
+    bottom: 0;
+    width: $size-5;
+}
+
+.rh-n,
+.rh-s {
+    left: 0;
+    right: 0;
+    height: $size-5;
+}
+
+.rh-e {
+    right: -$size-2;
+    cursor: e-resize;
+}
+
+.rh-w {
+    left: -$size-2;
+    cursor: w-resize;
+}
+
+.rh-s {
+    bottom: -$size-2;
+    cursor: s-resize;
+}
+
+.rh-n {
+    top: -$size-2;
+    cursor: n-resize;
+}
+
+// The corners are visible dots, not just hit areas — they are the only part of
+// the frame that tells you the object can be resized at all.
+.rh-ne,
+.rh-nw,
+.rh-se,
+.rh-sw {
+    width: $size-7;
+    height: $size-7;
+    border-radius: $border-radius-round;
+    background: $accent-color;
+}
+
+.rh-se {
+    right: -$size-3;
+    bottom: -$size-3;
+    cursor: se-resize;
+}
+
+.rh-ne {
+    right: -$size-3;
+    top: -$size-3;
+    cursor: ne-resize;
+}
+
+.rh-nw {
+    left: -$size-3;
+    top: -$size-3;
+    cursor: nw-resize;
+}
+
+.rh-sw {
+    left: -$size-3;
+    bottom: -$size-3;
+    cursor: sw-resize;
+}
+
+// ── Delete badge ──────────────────────────────────────────────────────────────
+
+.canvas-delete {
+    @extend %corner-badge;
+}

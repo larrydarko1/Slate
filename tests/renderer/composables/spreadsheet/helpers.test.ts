@@ -1,15 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ref, computed } from 'vue';
-import { createHelpers } from '../../../../src/renderer/composables/spreadsheet/helpers';
-import type { SpreadsheetCoreState } from '../../../../src/renderer/composables/spreadsheet/state';
-import type {
-    Canvas,
-    SpreadsheetTable,
-    TextBox,
-    ChartObject,
-    SelectionRange,
-} from '../../../../src/renderer/types/spreadsheet';
-import { createEmptyCell, generateId } from '../../../../src/renderer/types/spreadsheet';
+import { createHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
+import type { Canvas, SpreadsheetTable, TextBox, ChartObject, SelectionRange } from '@/renderer/types/spreadsheet';
+import { createEmptyCell, generateId } from '@/renderer/types/spreadsheet';
 
 // ── Test helpers ─────────────────────────────────────────────────────────────
 
@@ -121,7 +115,7 @@ describe('finder functions', () => {
         const state = makeMockState([cv]);
         const h = createHelpers(state);
 
-        expect(h.findTable('nope')).toBeUndefined();
+        expect(h.findTable('nope')).toBeNull();
     });
 
     it('findTableGlobal searches across canvases', () => {
@@ -153,15 +147,15 @@ describe('finder functions', () => {
         const state = makeMockState([cv1, cv2]);
         const h = createHelpers(state);
 
-        expect(h.findTableByName('Data', 'Canvas 2')?.id).toBe(t2.id);
+        expect(h.findTableByName('Data', { canvasName: 'Canvas 2' })?.id).toBe(t2.id);
     });
 
-    it('findTableByName returns undefined for missing canvas', () => {
+    it('findTableByName returns null for missing canvas', () => {
         const cv = makeCanvas({ name: 'Canvas 1' });
         const state = makeMockState([cv]);
         const h = createHelpers(state);
 
-        expect(h.findTableByName('X', 'No such canvas')).toBeUndefined();
+        expect(h.findTableByName('X', { canvasName: 'No such canvas' })).toBeNull();
     });
 
     it('findTextBox finds text box in active canvas', () => {
@@ -269,13 +263,13 @@ describe('selection queries', () => {
         h = createHelpers(state);
     });
 
-    it('getNormalizedSelection returns null when no selection', () => {
-        expect(h.getNormalizedSelection()).toBeNull();
+    it('findNormalizedSelection returns null when no selection', () => {
+        expect(h.findNormalizedSelection()).toBeNull();
     });
 
-    it('getNormalizedSelection normalizes inverted selection', () => {
+    it('findNormalizedSelection normalizes inverted selection', () => {
         state.selectionRange.value = { tableId: 'tbl_sel', startCol: 2, startRow: 2, endCol: 0, endRow: 0 };
-        const norm = h.getNormalizedSelection();
+        const norm = h.findNormalizedSelection();
         expect(norm).toEqual({ tableId: 'tbl_sel', startCol: 0, startRow: 0, endCol: 2, endRow: 2 });
     });
 

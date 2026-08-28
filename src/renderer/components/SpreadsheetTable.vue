@@ -1,31 +1,30 @@
 <script setup lang="ts">
-import { computed, inject, nextTick, ref, toRef, watch, type PropType } from 'vue';
-import type { SpreadsheetTable } from '../types/spreadsheet';
-import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';
-import ContextMenu from './ContextMenu.vue';
-import NotePopup from './table/NotePopup.vue';
-import NoteEditor from './table/NoteEditor.vue';
-import { useTableCellRendering } from '../composables/table/useTableCellRendering';
-import { useTableStructure } from '../composables/table/useTableStructure';
-import { useFillHandle } from '../composables/table/useFillHandle';
-import { useRowColReorder } from '../composables/table/useRowColReorder';
-import { useTableContextMenus } from '../composables/table/useTableContextMenus';
-import { useTableNotes } from '../composables/table/useTableNotes';
+import { computed, nextTick, ref, toRef, watch } from 'vue';
+import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import ContextMenu from '@/renderer/components/ContextMenu.vue';
+import type { ContextMenuApi } from '@/renderer/types/contextMenu';
+import NotePopup from '@/renderer/components/table/NotePopup.vue';
+import NoteEditor from '@/renderer/components/table/NoteEditor.vue';
+import { useTableCellRendering } from '@/renderer/composables/table/useTableCellRendering';
+import { useTableStructure } from '@/renderer/composables/table/useTableStructure';
+import { useFillHandle } from '@/renderer/composables/table/useFillHandle';
+import { useRowColReorder } from '@/renderer/composables/table/useRowColReorder';
+import { useTableContextMenus } from '@/renderer/composables/table/useTableContextMenus';
+import { useTableNotes } from '@/renderer/composables/table/useTableNotes';
 
-const props = defineProps({
-    table: { type: Object as PropType<SpreadsheetTable>, required: true },
-});
+const props = defineProps<{ table: SpreadsheetTable }>();
 
 defineEmits<{ remove: [] }>();
 
-const ss = inject(SPREADSHEET_KEY)!;
+const ss = injectSpreadsheet();
 const tableRef = toRef(props, 'table');
 
 // DOM refs
 const tableEl = ref<HTMLElement | null>(null);
 const nameInputRef = ref<HTMLInputElement | null>(null);
 const cellInputRef = ref<HTMLInputElement[] | null>(null);
-const ctxMenu = ref<InstanceType<typeof ContextMenu> | null>(null);
+const ctxMenu = ref<ContextMenuApi | null>(null);
 
 // ── Name editing ─────────────────────────────────────────────────────────────
 
@@ -82,7 +81,7 @@ const { onColumnContextMenu, onRowContextMenu, onCellContextMenu } = useTableCon
 
 // ── Table position ───────────────────────────────────────────────────────────
 
-const tableStyle = computed(() => ({
+const tableStyle = computed((): { left: string; top: string; zIndex: number } => ({
     left: props.table.x + 'px',
     top: props.table.y + 'px',
     zIndex: props.table.zIndex,
@@ -94,23 +93,23 @@ let isDragging = false;
 let isChartDragging = false;
 let chartDragStart: { ci: number; ri: number } | null = null;
 
-function startNameEdit() {
+function startNameEdit(): void {
     localName.value = props.table.name;
     editingName.value = true;
-    nextTick(() => nameInputRef.value?.select());
+    void nextTick((): void => nameInputRef.value?.select());
 }
 
-function commitName() {
+function commitName(): void {
     editingName.value = false;
-    if (localName.value.trim()) ss.renameTable(props.table.id, localName.value.trim());
+    if (localName.value.trim() !== '') ss.renameTable(props.table.id, localName.value.trim());
 }
 
-function cancelNameEdit() {
+function cancelNameEdit(): void {
     editingName.value = false;
     localName.value = props.table.name;
 }
 
-function onCellMouseDown(ci: number, ri: number, e: MouseEvent) {
+function onCellMouseDown(ci: number, ri: number, e: MouseEvent): void {
     // Chart data selection mode
     if (ss.chartSelectionActive.value) {
         e.preventDefault();
@@ -138,11 +137,11 @@ function onCellMouseDown(ci: number, ri: number, e: MouseEvent) {
         isDragging = true;
         document.addEventListener('mouseup', onSelectionMouseUp);
     }
-    nextTick(() => tableEl.value?.focus());
+    void nextTick((): void => tableEl.value?.focus());
 }
 
-function onCellMouseOver(ci: number, ri: number) {
-    if (isChartDragging && chartDragStart) {
+function onCellMouseOver(ci: number, ri: number): void {
+    if (isChartDragging && chartDragStart !== null) {
         const startCol = Math.min(chartDragStart.ci, ci);
         const startRow = Math.min(chartDragStart.ri, ri);
         const endCol = Math.max(chartDragStart.ci, ci);
@@ -155,92 +154,92 @@ function onCellMouseOver(ci: number, ri: number) {
     }
 }
 
-function onChartDragMove(_e: MouseEvent) {
+function onChartDragMove(_e: MouseEvent): void {
     // Chart selection handled by onCellMouseOver
 }
 
-function onChartDragEnd() {
+function onChartDragEnd(): void {
     isChartDragging = false;
     chartDragStart = null;
     document.removeEventListener('mousemove', onChartDragMove);
     document.removeEventListener('mouseup', onChartDragEnd);
 }
 
-function onSelectionMouseUp() {
+function onSelectionMouseUp(): void {
     isDragging = false;
     resetDragFlags();
     document.removeEventListener('mouseup', onSelectionMouseUp);
 }
 
-function onCornerClick() {
+function onCornerClick(): void {
     ss.selectAll(props.table.id);
-    nextTick(() => tableEl.value?.focus());
+    void nextTick((): void => tableEl.value?.focus());
 }
 
-function onTableMouseDown() {
+function onTableMouseDown(): void {
     ss.bringToFront(props.table.id);
 }
 
 // ── Cell editing ─────────────────────────────────────────────────────────────
 
-function onCellDblClick(ci: number, ri: number) {
+function onCellDblClick(ci: number, ri: number): void {
     ss.selectCell(props.table.id, ci, ri);
     ss.startEditing();
-    nextTick(() => {
+    void nextTick((): void => {
         const inp = cellInputRef.value?.[0];
-        if (inp) {
+        if (inp !== undefined) {
             inp.focus();
             inp.select();
         }
     });
 }
 
-function onCellInput(e: Event) {
+function onCellInput(e: Event): void {
     const val = (e.target as HTMLInputElement).value;
     ss.editValue.value = val;
     if (val.startsWith('=') && !ss.formulaMode.value) ss.formulaMode.value = true;
     if (!val.startsWith('=') && ss.formulaMode.value) ss.formulaMode.value = false;
 }
 
-function onCellEnter() {
+function onCellEnter(): void {
     ss.commitEdit();
     ss.moveSelection(0, 1);
-    nextTick(() => tableEl.value?.focus());
+    void nextTick((): void => tableEl.value?.focus());
 }
 
-function onCellTab(e: KeyboardEvent) {
+function onCellTab(e: KeyboardEvent): void {
     ss.commitEdit();
     ss.moveSelection(e.shiftKey ? -1 : 1, 0);
-    nextTick(() => tableEl.value?.focus());
+    void nextTick((): void => tableEl.value?.focus());
 }
 
-function onCellEditBlur() {
-    setTimeout(() => {
+function onCellEditBlur(): void {
+    setTimeout((): void => {
         if (ss.isEditing.value) ss.commitEdit();
     }, 100);
 }
 
 // ── Keyboard navigation ─────────────────────────────────────────────────────
 
-function onKeyDown(e: KeyboardEvent) {
+function onKeyDown(e: KeyboardEvent): void {
     if (ss.isEditing.value) return;
     const ac = ss.activeCell.value;
-    if (!ac || ac.tableId !== props.table.id) return;
+    if (ac === null || ac.tableId !== props.table.id) return;
 
     const mod = e.metaKey || e.ctrlKey;
     if (mod && e.key === 'c') {
         e.preventDefault();
-        ss.copyCells();
+        void ss.copyCells();
         return;
     }
     if (mod && e.key === 'x') {
         e.preventDefault();
-        ss.cutCells();
+        void ss.cutCells();
         return;
     }
     if (mod && e.key === 'v') {
         e.preventDefault();
-        ss.pasteCells();
+        void ss.pasteCells();
         return;
     }
 
@@ -268,9 +267,9 @@ function onKeyDown(e: KeyboardEvent) {
         case 'Enter':
             e.preventDefault();
             ss.startEditing();
-            nextTick(() => {
+            void nextTick((): void => {
                 const inp = cellInputRef.value?.[0];
-                if (inp) {
+                if (inp !== undefined) {
                     inp.focus();
                     inp.select();
                 }
@@ -285,9 +284,9 @@ function onKeyDown(e: KeyboardEvent) {
             if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
                 e.preventDefault();
                 ss.startEditing(e.key);
-                nextTick(() => {
+                void nextTick((): void => {
                     const inp = cellInputRef.value?.[0];
-                    if (inp) inp.focus();
+                    if (inp !== undefined) inp.focus();
                 });
             }
     }
@@ -296,16 +295,19 @@ function onKeyDown(e: KeyboardEvent) {
 // ── Focus management ─────────────────────────────────────────────────────────
 
 watch(
-    () => ss.activeCell.value,
-    (ac) => {
+    (): { tableId: string; col: number; row: number } | null => ss.activeCell.value,
+    (ac): void => {
         if (ac?.tableId === props.table.id && !ss.isEditing.value) {
-            nextTick(() => tableEl.value?.focus());
+            void nextTick((): void => tableEl.value?.focus());
         }
     },
 );
 </script>
 
 <template>
+    <!-- Focusable container: the @keydown below is the grid's keyboard
+         navigation, and the markup inside is a real <table>. -->
+    <!-- eslint-disable-next-line a11y/no-static-element-interactions -->
     <div
         ref="tableEl"
         class="spreadsheet-table"
@@ -317,6 +319,7 @@ watch(
         <!-- Title bar -->
         <div
             class="table-title-bar"
+            role="presentation"
             @mousedown.stop="startDrag"
             @dblclick.stop>
             <input
@@ -328,6 +331,9 @@ watch(
                 @keydown.enter.prevent="commitName"
                 @keydown.escape.prevent="cancelNameEdit"
                 @mousedown.stop />
+            <!-- Double-click renames; the same action is on the table's
+                 context menu, which is reachable from the keyboard. -->
+            <!-- eslint-disable-next-line a11y/no-static-element-interactions -->
             <span
                 v-else
                 class="table-name"
@@ -354,6 +360,10 @@ watch(
                             class="corner-cell"
                             :class="{ 'all-selected': ss.isEntireTableSelected(table.id) }"
                             @mousedown.stop="onCornerClick"></th>
+                        <!-- @mouseover extends a drag-select in progress: it only
+                             means anything while a mouse button is held, so there is
+                             no focus equivalent. -->
+                        <!-- eslint-disable-next-line a11y/mouse-events-have-key-events -->
                         <th
                             v-for="(col, ci) in table.columns"
                             :key="col.id"
@@ -380,6 +390,7 @@ watch(
                             <span>{{ columnLetter(ci) }}</span>
                             <div
                                 class="col-resize-handle"
+                                role="presentation"
                                 @mousedown.stop.prevent="startColResize(ci, $event)"></div>
                         </th>
                         <th
@@ -408,6 +419,7 @@ watch(
                                 reorderRowState.toIdx === ri &&
                                 reorderRowState.toIdx > reorderRowState.fromEnd,
                         }">
+                        <!-- eslint-disable-next-line a11y/mouse-events-have-key-events -->
                         <td
                             class="row-header"
                             :class="{
@@ -433,6 +445,7 @@ watch(
                         <template
                             v-for="(_cell, ci) in row"
                             :key="ci">
+                            <!-- eslint-disable-next-line a11y/mouse-events-have-key-events -->
                             <td
                                 v-if="!ss.isCellHiddenByMerge(table.id, ci, ri)"
                                 class="cell"
@@ -448,8 +461,13 @@ watch(
                                 <div
                                     v-if="ss.cellHasNote(table.id, ci, ri)"
                                     class="note-indicator"
+                                    role="button"
+                                    tabindex="0"
+                                    aria-label="Show cell note"
                                     @mouseenter="showNotePopup(ci, ri, $event)"
-                                    @mouseleave="hideNotePopup"></div>
+                                    @mouseleave="hideNotePopup"
+                                    @focus="showNotePopup(ci, ri, $event)"
+                                    @blur="hideNotePopup"></div>
                                 <template v-if="isCellEditing(ci, ri)">
                                     <input
                                         ref="cellInputRef"
@@ -504,6 +522,7 @@ watch(
                                 <div
                                     v-if="isSelectionCorner(ci, ri) && !ss.isEditing.value"
                                     class="fill-handle"
+                                    role="presentation"
                                     @mousedown.stop.prevent="startFillDrag(ci, ri, $event)"></div>
                             </td>
                         </template>
@@ -526,6 +545,9 @@ watch(
         <ContextMenu ref="ctxMenu" />
 
         <!-- Note popup -->
+        <!-- Hover-follow only: these keep the tooltip open while the pointer
+             moves onto it. Keyboard users get it from the indicator's focus. -->
+        <!-- eslint-disable-next-line a11y/mouse-events-have-key-events -->
         <NotePopup
             :visible="notePopup.visible"
             :x="notePopup.x"
@@ -551,15 +573,15 @@ watch(
 <style scoped lang="scss">
 .spreadsheet-table {
     position: absolute;
-    border-radius: 10px;
+    border-radius: $border-radius-xl;
     overflow: hidden;
     box-shadow: $shadow-md;
-    border: 1px solid $border-color;
+    border: $border-width-thin $border-color;
     background: $bg-primary;
     outline: none;
     transition:
-        box-shadow 0.15s,
-        border-color 0.15s;
+        box-shadow $duration-base,
+        border-color $duration-base;
 
     &.active {
         box-shadow: $shadow-lg;
@@ -571,22 +593,23 @@ watch(
             cursor: crosshair;
 
             &:hover {
+                /* stylelint-disable-next-line declaration-no-important */
                 background: $accent-color-alpha !important;
             }
         }
     }
 }
 
-/* ── Title bar ── */
+/* ––––– Title bar ––––– */
 
 .table-title-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 30px;
-    padding: 0 10px;
+    height: $size-18;
+    padding: 0 $space-9;
     background: $accent-color;
-    color: #fff;
+    color: $on-accent;
     cursor: grab;
     user-select: none;
 
@@ -596,50 +619,49 @@ watch(
 }
 
 .table-name {
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+
+    @include truncate;
 }
 
 .table-name-input {
     border: none;
     outline: none;
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 600;
-    border-radius: 3px;
-    padding: 2px 6px;
-    width: 140px;
+    background: $glass-soft;
+    color: $on-accent;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    border-radius: $border-radius-xs;
+    padding: $space-1 $space-5;
+    width: $size-23;
 
     &::selection {
-        background: rgba(255, 255, 255, 0.3);
+        background: $glass;
     }
 }
 
 .table-close-btn {
-    width: 20px;
-    height: 20px;
+    width: $size-13;
+    height: $size-13;
     border: none;
-    border-radius: 4px;
+    border-radius: $border-radius-sm;
     background: transparent;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 16px;
-    line-height: 1;
+    color: $glass-strong;
+    font-size: $font-size-xl;
+    line-height: $line-height-none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
 
     &:hover {
-        background: rgba(255, 255, 255, 0.2);
-        color: #fff;
+        background: $glass-soft;
+        color: $on-accent;
     }
 }
 
-/* ── Table grid ── */
+/* ––––– Table grid ––––– */
 
 .table-grid-wrapper {
     overflow: visible;
@@ -651,12 +673,12 @@ watch(
 }
 
 .corner-cell {
-    width: 36px;
-    min-width: 36px;
-    height: 24px;
+    width: $size-20;
+    min-width: $size-20;
+    height: $size-15;
     background: $bg-tertiary;
-    border-bottom: 1px solid $border-color;
-    border-right: 1px solid $border-color;
+    border-bottom: $border-width-thin $border-color;
+    border-right: $border-width-thin $border-color;
     cursor: pointer;
     user-select: none;
 
@@ -671,16 +693,16 @@ watch(
 
 .col-header {
     position: relative;
-    height: 24px;
+    height: $size-15;
     background: $bg-tertiary;
-    border-bottom: 1px solid $border-color;
-    border-right: 1px solid $border-color;
-    font-size: 11px;
-    font-weight: 600;
+    border-bottom: $border-width-thin $border-color;
+    border-right: $border-width-thin $border-color;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
     color: $text-muted;
     text-align: center;
     user-select: none;
-    padding: 0 4px;
+    padding: 0 $space-3;
     cursor: pointer;
 
     &:hover:not(.col-selected) {
@@ -689,31 +711,31 @@ watch(
 
     &.col-selected {
         background: $accent-color;
-        color: #fff;
+        color: $on-accent;
     }
 }
 
 .col-resize-handle {
     position: absolute;
-    right: -2px;
+    right: -$size-1;
     top: 0;
     bottom: 0;
-    width: 5px;
+    width: $size-4;
     cursor: col-resize;
-    z-index: 2;
+    z-index: $z-raised;
 
     &:hover,
     &:active {
         background: $accent-color;
-        opacity: 0.4;
+        opacity: $opacity-low;
     }
 }
 
 .add-col-header {
-    width: 28px;
-    min-width: 28px;
+    width: $size-17;
+    min-width: $size-17;
     background: $bg-tertiary;
-    border-bottom: 1px solid $border-color;
+    border-bottom: $border-width-thin $border-color;
     text-align: center;
     cursor: e-resize;
     user-select: none;
@@ -724,18 +746,18 @@ watch(
 }
 
 .row-header {
-    width: 36px;
-    min-width: 36px;
-    height: 26px;
+    width: $size-20;
+    min-width: $size-20;
+    height: $size-16;
     background: $bg-tertiary;
-    border-bottom: 1px solid $border-color;
-    border-right: 1px solid $border-color;
-    font-size: 11px;
-    font-weight: 500;
+    border-bottom: $border-width-thin $border-color;
+    border-right: $border-width-thin $border-color;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
     color: $text-muted;
     text-align: center;
     user-select: none;
-    padding: 0 4px;
+    padding: 0 $space-3;
     cursor: pointer;
 
     &:hover:not(.row-selected) {
@@ -744,14 +766,14 @@ watch(
 
     &.row-selected {
         background: $accent-color;
-        color: #fff;
+        color: $on-accent;
     }
 }
 
 .cell {
-    height: 26px;
-    border-bottom: 1px solid $border-color;
-    border-right: 1px solid $border-color;
+    height: $size-16;
+    border-bottom: $border-width-thin $border-color;
+    border-right: $border-width-thin $border-color;
     padding: 0;
     position: relative;
     cursor: cell;
@@ -759,26 +781,26 @@ watch(
 
     &.header-row {
         background: $bg-secondary;
-        font-weight: 600;
+        font-weight: $font-weight-semibold;
     }
 
     &.selected {
         outline: 2px solid $accent-color;
         outline-offset: -1px;
-        z-index: 3;
+        z-index: $z-raised-high;
         overflow: visible;
     }
 
     &.in-selection {
         background: $accent-color-alpha;
-        z-index: 1;
+        z-index: $z-base;
     }
 
     &.in-fill {
         background: $accent-color-alpha;
         outline: 1px dashed $accent-color;
         outline-offset: -1px;
-        z-index: 1;
+        z-index: $z-base;
     }
 
     &.merged-cell {
@@ -786,40 +808,40 @@ watch(
     }
 
     &.formula-ref-highlight {
-        z-index: 2;
+        z-index: $z-raised;
         position: relative;
     }
 
-    &:hover:not(.selected):not(.in-selection) {
+    &:hover:not(.selected, .in-selection) {
         background: $accent-color-alpha;
     }
 }
 
 .cell-text {
     display: block;
-    padding: 0 6px;
-    line-height: 26px;
-    font-size: 12px;
+    padding: 0 $space-5;
+    line-height: 2.1667;
+    font-size: $font-size-base;
     color: $text-primary;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+
+    @include truncate;
 
     &.error-value {
         color: $danger-color;
-        font-size: 11px;
+        font-size: $font-size-sm;
     }
 
     &.bold {
-        font-weight: 700;
+        font-weight: $font-weight-bold;
     }
+
     &.italic {
         font-style: italic;
     }
 
     &.type-currency {
         font-feature-settings: 'tnum' 1;
-        letter-spacing: 0.01em;
+        letter-spacing: $letter-spacing-tight;
     }
 
     &.type-integer,
@@ -836,27 +858,27 @@ watch(
     }
 }
 
-/* ── Link open button (URL cells) ── */
+/* –––––– Link open button (URL cells) ––––– */
 
 .cell-link-btn {
     position: absolute;
-    right: 3px;
+    right: $size-2;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
+    width: $size-11;
+    height: $size-11;
     padding: 0;
     border: none;
-    border-radius: 3px;
+    border-radius: $border-radius-xs;
     background: transparent;
     color: $accent-color;
     cursor: pointer;
-    opacity: 0;
+    opacity: $opacity-none;
     pointer-events: none;
-    z-index: 3;
+    z-index: $z-raised-high;
 
     &:hover {
         background: $accent-color-alpha;
@@ -865,7 +887,7 @@ watch(
 
 .cell:hover .cell-link-btn,
 .cell.selected .cell-link-btn {
-    opacity: 1;
+    opacity: $opacity-full;
     pointer-events: auto;
 }
 
@@ -876,15 +898,15 @@ watch(
     height: 100%;
     border: none;
     outline: none;
-    padding: 0 6px;
-    font-size: 12px;
+    padding: 0 $space-5;
+    font-size: $font-size-base;
     font-family: inherit;
     color: $text-primary;
     background: $bg-primary;
-    z-index: 2;
+    z-index: $z-raised;
 }
 
-/* ── Note indicator ── */
+/* ––––– Note indicator ––––– */
 
 .note-indicator {
     position: absolute;
@@ -892,69 +914,69 @@ watch(
     right: 0;
     width: 0;
     height: 0;
-    border-left: 6px solid transparent;
-    border-top: 6px solid #f5a623;
-    z-index: 3;
+    border-left: $size-5 solid transparent;
+    border-top: $size-5 solid $note-accent;
+    z-index: $z-raised-high;
     pointer-events: auto;
     cursor: default;
 }
 
-/* ── Fill handle ── */
+/* ––––– Fill handle ––––– */
 
 .fill-handle {
     position: absolute;
-    right: -4px;
-    bottom: -4px;
-    width: 8px;
-    height: 8px;
+    right: -$size-3;
+    bottom: -$size-3;
+    width: $size-7;
+    height: $size-7;
     background: $accent-color;
-    border: 1.5px solid #fff;
-    border-radius: 1px;
+    border: 1.5px solid $on-accent;
+    border-radius: $border-radius-hairline;
     cursor: crosshair;
-    z-index: 4;
+    z-index: $z-raised-high;
     pointer-events: auto;
 
-    :root[data-theme='dark'] & {
+    @include dark {
         border-color: $bg-primary;
     }
 }
 
-/* ── Row / Column reorder drop indicators ── */
+/* ––––– Row / Column reorder drop indicators ––––– */
 
 .reorder-source {
-    opacity: 0.4;
+    opacity: $opacity-low;
 }
 
 tr.reorder-row-source > td {
-    opacity: 0.4;
+    opacity: $opacity-low;
 }
 
 tr.reorder-row-drop-before > td {
-    box-shadow: inset 0 2px 0 0 $accent-color;
+    box-shadow: inset 0 $size-1 0 0 $accent-color;
 }
 
 tr.reorder-row-drop-after > td {
-    box-shadow: inset 0 -2px 0 0 $accent-color;
+    box-shadow: inset 0 (-$size-1) 0 0 $accent-color;
 }
 
 .row-header.reorder-drop-before {
-    box-shadow: inset 0 2px 0 0 $accent-color;
+    box-shadow: inset 0 $size-1 0 0 $accent-color;
 }
 
 .row-header.reorder-drop-after {
-    box-shadow: inset 0 -2px 0 0 $accent-color;
+    box-shadow: inset 0 (-$size-1) 0 0 $accent-color;
 }
 
 .col-header.reorder-drop-before {
-    box-shadow: inset 2px 0 0 0 $accent-color;
+    box-shadow: inset $size-1 0 0 0 $accent-color;
 }
 
 .col-header.reorder-drop-after {
-    box-shadow: inset -2px 0 0 0 $accent-color;
+    box-shadow: inset (-$size-1) 0 0 0 $accent-color;
 }
 
 .add-row-cell {
-    height: 24px;
+    height: $size-15;
     background: $bg-tertiary;
     text-align: center;
     cursor: s-resize;
@@ -967,10 +989,10 @@ tr.reorder-row-drop-after > td {
 }
 
 .add-handle {
-    font-size: 12px;
-    font-weight: 700;
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
     color: $text-muted;
-    line-height: 24px;
+    line-height: 2;
     letter-spacing: 1px;
 }
 

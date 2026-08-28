@@ -1,11 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, inject } from 'vue';
-import { SPREADSHEET_KEY } from '../../composables/useSpreadsheet';
-
-const ss = inject(SPREADSHEET_KEY)!;
-
-const fontSelectorRef = ref<HTMLElement | null>(null);
-const fontMenuOpen = ref(false);
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 
 const fontOptions = [
     'System Default',
@@ -26,17 +21,22 @@ const fontOptions = [
     'Optima',
 ];
 
-const hasActiveTextBox = computed(() => !!ss.activeTextBoxId.value);
-const hasActiveCell = computed(() => !!ss.activeCell.value);
+const ss = injectSpreadsheet();
+
+const fontSelectorRef = ref<HTMLElement | null>(null);
+const fontMenuOpen = ref(false);
+
+const hasActiveTextBox = computed((): boolean => ss.activeTextBoxId.value !== null);
+const hasActiveCell = computed((): boolean => ss.activeCell.value !== null);
 
 const activeTextBoxData = computed(() => {
-    if (!ss.activeTextBoxId.value) return null;
-    return ss.findTextBox(ss.activeTextBoxId.value) ?? null;
+    if (ss.activeTextBoxId.value === null) return null;
+    return ss.findTextBox(ss.activeTextBoxId.value);
 });
 
 const fmtFontFamily = computed(() => {
     if (hasActiveTextBox.value) return activeTextBoxData.value?.fontFamily ?? 'System Default';
-    const fmt = ss.getActiveCellFormat();
+    const fmt = ss.findActiveCellFormat();
     return fmt?.fontFamily ?? 'System Default';
 });
 
@@ -47,7 +47,7 @@ function toggleFontMenu(): void {
 function fmtSetFont(font: string): void {
     if (hasActiveTextBox.value) {
         const id = ss.activeTextBoxId.value;
-        if (id) ss.updateTextBox(id, { fontFamily: font });
+        if (id !== null) ss.updateTextBox(id, { fontFamily: font });
     } else if (hasActiveCell.value) {
         ss.setSelectionFormat({ fontFamily: font === 'System Default' ? undefined : font });
     }
@@ -55,7 +55,7 @@ function fmtSetFont(font: string): void {
 }
 
 function onClickOutside(e: MouseEvent): void {
-    if (fontMenuOpen.value && fontSelectorRef.value && !fontSelectorRef.value.contains(e.target as Node)) {
+    if (fontMenuOpen.value && fontSelectorRef.value !== null && !fontSelectorRef.value.contains(e.target as Node)) {
         fontMenuOpen.value = false;
     }
 }
@@ -110,106 +110,55 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 </template>
 
 <style scoped lang="scss">
-.toolbar-group {
-    display: flex;
-    align-items: center;
-    gap: 1px;
-}
-
-.tb {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    height: 30px;
-    min-width: 30px;
-    padding: 0 7px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: $text-muted;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition:
-        background 0.12s,
-        color 0.12s;
-    -webkit-app-region: no-drag;
-
-    svg {
-        flex-shrink: 0;
-    }
-
-    &:hover {
-        background: $bg-hover;
-        color: $text-primary;
-    }
-
-    &:active {
-        background: $bg-selected;
-    }
-
-    &.has-label {
-        padding: 0 10px 0 7px;
-
-        span {
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 0.01em;
-        }
-    }
-}
-
 .font-selector-wrapper {
     position: relative;
 }
 
 .font-selector-btn {
-    gap: 4px !important;
-    max-width: 140px;
+    gap: $space-3;
+    max-width: $size-23;
 
     .chevron {
-        opacity: 0.5;
-        margin-left: 1px;
+        opacity: $opacity-mid;
+        margin-left: $space-0;
         flex-shrink: 0;
     }
 }
 
 .font-selector-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 110px;
+    @include truncate;
+
+    max-width: $size-24;
 }
 
 .font-dropdown {
     position: absolute;
     top: 100%;
     left: 0;
-    margin-top: 4px;
+    margin-top: $space-3;
     background: $bg-primary;
-    border: 1px solid $border-color;
-    border-radius: 8px;
+    border: $border-width-thin $border-color;
+    border-radius: $border-radius-lg;
     box-shadow: $shadow-lg;
-    padding: 4px;
-    z-index: 200;
-    min-width: 180px;
-    max-height: 320px;
+    padding: $space-3;
+    z-index: $z-popover;
+    min-width: $size-24;
+    max-height: $size-34;
     overflow-y: auto;
 }
 
 .font-option {
     display: block;
     width: 100%;
-    padding: 5px 10px;
+    padding: $space-4 $space-9;
     border: none;
-    border-radius: 5px;
+    border-radius: $border-radius;
     background: transparent;
     color: $text-primary;
-    font-size: 13px;
+    font-size: $font-size-md;
     text-align: left;
     cursor: pointer;
-    transition: background 0.1s;
+    transition: background $duration-quick;
     white-space: nowrap;
 
     &:hover {
@@ -218,7 +167,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 
     &.active {
         background: $accent-color-alpha;
-        font-weight: 600;
+        font-weight: $font-weight-semibold;
     }
 }
 </style>

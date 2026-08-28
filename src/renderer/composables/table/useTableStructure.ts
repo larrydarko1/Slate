@@ -3,15 +3,25 @@
  * Owns: title-bar drag, column width resize, drag-to-add rows and columns.
  * Does NOT own: cell selection, reorder, fill handle, context menus.
  */
-
 import type { Ref } from 'vue';
-import type { SpreadsheetTable } from '../../types/spreadsheet';
-import type { SpreadsheetState } from '../useSpreadsheet';
+import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+
+export type TableStructure = {
+    startDrag: (e: MouseEvent) => void;
+    startColResize: (ci: number, e: MouseEvent) => void;
+    startAddRowDrag: (e: MouseEvent) => void;
+    startAddColDrag: (e: MouseEvent) => void;
+};
 
 const ROW_HEIGHT = 26;
 const COL_WIDTH = 120;
 
-export function useTableStructure(table: Ref<SpreadsheetTable>, ss: SpreadsheetState, editingName: Ref<boolean>) {
+export function useTableStructure(
+    table: Ref<SpreadsheetTable>,
+    ss: SpreadsheetState,
+    editingName: Ref<boolean>,
+): TableStructure {
     // ── Table drag ───────────────────────────────────────────────────────────
 
     let dragState: { startX: number; startY: number; origX: number; origY: number } | null = null;
@@ -29,7 +39,7 @@ export function useTableStructure(table: Ref<SpreadsheetTable>, ss: SpreadsheetS
     }
 
     function onDragMove(e: MouseEvent): void {
-        if (!dragState) return;
+        if (dragState === null) return;
         const zoom = ss.canvasZoom.value;
         const dx = (e.clientX - dragState.startX) / zoom;
         const dy = (e.clientY - dragState.startY) / zoom;
@@ -55,7 +65,7 @@ export function useTableStructure(table: Ref<SpreadsheetTable>, ss: SpreadsheetS
     }
 
     function onResizeMove(e: MouseEvent): void {
-        if (!resizeState) return;
+        if (resizeState === null) return;
         const zoom = ss.canvasZoom.value;
         const dx = (e.clientX - resizeState.startX) / zoom;
         const newW = Math.max(10, resizeState.origWidth + dx);
@@ -80,7 +90,7 @@ export function useTableStructure(table: Ref<SpreadsheetTable>, ss: SpreadsheetS
     }
 
     function onAddRowDragMove(e: MouseEvent): void {
-        if (!addRowDragState) return;
+        if (addRowDragState === null) return;
         const zoom = ss.canvasZoom.value;
         const dy = (e.clientY - addRowDragState.startY) / zoom;
         const target = Math.round(dy / ROW_HEIGHT);
@@ -95,7 +105,7 @@ export function useTableStructure(table: Ref<SpreadsheetTable>, ss: SpreadsheetS
     }
 
     function onAddRowDragEnd(): void {
-        if (addRowDragState && addRowDragState.added === 0) {
+        if (addRowDragState !== null && addRowDragState.added === 0) {
             ss.addRow(table.value.id);
         }
         addRowDragState = null;
@@ -114,7 +124,7 @@ export function useTableStructure(table: Ref<SpreadsheetTable>, ss: SpreadsheetS
     }
 
     function onAddColDragMove(e: MouseEvent): void {
-        if (!addColDragState) return;
+        if (addColDragState === null) return;
         const zoom = ss.canvasZoom.value;
         const dx = (e.clientX - addColDragState.startX) / zoom;
         const target = Math.round(dx / COL_WIDTH);
@@ -129,7 +139,7 @@ export function useTableStructure(table: Ref<SpreadsheetTable>, ss: SpreadsheetS
     }
 
     function onAddColDragEnd(): void {
-        if (addColDragState && addColDragState.added === 0) {
+        if (addColDragState !== null && addColDragState.added === 0) {
             ss.addColumn(table.value.id);
         }
         addColDragState = null;

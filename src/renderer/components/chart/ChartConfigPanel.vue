@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { inject, type PropType } from 'vue';
-import type { ChartObject } from '../../types/spreadsheet';
-import { SPREADSHEET_KEY } from '../../composables/useSpreadsheet';
+import { useId } from 'vue';
+import type { ChartObject } from '@/renderer/types/spreadsheet';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+
+const props = defineProps<{ chart: ChartObject }>();
 
 const CHART_REF_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
-const props = defineProps({
-    chart: { type: Object as PropType<ChartObject>, required: true },
-});
+const ss = injectSpreadsheet();
 
-const ss = inject(SPREADSHEET_KEY)!;
+const uid = useId();
 
 function seriesColor(i: number): string {
     return CHART_REF_COLORS[i % CHART_REF_COLORS.length];
@@ -47,7 +47,7 @@ function clearRef(mode: string): void {
 function onHeaderToggle(e: Event): void {
     const checked = (e.target as HTMLInputElement).checked;
     const ds = props.chart.dataSource;
-    if (ds) {
+    if (ds !== null) {
         ss.updateChart(props.chart.id, { dataSource: { ...ds, useHeader: checked } });
     }
 }
@@ -71,8 +71,9 @@ function onGridToggle(e: Event): void {
         class="chart-config"
         @mousedown.stop>
         <div class="config-row">
-            <label>Type</label>
+            <label :for="`${uid}-type`">Type</label>
             <select
+                :id="`${uid}-type`"
                 :value="chart.chartType"
                 @change="onTypeChange">
                 <option value="bar">Bar</option>
@@ -88,8 +89,11 @@ function onGridToggle(e: Event): void {
         <!-- Labels reference -->
         <div class="config-section">
             <div class="config-section-header">Labels</div>
+            <!-- Presentational: the click only forwards to the input inside,
+                 which is focusable and arms the same picker on @focus. -->
             <div
                 class="ref-field"
+                role="presentation"
                 :class="{ picking: ss.chartSelectionMode.value === 'labels' }"
                 :style="refFieldStyle('labels')"
                 @click="onRefFieldClick('labels')">
@@ -128,6 +132,7 @@ function onGridToggle(e: Event): void {
                 v-for="(sref, i) in chart.dataSource?.seriesRefs ?? []"
                 :key="i"
                 class="ref-field"
+                role="presentation"
                 :class="{ picking: ss.chartSelectionMode.value === 'series:' + i }"
                 :style="refFieldStyle('series:' + i)"
                 @click="onRefFieldClick('series:' + i)">
@@ -157,16 +162,18 @@ function onGridToggle(e: Event): void {
 
         <!-- Options -->
         <div class="config-row">
-            <label>Header</label>
+            <label :for="`${uid}-header`">Header</label>
             <input
+                :id="`${uid}-header`"
                 type="checkbox"
                 :checked="chart.dataSource?.useHeader ?? true"
                 @change="onHeaderToggle" />
             <span class="config-hint">First row is header</span>
         </div>
         <div class="config-row">
-            <label>Legend</label>
+            <label :for="`${uid}-legend`">Legend</label>
             <select
+                :id="`${uid}-legend`"
                 :value="chart.showLegend ? chart.legendPosition : 'off'"
                 @change="onLegendChange">
                 <option value="off">Hidden</option>
@@ -177,8 +184,9 @@ function onGridToggle(e: Event): void {
             </select>
         </div>
         <div class="config-row">
-            <label>Grid</label>
+            <label :for="`${uid}-grid`">Grid</label>
             <input
+                :id="`${uid}-grid`"
                 type="checkbox"
                 :checked="chart.showGrid"
                 @change="onGridToggle" />
@@ -190,59 +198,59 @@ function onGridToggle(e: Event): void {
 .chart-config {
     position: absolute;
     top: 0;
-    right: -240px;
-    width: 230px;
+    right: -$size-31;
+    width: $size-30;
     background: $bg-primary;
-    border: 1px solid $border-color;
-    border-radius: 8px;
-    padding: 8px;
+    border: $border-width-thin $border-color;
+    border-radius: $border-radius-lg;
+    padding: $space-7;
     box-shadow: $shadow-md;
-    z-index: 20;
-    max-height: 480px;
+    z-index: $z-canvas-chrome;
+    max-height: $size-35;
     overflow-y: auto;
-    font-size: 11px;
+    font-size: $font-size-sm;
 }
 
 .config-section {
-    margin-bottom: 8px;
-    border-bottom: 1px solid $border-color;
-    padding-bottom: 6px;
+    margin-bottom: $space-7;
+    border-bottom: $border-width-thin $border-color;
+    padding-bottom: $space-5;
 }
 
 .config-section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-weight: 600;
+    font-weight: $font-weight-semibold;
     color: $text-muted;
-    font-size: 10px;
+    font-size: $font-size-xs;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 4px;
+    margin-bottom: $space-3;
 }
 
 .add-series-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 4px;
-    border: 1px solid $border-color;
+    width: $size-12;
+    height: $size-12;
+    border-radius: $border-radius-sm;
+    border: $border-width-thin $border-color;
     background: $bg-secondary;
     color: $text-muted;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
     cursor: pointer;
     padding: 0;
-    line-height: 1;
+    line-height: $line-height-none;
     transition:
-        background 0.15s,
-        color 0.15s;
+        background $duration-base,
+        color $duration-base;
 
     &:hover {
         background: $accent-color;
-        color: white;
+        color: $on-accent;
         border-color: $accent-color;
     }
 }
@@ -250,16 +258,16 @@ function onGridToggle(e: Event): void {
 .ref-field {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px 4px;
-    border: 1px solid $border-color;
-    border-radius: 5px;
+    gap: $space-3;
+    padding: $space-2 $space-3;
+    border: $border-width-thin $border-color;
+    border-radius: $border-radius;
     background: $bg-secondary;
-    margin-bottom: 4px;
+    margin-bottom: $space-3;
     cursor: text;
     transition:
-        border-color 0.15s,
-        box-shadow 0.15s;
+        border-color $duration-base,
+        box-shadow $duration-base;
 
     &:hover {
         border-color: $text-muted;
@@ -271,9 +279,9 @@ function onGridToggle(e: Event): void {
 }
 
 .ref-color-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+    width: $size-7;
+    height: $size-7;
+    border-radius: $border-radius-round;
     flex-shrink: 0;
 }
 
@@ -282,7 +290,7 @@ function onGridToggle(e: Event): void {
     border: none;
     outline: none;
     background: transparent;
-    font-size: 11px;
+    font-size: $font-size-sm;
     font-family: $font-family;
     color: $text-primary;
     padding: 0;
@@ -291,7 +299,7 @@ function onGridToggle(e: Event): void {
     &::placeholder {
         color: $text-muted;
         font-family: inherit;
-        font-size: 10px;
+        font-size: $font-size-xs;
     }
 }
 
@@ -299,20 +307,20 @@ function onGridToggle(e: Event): void {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
+    width: $size-11;
+    height: $size-11;
+    border-radius: $border-radius-round;
     border: none;
     background: transparent;
     color: $text-muted;
-    font-size: 13px;
+    font-size: $font-size-md;
     cursor: pointer;
     padding: 0;
     flex-shrink: 0;
-    line-height: 1;
+    line-height: $line-height-none;
     transition:
-        background 0.15s,
-        color 0.15s;
+        background $duration-base,
+        color $duration-base;
 
     &:hover {
         background: $danger-color-alpha;
@@ -321,44 +329,44 @@ function onGridToggle(e: Event): void {
 }
 
 .ref-empty-hint {
-    font-size: 10px;
+    font-size: $font-size-xs;
     color: $text-muted;
     text-align: center;
-    padding: 4px;
+    padding: $space-3;
 }
 
 .config-row {
     display: flex;
     align-items: flex-start;
-    gap: 6px;
-    margin-bottom: 6px;
+    gap: $space-5;
+    margin-bottom: $space-5;
 
     > label:first-child {
         flex: 0 0 50px;
-        font-weight: 600;
+        font-weight: $font-weight-semibold;
         color: $text-muted;
-        padding-top: 2px;
-        font-size: 11px;
+        padding-top: $space-1;
+        font-size: $font-size-sm;
     }
 
     select {
         flex: 1;
-        font-size: 11px;
-        padding: 2px 4px;
-        border: 1px solid $border-color;
-        border-radius: 4px;
+        font-size: $font-size-sm;
+        padding: $space-1 $space-3;
+        border: $border-width-thin $border-color;
+        border-radius: $border-radius-sm;
         background: $bg-secondary;
         color: $text-primary;
     }
 
     input[type='checkbox'] {
-        margin-top: 3px;
+        margin-top: $space-2;
     }
 }
 
 .config-hint {
-    font-size: 10px;
+    font-size: $font-size-xs;
     color: $text-muted;
-    padding-top: 3px;
+    padding-top: $space-2;
 }
 </style>

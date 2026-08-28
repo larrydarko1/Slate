@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, useId } from 'vue';
 
 const props = defineProps<{
     label: string;
@@ -18,24 +18,26 @@ const emit = defineEmits<{
     'update:open': [value: boolean];
 }>();
 
-const showCustom = computed(() => props.showCustomInput !== false);
+const uid = useId();
+
+const showCustom = computed((): boolean => props.showCustomInput !== false);
 
 function isLightColor(hex: string): boolean {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return (r * 299 + g * 587 + b * 114) / 1000 > 200;
+    const red = parseInt(hex.slice(1, 3), 16);
+    const green = parseInt(hex.slice(3, 5), 16);
+    const blue = parseInt(hex.slice(5, 7), 16);
+    return (red * 299 + green * 587 + blue * 114) / 1000 > 200;
 }
 
-function onQuickApply() {
+function onQuickApply(): void {
     emit('apply', props.lastColor);
 }
 
-function toggleDropdown() {
+function toggleDropdown(): void {
     emit('update:open', !props.open);
 }
 
-function onCustomColor(e: Event) {
+function onCustomColor(e: Event): void {
     emit('apply', (e.target as HTMLInputElement).value);
 }
 </script>
@@ -103,8 +105,13 @@ function onCustomColor(e: Event) {
             <div
                 v-if="showCustom"
                 class="color-custom-row">
-                <label class="color-custom-label">Custom:</label>
+                <label
+                    class="color-custom-label"
+                    :for="`${uid}-custom`"
+                    >Custom:</label
+                >
                 <input
+                    :id="`${uid}-custom`"
                     type="color"
                     class="color-custom-input"
                     :value="lastColor"
@@ -117,41 +124,6 @@ function onCustomColor(e: Event) {
 </template>
 
 <style scoped lang="scss">
-// Base toolbar button — self-contained so ColorPicker works outside Toolbar
-.tb {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    height: 30px;
-    min-width: 30px;
-    padding: 0 7px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: $text-muted;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition:
-        background 0.12s,
-        color 0.12s;
-    -webkit-app-region: no-drag;
-
-    svg {
-        flex-shrink: 0;
-    }
-
-    &:hover {
-        background: $bg-hover;
-        color: $text-primary;
-    }
-
-    &:active {
-        background: $bg-selected;
-    }
-}
-
 .color-btn-wrapper {
     position: relative;
     display: flex;
@@ -159,40 +131,40 @@ function onCustomColor(e: Event) {
 }
 
 .color-btn {
-    padding-right: 2px !important;
-    border-top-right-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
+    padding-right: $space-1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
     position: relative;
 }
 
 .color-indicator {
     position: absolute;
-    bottom: 3px;
-    left: 6px;
-    right: 6px;
+    bottom: $size-2;
+    left: $size-5;
+    right: $size-5;
     height: 2.5px;
-    border-radius: 1px;
+    border-radius: $border-radius-hairline;
 }
 
 .color-chevron {
-    padding: 0 3px !important;
-    min-width: 14px !important;
-    border-top-left-radius: 0 !important;
-    border-bottom-left-radius: 0 !important;
+    padding: 0 $space-2;
+    min-width: $size-10;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
 }
 
 .color-dropdown {
     position: absolute;
     top: 100%;
     left: 0;
-    margin-top: 4px;
+    margin-top: $space-3;
     background: $bg-primary;
-    border: 1px solid $border-color;
-    border-radius: 10px;
+    border: $border-width-thin $border-color;
+    border-radius: $border-radius-xl;
     box-shadow: $shadow-lg;
-    padding: 10px;
-    z-index: 200;
-    width: 240px;
+    padding: $space-9;
+    z-index: $z-popover;
+    width: $size-31;
 
     &.dropdown-anchor-right {
         left: auto;
@@ -201,35 +173,35 @@ function onCustomColor(e: Event) {
 }
 
 .color-dropdown-header {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
     color: $text-muted;
-    margin-bottom: 8px;
-    letter-spacing: 0.02em;
+    margin-bottom: $space-7;
+    letter-spacing: $letter-spacing-wide;
 }
 
 .color-grid {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
-    gap: 3px;
-    margin-bottom: 8px;
+    gap: $space-2;
+    margin-bottom: $space-7;
 }
 
 .color-swatch {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    width: $size-13;
+    height: $size-13;
+    border-radius: $border-radius-sm;
+    border: $border-width-thin $scrim-soft;
     cursor: pointer;
     transition:
-        transform 0.1s,
-        box-shadow 0.1s;
+        transform $duration-quick,
+        box-shadow $duration-quick;
     padding: 0;
 
     &:hover {
         transform: scale(1.2);
-        z-index: 1;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+        z-index: $z-base;
+        box-shadow: 0 $size-0 $size-3 $scrim-strong;
     }
 
     &.active {
@@ -238,23 +210,23 @@ function onCustomColor(e: Event) {
     }
 
     &.is-light {
-        border-color: rgba(0, 0, 0, 0.15);
+        border-color: $scrim-strong;
     }
 }
 
 .color-clear-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: $space-5;
     width: 100%;
-    padding: 5px 6px;
+    padding: $space-4 $space-5;
     border: none;
-    border-radius: 5px;
+    border-radius: $border-radius;
     background: transparent;
     color: $text-muted;
-    font-size: 11px;
+    font-size: $font-size-sm;
     cursor: pointer;
-    transition: background 0.1s;
+    transition: background $duration-quick;
 
     &:hover {
         background: $bg-hover;
@@ -262,36 +234,22 @@ function onCustomColor(e: Event) {
     }
 }
 
-.color-custom-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 6px;
-    padding-top: 6px;
-    border-top: 1px solid $border-color;
-}
-
-.color-custom-label {
-    font-size: 11px;
-    color: $text-muted;
-    font-weight: 500;
-}
-
 .color-custom-input {
-    width: 28px;
-    height: 22px;
-    border: 1px solid $border-color;
-    border-radius: 4px;
-    padding: 1px;
+    width: $size-17;
+    height: $size-14;
+    border: $border-width-thin $border-color;
+    border-radius: $border-radius-sm;
+    padding: $space-0;
     cursor: pointer;
     background: transparent;
 
     &::-webkit-color-swatch-wrapper {
-        padding: 1px;
+        padding: $space-0;
     }
+
     &::-webkit-color-swatch {
         border: none;
-        border-radius: 2px;
+        border-radius: $border-radius-2xs;
     }
 }
 </style>

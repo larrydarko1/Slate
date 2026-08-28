@@ -2,6 +2,14 @@
     "name": "slate",
     "version": "1.3.1",
     "description": "A free, canvas-based spreadsheet app for desktop.",
+    "keywords": [
+        "spreadsheet",
+        "canvas",
+        "electron",
+        "desktop",
+        "offline",
+        "vue"
+    ],
     "homepage": "https://github.com/larrydarko1/slate#readme",
     "bugs": {
         "url": "https://github.com/larrydarko1/slate/issues"
@@ -21,19 +29,39 @@
         "build:mac": "npm run build && electron-builder --mac --publish never",
         "build:win": "npm run build && electron-builder --win --publish never",
         "build:linux": "npm run build && electron-builder --linux --publish never",
-        "test": "vitest run",
-        "test:watch": "vitest",
-        "lint": "eslint src/",
-        "lint:fix": "eslint src/ --fix",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "lint:dup": "jscpd src --config .jscpd.json --reporters console",
         "format": "prettier --write \"src/**/*.{ts,vue,scss,json}\"",
         "format:check": "prettier --check \"src/**/*.{ts,vue,scss,json}\"",
+        "stylelint": "stylelint \"src/**/*.{scss,vue}\"",
+        "stylelint:fix": "stylelint \"src/**/*.{scss,vue}\" --fix",
+        "audit:check": "node scripts/check/check-audit.mjs",
+        "code:check": "node scripts/check/check-code-style.mjs",
+        "dead:check": "node scripts/check/check-dead-code.mjs",
+        "declorder:check": "node scripts/check/check-declaration-order.mjs",
+        "dup:check": "node scripts/check/check-duplication.mjs",
+        "error:check": "node scripts/check/check-error-handling.mjs",
+        "html:check": "node scripts/check/check-html-standards.mjs",
+        "ipc:check": "node scripts/check/check-ipc-standards.mjs",
+        "pipeline:check": "node scripts/check/check-pipeline.mjs",
+        "pkg:check": "node scripts/check/check-package-json.mjs",
+        "refactor:check": "node scripts/check/check-refactoring.mjs",
+        "scss:check": "node scripts/check/check-scss-standards.mjs",
+        "security:check": "node scripts/check/check-electron-security.mjs",
+        "test:check": "node scripts/check/check-testing.mjs",
         "prepare": "husky",
-        "ci:check": "npm audit --audit-level=high --omit=dev && npm run lint && npm run format:check && npm test && npm run build"
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "npx vitest run --coverage",
+        "ci:check": "npm run audit:check && npm run lint && npm run format:check && npm run stylelint && npm run pkg:check && npm run pipeline:check && npm run code:check && npm run declorder:check && npm run html:check && npm run scss:check && npm run refactor:check && npm run ipc:check && npm run security:check && npm run error:check && npm run dup:check && npm run dead:check && npm run test:coverage && npm run test:check && npm run build"
     },
     "dependencies": {
         "chart.js": "^4.5.1",
+        "electron-log": "^5.4.4",
         "vue": "^3.5.17",
-        "vue-chartjs": "^5.3.3"
+        "vue-chartjs": "^5.3.3",
+        "zod": "^4.4.3"
     },
     "devDependencies": {
         "@commitlint/cli": "^20.5.0",
@@ -41,30 +69,48 @@
         "@eslint/js": "^10.0.1",
         "@types/node": "^24.0.13",
         "@vitejs/plugin-vue": "^6.0.0",
-        "@vue/test-utils": "^2.4.6",
-        "@vue/tsconfig": "^0.7.0",
+        "@vitest/coverage-v8": "^4.1.11",
+        "@vitest/eslint-plugin": "^1.6.27",
+        "@vue/test-utils": "^2.5.0",
+        "@vue/tsconfig": "^0.9.1",
         "electron": "^40.0.0",
         "electron-builder": "^26.4.0",
         "electron-vite": "^5.0.0",
         "eslint": "^10.0.3",
         "eslint-config-prettier": "^10.1.8",
+        "eslint-import-resolver-typescript": "^4.4.5",
+        "eslint-plugin-import-x": "^4.17.1",
         "eslint-plugin-vue": "^10.8.0",
+        "eslint-plugin-vuejs-accessibility": "^2.6.0",
         "globals": "^17.4.0",
         "husky": "^9.1.7",
+        "jscpd": "^5.0.16",
         "jsdom": "^26.1.0",
+        "knip": "^6.32.3",
         "lint-staged": "^16.4.0",
+        "postcss-html": "^2.0.0",
         "prettier": "^3.8.1",
         "sass-embedded": "^1.92.1",
-        "typescript": "~5.8.3",
-        "typescript-eslint": "^8.57.0",
+        "stylelint": "^17.14.1",
+        "stylelint-config-standard-scss": "^17.0.0",
+        "stylelint-declaration-strict-value": "^1.12.1",
+        "stylelint-scss": "^7.2.0",
+        "typescript": "~6.0.2",
+        "typescript-eslint": "^8.68.0",
         "vite": "^7.0.0",
         "vitest": "^4.1.4",
-        "vue-tsc": "^3.3.8"
+        "vue-tsc": "^3.3.11",
+        "yaml": "^2.9.0"
     },
     "engines": {
-        "node": ">=20",
-        "npm": ">=10"
+        "node": ">=24",
+        "npm": ">=11"
     },
+    "os": [
+        "darwin",
+        "linux",
+        "win32"
+    ],
     "private": true,
     "packageManager": "npm@11.11.0",
     "build": {
@@ -84,12 +130,13 @@
             }
         ],
         "files": [
+            "package.json",
+            "build/icon.png",
             "out/**/*",
             "node_modules/**/*"
         ],
         "dmg": {
             "background": "build/dmg-background.png",
-            "icon": "build/icon.icns",
             "iconSize": 100,
             "iconTextSize": 14,
             "title": "${productName} ${version}",
@@ -120,14 +167,12 @@
                         "x64"
                     ]
                 }
-            ],
-            "icon": "build/icon.icns"
+            ]
         },
         "win": {
             "target": [
                 "nsis"
-            ],
-            "icon": "build/icon.ico"
+            ]
         },
         "linux": {
             "target": [

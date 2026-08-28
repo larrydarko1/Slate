@@ -3,35 +3,60 @@
  * Owns: fill drag state, fill range computation, fill preview highlighting.
  * Does NOT own: cell value writes (delegated to ss.fillCells).
  */
-
 import { ref, type Ref } from 'vue';
-import type { SpreadsheetTable } from '../../types/spreadsheet';
-import type { SpreadsheetState } from '../useSpreadsheet';
+import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 
-interface FillDragState {
+export type FillHandle = {
+    fillDragState: Ref<
+        {
+            active: boolean;
+            sourceRange: { startCol: number; startRow: number; endCol: number; endRow: number };
+            currentCol: number;
+            currentRow: number;
+        } | null,
+        | FillDragState
+        | {
+              active: boolean;
+              sourceRange: { startCol: number; startRow: number; endCol: number; endRow: number };
+              currentCol: number;
+              currentRow: number;
+          }
+        | null
+    >;
+    isSelectionCorner: (ci: number, ri: number) => boolean;
+    isCellInFillPreview: (ci: number, ri: number) => boolean;
+    startFillDrag: (_ci: number, _ri: number, _e: MouseEvent) => void;
+};
+
+type FillDragState = {
     active: boolean;
     sourceRange: { startCol: number; startRow: number; endCol: number; endRow: number };
     currentCol: number;
     currentRow: number;
-}
+};
 
-export function useFillHandle(table: Ref<SpreadsheetTable>, ss: SpreadsheetState, tableEl: Ref<HTMLElement | null>) {
+export function useFillHandle(
+    table: Ref<SpreadsheetTable>,
+    ss: SpreadsheetState,
+    tableEl: Ref<HTMLElement | null>,
+): FillHandle {
     const fillDragState = ref<FillDragState | null>(null);
 
     // ── Queries ──────────────────────────────────────────────────────────────
 
     function isSelectionCorner(ci: number, ri: number): boolean {
         if (ss.activeCell.value?.tableId !== table.value.id) return false;
-        const sr = ss.getNormalizedSelection();
-        if (!sr || sr.tableId !== table.value.id) return false;
+        const sr = ss.findNormalizedSelection();
+        if (sr === null || sr.tableId !== table.value.id) return false;
         return ci === sr.endCol && ri === sr.endRow;
     }
 
     function isCellInFillPreview(ci: number, ri: number): boolean {
         const st = fillDragState.value;
-        if (!st || !st.active) return false;
-        const fr = getFillRange();
-        if (!fr) return false;
+        if (st === null || !st.active) return false;
+        const fr = findFillRange();
+        if (fr === null) return false;
         const inSource =
             ci >= st.sourceRange.startCol &&
             ci <= st.sourceRange.endCol &&
@@ -43,9 +68,9 @@ export function useFillHandle(table: Ref<SpreadsheetTable>, ss: SpreadsheetState
 
     // ── Fill range computation ───────────────────────────────────────────────
 
-    function getFillRange(): { startCol: number; startRow: number; endCol: number; endRow: number } | null {
+    function findFillRange(): { startCol: number; startRow: number; endCol: number; endRow: number } | null {
         const st = fillDragState.value;
-        if (!st || !st.active) return null;
+        if (st === null || !st.active) return null;
         const src = st.sourceRange;
         const dCol = st.currentCol - src.endCol;
         const dRow = st.currentRow - src.endRow;
@@ -74,8 +99,8 @@ export function useFillHandle(table: Ref<SpreadsheetTable>, ss: SpreadsheetState
     // ── Drag handlers ────────────────────────────────────────────────────────
 
     function startFillDrag(_ci: number, _ri: number, _e: MouseEvent): void {
-        const sr = ss.getNormalizedSelection();
-        if (!sr || sr.tableId !== table.value.id) return;
+        const sr = ss.findNormalizedSelection();
+        if (sr === null || sr.tableId !== table.value.id) return;
         fillDragState.value = {
             active: true,
             sourceRange: { startCol: sr.startCol, startRow: sr.startRow, endCol: sr.endCol, endRow: sr.endRow },
@@ -88,16 +113,16 @@ export function useFillHandle(table: Ref<SpreadsheetTable>, ss: SpreadsheetState
 
     function onFillDragMove(e: MouseEvent): void {
         const st = fillDragState.value;
-        if (!st || !st.active) return;
+        if (st === null || !st.active) return;
         const gridWrapper = tableEl.value?.querySelector('.table-grid-wrapper');
-        if (!gridWrapper) return;
+        if (gridWrapper == null) return;
 
         // Determine target row
         const rows = gridWrapper.querySelectorAll('tbody tr');
         let targetRow = st.currentRow;
         for (let ri = 0; ri < table.value.rows.length; ri++) {
             const tr = rows[ri];
-            if (!tr) continue;
+            if (tr === undefined) continue;
             const rect = tr.getBoundingClientRect();
             if (e.clientY >= rect.top && e.clientY < rect.bottom) {
                 targetRow = ri;
@@ -124,9 +149,9 @@ export function useFillHandle(table: Ref<SpreadsheetTable>, ss: SpreadsheetState
 
     function onFillDragEnd(): void {
         const st = fillDragState.value;
-        if (st && st.active) {
-            const fr = getFillRange();
-            if (fr) {
+        if (st !== null && st.active) {
+            const fr = findFillRange();
+            if (fr !== null) {
                 const tableId = table.value.id;
                 ss.fillCells(
                     tableId,

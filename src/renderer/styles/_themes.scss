@@ -1,0 +1,96 @@
+// Theme palettes — the design system's only runtime-variable layer, and the
+// only file here that emits CSS unconditionally.
+// Owns: every `--token` the app paints with, in every theme.
+// Does NOT own: which theme is active. Toolbar.vue sets `data-theme` on
+// <html>; nothing in SCSS decides.
+
+// `:root` shares its block with dark on purpose. It is the layer that paints
+// before Toolbar.vue has written the attribute, so sharing means the two can
+// never disagree about what "no theme yet" looks like.
+
+// Every token must appear in BOTH blocks. A token present in dark but missing
+// from light falls through to the `:root` (dark) value, so that one element is
+// off-palette for light-theme users only — invisible to everyone else,
+// including whoever wrote it. `scss:check` compares the two sets for that
+// reason, and `stylelint`'s `no-unknown-custom-properties` reads this file as
+// its reference for which `var(--…)` names exist at all.
+
+:root,
+[data-theme='dark'] {
+    color-scheme: dark;
+
+    --text1: #fafafa;
+    --text2: #a1a1aa;
+    --text3: #3f3f46;
+    --text-primary: #fafafa;
+    --base1: #27272a;
+    --base2: #fafafa;
+    --base3: #3f3f46;
+    --base4: #09090b;
+    --bg-primary: #18181b;
+    --bg-secondary: #1c1c1f;
+    --bg-tertiary: #27272a;
+    --bg-hover: #2c2c30;
+    --bg-selected: #3f3f46;
+    --border-color: #2e2e33;
+    --accent-color-alpha: rgb(62 97 180 / 12%);
+    --danger-color-alpha: rgb(239 68 68 / 12%);
+    --scrollbar-thumb: #3f3f46;
+    --scrollbar-thumb-hover: #52525b;
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 20%);
+    --shadow-md: 0 2px 8px rgb(0 0 0 / 30%);
+    --shadow-lg: 0 4px 16px rgb(0 0 0 / 40%);
+
+    // Sticky notes keep their own paper palette rather than reusing the surface
+    // tokens: a note is meant to read as an object laid on the sheet, so it does
+    // not follow bg-secondary the way a panel does.
+    --note-bg: #3d3100;
+    --note-border: #78600a;
+    --note-text: #fef3c7;
+
+    // Cell value types. The hues are the same in both themes on purpose: they
+    // encode what a value IS, and that does not change when the lights go out.
+    // Only the wash behind them shifts, because it sits on a different surface.
+
+    // Washes painted straight onto the sheet, where a theme surface token would
+    // be opaque and hide the grid underneath.
+
+    // Formula-mode badge. Amber in both themes — it means "this sheet is
+    // feeding a formula", and that does not change with the lights. What
+    // changes is which end of the amber reads on the surface behind it.
+    --formula-bg: rgb(245 158 11 / 12%);
+    --formula-border: rgb(245 158 11 / 30%);
+    --formula-text: #fbbf24;
+}
+
+[data-theme='light'] {
+    color-scheme: light;
+
+    --text1: #1a1a1a;
+    --text2: #555;
+    --text3: #c8c8c8;
+    --text-primary: #1a1a1a;
+    --base1: #e4e4e7;
+    --base2: #1a1a1a;
+    --base3: #d4d4d8;
+    --base4: #fff;
+    --bg-primary: #fff;
+    --bg-secondary: #fafafa;
+    --bg-tertiary: #f4f4f5;
+    --bg-hover: #f0f0f1;
+    --bg-selected: #e4e4e7;
+    --border-color: #e4e4e7;
+    --accent-color-alpha: rgb(62 97 180 / 8%);
+    --danger-color-alpha: rgb(239 68 68 / 10%);
+    --scrollbar-thumb: #d4d4d8;
+    --scrollbar-thumb-hover: #a1a1aa;
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 4%);
+    --shadow-md: 0 2px 8px rgb(0 0 0 / 6%);
+    --shadow-lg: 0 4px 16px rgb(0 0 0 / 8%);
+    --note-bg: #fef9e7;
+    --note-border: #f0d96c;
+    --note-text: #3d3100;
+    --formula-bg: rgb(245 158 11 / 10%);
+    --formula-border: rgb(245 158 11 / 35%);
+    --formula-text: #b45309;
+}

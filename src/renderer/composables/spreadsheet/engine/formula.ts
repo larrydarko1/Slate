@@ -18,18 +18,15 @@
  *  - Mixed currency → first cell's currency wins
  */
 
-import type { CellValue } from '../../../types/spreadsheet';
-import type { CellDataType } from './cellTypes';
-import { tokenize } from './tokenizer';
-import { Parser } from './parser';
-import { evaluate } from './evaluator';
-
-// Re-export AST node type for consumers that need it
-export type { ASTNode } from './parser';
+import type { CellValue } from '@/renderer/types/spreadsheet';
+import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { tokenize } from '@/renderer/composables/spreadsheet/engine/tokenizer';
+import { Parser } from '@/renderer/composables/spreadsheet/engine/parser';
+import { evaluate } from '@/renderer/composables/spreadsheet/engine/evaluator';
 
 // ── Public context the evaluator needs ───────────────────────────────────────
 
-export interface FormulaContext {
+export type FormulaContext = {
     getCellValue: (col: number, row: number) => CellValue;
     getCellType: (col: number, row: number) => CellDataType;
     getCellRange: (startCol: number, startRow: number, endCol: number, endRow: number) => CellValue[];
@@ -53,13 +50,13 @@ export interface FormulaContext {
         ec: number,
         er: number,
     ) => CellDataType[];
-}
+};
 
 /** Result of a type-aware formula evaluation */
-export interface TypedResult {
+export type TypedResult = {
     value: CellValue;
     type: CellDataType;
-}
+};
 
 // ── Public API ───────────────────────────────────────────────────────────────
 

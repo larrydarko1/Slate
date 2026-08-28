@@ -1,13 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, inject } from 'vue';
-import { SPREADSHEET_KEY } from '../../composables/useSpreadsheet';
-import type { CellDataType } from '../../composables/spreadsheet/engine/cellTypes';
-import { getTypeLabel } from '../../composables/spreadsheet/engine/cellTypes';
-
-const ss = inject(SPREADSHEET_KEY)!;
-
-const typeSelectorRef = ref<HTMLElement | null>(null);
-const typeMenuOpen = ref(false);
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { getTypeLabel } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 
 const typeOptions: { value: CellDataType; label: string; short: string }[] = [
     { value: 'text', label: 'Text', short: 'ABC' },
@@ -18,26 +13,31 @@ const typeOptions: { value: CellDataType; label: string; short: string }[] = [
     { value: 'currency_eur', label: 'Euro (€)', short: '€' },
 ];
 
-const hasActiveCell = computed(() => !!ss.activeCell.value);
+const ss = injectSpreadsheet();
+
+const typeSelectorRef = ref<HTMLElement | null>(null);
+const typeMenuOpen = ref(false);
+
+const hasActiveCell = computed(() => !(ss.activeCell.value === null));
 
 const currentCellType = computed<CellDataType>(() => {
-    if (!ss.activeCell.value) return 'text';
+    if (ss.activeCell.value === null) return 'text';
     return ss.getCellType(ss.activeCell.value.tableId, ss.activeCell.value.col, ss.activeCell.value.row);
 });
 
 const supportsDecimals = computed(() => {
-    const t = currentCellType.value;
-    return t === 'float' || t === 'percent' || t === 'currency_eur' || t === 'currency_usd';
+    const cellType = currentCellType.value;
+    return cellType === 'float' || cellType === 'percent' || cellType === 'currency_eur' || cellType === 'currency_usd';
 });
 
 const currentTypeLabel = computed(() => {
     const opt = typeOptions.find((o) => o.value === currentCellType.value);
-    return opt ? opt.short : getTypeLabel(currentCellType.value);
+    return opt !== undefined ? opt.short : getTypeLabel(currentCellType.value);
 });
 
 function changeDecimals(delta: number): void {
-    if (!ss.activeCell.value) return;
-    const fmt = ss.getActiveCellFormat();
+    if (ss.activeCell.value === null) return;
+    const fmt = ss.findActiveCellFormat();
     const current = fmt?.decimalPlaces ?? 2;
     const next = Math.max(0, Math.min(10, current + delta));
     ss.setSelectionFormat({ decimalPlaces: next });
@@ -48,13 +48,13 @@ function toggleTypeMenu(): void {
 }
 
 function setType(t: CellDataType): void {
-    if (!ss.activeCell.value) return;
+    if (ss.activeCell.value === null) return;
     ss.setCellType(ss.activeCell.value.tableId, ss.activeCell.value.col, ss.activeCell.value.row, t);
     typeMenuOpen.value = false;
 }
 
 function onClickOutside(e: MouseEvent): void {
-    if (typeMenuOpen.value && typeSelectorRef.value && !typeSelectorRef.value.contains(e.target as Node)) {
+    if (typeMenuOpen.value && typeSelectorRef.value !== null && !typeSelectorRef.value.contains(e.target as Node)) {
         typeMenuOpen.value = false;
     }
 }
@@ -193,59 +193,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 </template>
 
 <style scoped lang="scss">
-.toolbar-group {
-    display: flex;
-    align-items: center;
-    gap: 1px;
-}
-
-.tb {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    height: 30px;
-    min-width: 30px;
-    padding: 0 7px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: $text-muted;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition:
-        background 0.12s,
-        color 0.12s;
-    -webkit-app-region: no-drag;
-
-    svg {
-        flex-shrink: 0;
-    }
-
-    &:hover {
-        background: $bg-hover;
-        color: $text-primary;
-    }
-
-    &:active {
-        background: $bg-selected;
-    }
-
-    &.has-label {
-        padding: 0 10px 0 7px;
-
-        span {
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 0.01em;
-        }
-    }
-}
-
 .decimal-btn {
-    padding: 0 4px !important;
-    min-width: 24px;
+    padding: 0 $space-3;
+    min-width: $size-15;
 }
 
 .type-selector-wrapper {
@@ -253,11 +203,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 }
 
 .type-selector-btn {
-    gap: 4px !important;
+    gap: $space-3;
 
     .chevron {
-        opacity: 0.5;
-        margin-left: 1px;
+        opacity: $opacity-mid;
+        margin-left: $space-0;
     }
 }
 
@@ -265,29 +215,29 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     position: absolute;
     top: 100%;
     left: 0;
-    margin-top: 4px;
+    margin-top: $space-3;
     background: $bg-primary;
-    border: 1px solid $border-color;
-    border-radius: 8px;
+    border: $border-width-thin $border-color;
+    border-radius: $border-radius-lg;
     box-shadow: $shadow-lg;
-    padding: 4px;
-    z-index: 100;
-    min-width: 150px;
+    padding: $space-3;
+    z-index: $z-overlay;
+    min-width: $size-27;
 }
 
 .type-option {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: $space-7;
     width: 100%;
-    padding: 5px 8px;
+    padding: $space-4 $space-7;
     border: none;
-    border-radius: 5px;
+    border-radius: $border-radius;
     background: transparent;
     color: $text-primary;
-    font-size: 12px;
+    font-size: $font-size-base;
     cursor: pointer;
-    transition: background 0.1s;
+    transition: background $duration-quick;
 
     &:hover {
         background: $bg-hover;
@@ -295,39 +245,43 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 
     &.active {
         background: $accent-color-alpha;
-        font-weight: 600;
+        font-weight: $font-weight-semibold;
     }
 }
 
 .type-option-badge {
-    font-size: 9px;
-    font-weight: 700;
-    padding: 1px 5px;
-    border-radius: 3px;
-    min-width: 26px;
+    font-size: $font-size-2xs;
+    font-weight: $font-weight-bold;
+    padding: $space-0 $space-4;
+    border-radius: $border-radius-xs;
+    min-width: $size-16;
     text-align: center;
     background: $bg-tertiary;
     color: $text-muted;
 
     &.badge-integer {
-        background: rgba(59, 130, 246, 0.12);
-        color: rgb(59, 130, 246);
+        background: $type-text-alpha;
+        color: $type-text;
     }
+
     &.badge-float {
-        background: rgba(99, 102, 241, 0.12);
-        color: rgb(99, 102, 241);
+        background: $type-number-alpha;
+        color: $type-number;
     }
+
     &.badge-currency-eur {
-        background: rgba(16, 185, 129, 0.12);
-        color: rgb(16, 185, 129);
+        background: $type-currency-alpha;
+        color: $type-currency;
     }
+
     &.badge-currency-usd {
-        background: rgba(34, 197, 94, 0.12);
-        color: rgb(34, 197, 94);
+        background: $type-percent-alpha;
+        color: $type-percent;
     }
+
     &.badge-text {
-        background: rgba(245, 158, 11, 0.12);
-        color: rgb(245, 158, 11);
+        background: $type-date-alpha;
+        color: $type-date;
     }
 }
 

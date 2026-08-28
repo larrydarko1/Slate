@@ -1,0 +1,64 @@
+// Colour tokens that do NOT change with the theme.
+// Owns: the 30 custom properties both palettes had declared identically, which
+// is exactly the duplication `dup:check` was reporting inside _themes.scss.
+// Does NOT own: anything that forks (_themes.scss).
+// The split is the useful part, not the dedupe. A token's file now answers a
+// question the value alone could not: is this colour a property of the THEME,
+// or a property of the THING? Add a token here and you are asserting it should
+// look the same in the dark — which is a claim someone can disagree with, and
+// now has somewhere to look.
+
+:root {
+    // ── Accents ──
+    // Slate uses one accent and one danger hue in both themes. Their alpha
+    // washes do fork — those sit in _themes.scss, because a 12% tint reads
+    // differently on a dark surface than a light one.
+    --accent-color: #3e61b4;
+    --danger-color: #ef4444;
+    --text-muted: #71717a;
+    --on-accent: #fff;
+
+    // ── Cell value types ──
+    // The swatch a formula result or a cell format is tagged with. These encode
+    // what a value IS, and that does not change when the lights go out.
+    --type-text: #3b82f6;
+    --type-text-alpha: rgb(59 130 246 / 12%);
+    --type-number: #6366f1;
+    --type-number-alpha: rgb(99 102 241 / 12%);
+    --type-currency: #10b981;
+    --type-currency-alpha: rgb(16 185 129 / 12%);
+    --type-percent: #22c55e;
+    --type-percent-alpha: rgb(34 197 94 / 12%);
+    --type-date: #f59e0b;
+    --type-date-alpha: rgb(245 158 11 / 12%);
+    --type-boolean: #8b5cf6;
+    --type-boolean-alpha: rgb(139 92 246 / 12%);
+
+    // ── Formula mode ──
+    // The amber dot on a tab that is feeding a formula. The badge around it
+    // forks; the dot does not.
+    --formula-dot: #f59e0b;
+
+    // ── Notes ──
+    // The parts of a sticky note that stay put across themes — the action
+    // button and the placeholder ink. The paper itself is in _themes.scss.
+    --note-placeholder: #b89f4a;
+    --note-accent: #f5a623;
+    --note-accent-hover: #e09510;
+    --note-on-accent: #fff;
+    --note-muted: #b89f4a;
+
+    // ── Scrims and glass ──
+    // Washes painted straight onto the sheet or over the canvas, where a theme
+    // surface token would be opaque and hide what is underneath. Being
+    // translucent is what makes them theme-independent: they take their
+    // character from whatever they are laid over.
+    --scrim-faint: rgb(0 0 0 / 4%);
+    --scrim-soft: rgb(0 0 0 / 8%);
+    --scrim-strong: rgb(0 0 0 / 25%);
+    --glass-soft: rgb(255 255 255 / 20%);
+    --glass: rgb(255 255 255 / 30%);
+    --glass-strong: rgb(255 255 255 / 70%);
+    --scrim-medium: rgb(0 0 0 / 12%);
+    --scrim-heavy: rgb(0 0 0 / 16%);
+}

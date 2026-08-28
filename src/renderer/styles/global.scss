@@ -1,0 +1,9 @@
+// Global stylesheet — imported once by main.ts, and the only file in the app
+// that pulls in a module which emits CSS.
+// Tokens and mixins are deliberately absent here: they reach each SFC through
+// the injected barrel instead. See index.scss for the split and why it exists.
+
+@use '@/renderer/styles/tokens';
+@use '@/renderer/styles/themes';
+@use '@/renderer/styles/base';
+@use '@/renderer/styles/components';

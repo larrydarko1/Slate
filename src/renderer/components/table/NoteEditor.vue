@@ -21,13 +21,15 @@ const textareaRef = ref<HTMLTextAreaElement | null>(null);
 watch(
     () => props.visible,
     (v) => {
-        if (v) nextTick(() => textareaRef.value?.focus());
+        if (v) void nextTick(() => textareaRef.value?.focus());
     },
 );
 </script>
 
 <template>
     <Teleport to="body">
+        <!-- Click-outside dismissal; Escape does the same from the textarea. -->
+        <!-- eslint-disable-next-line a11y/no-static-element-interactions -->
         <div
             v-if="visible"
             class="note-editor-overlay"
@@ -36,7 +38,9 @@ watch(
                 class="note-editor"
                 :style="{ left: x + 'px', top: y + 'px' }">
                 <textarea
+                    id="note-editor-textarea"
                     ref="textareaRef"
+                    aria-label="Cell note"
                     class="note-editor-textarea"
                     :value="text"
                     placeholder="Type a note…"
@@ -66,65 +70,52 @@ watch(
     </Teleport>
 </template>
 
-<style lang="scss">
+<style scoped lang="scss">
 .note-editor-overlay {
     position: fixed;
     inset: 0;
-    z-index: 10003;
+    z-index: $z-tooltip-raised;
 }
 
 .note-editor {
     position: absolute;
-    width: 260px;
-    background: #fef9e7;
-    border: 1px solid #f0d96c;
-    border-radius: 10px;
+    width: $size-26;
+    background: $note-bg;
+    border: $border-width-thin $note-border;
+    border-radius: $border-radius-xl;
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.16),
-        0 0 0 1px rgba(0, 0, 0, 0.04);
+        0 8px 32px $scrim-heavy,
+        0 0 0 1px $scrim-faint;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-
-    :root[data-theme='dark'] & {
-        background: #3d3100;
-        border-color: #78600a;
-    }
 }
 
 .note-editor-textarea {
     width: 100%;
-    min-height: 80px;
-    max-height: 200px;
-    padding: 10px 12px;
+    min-height: $size-22;
+    max-height: $size-25;
+    padding: $space-9 $space-11;
     border: none;
     outline: none;
     resize: vertical;
-    font-size: 12px;
+    font-size: $font-size-base;
     font-family: inherit;
-    line-height: 1.5;
+    line-height: $line-height-base;
     background: transparent;
-    color: #3d3100;
-
-    :root[data-theme='dark'] & {
-        color: #fef3c7;
-    }
+    color: $note-text;
 
     &::placeholder {
-        color: #b89f4a;
+        color: $note-placeholder;
     }
 }
 
 .note-editor-actions {
     display: flex;
     align-items: center;
-    padding: 6px 8px;
-    gap: 6px;
-    border-top: 1px solid #f0d96c;
-
-    :root[data-theme='dark'] & {
-        border-top-color: #78600a;
-    }
+    padding: $space-5 $space-7;
+    gap: $space-5;
+    border-top: $border-width-thin $note-border;
 }
 
 .note-editor-spacer {
@@ -134,29 +125,29 @@ watch(
 .note-editor-cancel,
 .note-editor-save,
 .note-editor-delete {
-    padding: 4px 12px;
+    padding: $space-3 $space-11;
     border: none;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
+    border-radius: $border-radius-md;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
     cursor: pointer;
 }
 
 .note-editor-cancel {
     background: transparent;
-    color: #78600a;
+    color: $note-muted;
 
     &:hover {
-        background: rgba(0, 0, 0, 0.06);
+        background: $scrim-soft;
     }
 }
 
 .note-editor-save {
-    background: #f5a623;
-    color: #fff;
+    background: $note-accent;
+    color: $on-accent;
 
     &:hover {
-        background: #e09510;
+        background: $note-accent-hover;
     }
 }
 

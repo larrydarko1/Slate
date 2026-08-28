@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { inject, nextTick, ref, computed } from 'vue';
-import { SPREADSHEET_KEY } from '../composables/useSpreadsheet';
-import { MAX_CANVASES, createDefaultCanvas } from '../types/spreadsheet';
+import { nextTick, ref, computed } from 'vue';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import { MAX_CANVASES, createDefaultCanvas, type SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
-const ss = inject(SPREADSHEET_KEY)!;
+const ss = injectSpreadsheet();
 const maxCanvases = MAX_CANVASES;
 
-const zoomLabel = computed(() => `${Math.round(ss.canvasZoom.value * 100)}%`);
+const zoomLabel = computed((): string => `${Math.round(ss.canvasZoom.value * 100)}%`);
 
 /** During cross-canvas formula editing, the canvas where the formula cell lives */
-const formulaSourceCanvasId = computed(() => {
-    if (!ss.isEditing.value || !ss.formulaMode.value || !ss.activeCell.value) return null;
+const formulaSourceCanvasId = computed((): string | null => {
+    if (!ss.isEditing.value || !ss.formulaMode.value || ss.activeCell.value === null) return null;
     const info = ss.findTableGlobal(ss.activeCell.value.tableId);
-    if (!info) return null;
+    if (info === null) return null;
     // Only show indicator when the user is on a different canvas
     return info.canvas.id !== ss.activeCanvasId.value ? info.canvas.id : null;
 });
@@ -25,19 +25,19 @@ const renameValue = ref('');
 const renameInputRef = ref<HTMLInputElement[] | null>(null);
 const contextMenu = ref<{ x: number; y: number; canvasId: string } | null>(null);
 
-function onDragStart(e: DragEvent, index: number) {
-    if (renamingId.value) {
+function onDragStart(e: DragEvent, index: number): void {
+    if (renamingId.value !== null) {
         e.preventDefault();
         return;
     }
     dragIndex.value = index;
-    if (e.dataTransfer) {
+    if (e.dataTransfer !== null) {
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', String(index));
     }
 }
 
-function onDragOver(e: DragEvent, index: number) {
+function onDragOver(e: DragEvent, index: number): void {
     if (dragIndex.value === null) return;
     if (dragIndex.value === index) {
         dropTarget.value = null;
@@ -50,12 +50,12 @@ function onDragOver(e: DragEvent, index: number) {
     dropSide.value = e.clientX < midX ? 'before' : 'after';
 }
 
-function onDragLeave() {
+function onDragLeave(): void {
     dropTarget.value = null;
     dropSide.value = null;
 }
 
-function onDrop(_e: DragEvent, index: number) {
+function onDrop(_e: DragEvent, index: number): void {
     if (dragIndex.value === null || dragIndex.value === index) {
         resetDrag();
         return;
@@ -69,78 +69,81 @@ function onDrop(_e: DragEvent, index: number) {
     resetDrag();
 }
 
-function onDragEnd() {
+function onDragEnd(): void {
     resetDrag();
 }
 
-function resetDrag() {
+function resetDrag(): void {
     dragIndex.value = null;
     dropTarget.value = null;
     dropSide.value = null;
 }
 
-function startRename(id: string, currentName: string) {
+function startRename(id: string, currentName: string): void {
     renamingId.value = id;
     renameValue.value = currentName;
-    nextTick(() => {
+    void nextTick((): void => {
         const inputs = renameInputRef.value;
-        if (inputs && inputs.length > 0) {
+        if (inputs !== null && inputs.length > 0) {
             inputs[0].focus();
             inputs[0].select();
         }
     });
 }
 
-function commitRename() {
-    if (renamingId.value && renameValue.value.trim()) {
+function commitRename(): void {
+    if (renamingId.value !== null && renameValue.value.trim() !== '') {
         ss.renameCanvas(renamingId.value, renameValue.value.trim());
     }
     renamingId.value = null;
 }
 
-function cancelRename() {
+function cancelRename(): void {
     renamingId.value = null;
 }
 
-function confirmRemove(id: string, name: string) {
+function confirmRemove(id: string, name: string): void {
     if (confirm(`Delete canvas "${name}"? This cannot be undone.`)) {
         ss.removeCanvas(id);
     }
 }
 
-function onContextMenu(e: MouseEvent, canvasId: string) {
+function onContextMenu(e: MouseEvent, canvasId: string): void {
     contextMenu.value = { x: e.clientX, y: e.clientY, canvasId };
 }
 
-function ctxRename() {
-    if (!contextMenu.value) return;
-    const cv = ss.canvases.value.find((c) => c.id === contextMenu.value!.canvasId);
-    if (cv) startRename(cv.id, cv.name);
+function ctxRename(): void {
+    if (contextMenu.value === null) return;
+    const { canvasId } = contextMenu.value;
+    const cv = ss.canvases.value.find((c): boolean => c.id === canvasId);
+    if (cv !== undefined) startRename(cv.id, cv.name);
     contextMenu.value = null;
 }
 
-function ctxDuplicate() {
-    if (!contextMenu.value) return;
+function ctxDuplicate(): void {
+    if (contextMenu.value === null) return;
     if (ss.canvases.value.length >= MAX_CANVASES) return;
-    const src = ss.canvases.value.find((c) => c.id === contextMenu.value!.canvasId);
-    if (!src) {
+    const { canvasId } = contextMenu.value;
+    const src = ss.canvases.value.find((c): boolean => c.id === canvasId);
+    if (src === undefined) {
         contextMenu.value = null;
         return;
     }
 
     const dup = createDefaultCanvas(src.name + ' Copy');
     // Deep-clone tables
-    dup.tables = JSON.parse(JSON.stringify(src.tables));
+    dup.tables = JSON.parse(JSON.stringify(src.tables)) as SpreadsheetTable[];
     dup.canvasOffset = { ...src.canvasOffset };
     ss.canvases.value.push(dup);
     ss.switchCanvas(dup.id);
     contextMenu.value = null;
 }
 
-function ctxDelete() {
-    if (!contextMenu.value) return;
-    const cv = ss.canvases.value.find((c) => c.id === contextMenu.value!.canvasId);
-    if (cv) confirmRemove(cv.id, cv.name);
+function ctxDelete(): void {
+    if (contextMenu.value === null) return;
+    const { canvasId } = contextMenu.value;
+    const cv = ss.canvases.value.find((c): boolean => c.id === canvasId);
+    if (cv !== undefined) confirmRemove(cv.id, cv.name);
     contextMenu.value = null;
 }
 </script>
@@ -148,11 +151,14 @@ function ctxDelete() {
 <template>
     <div class="canvas-tabs">
         <div
-            ref="scrollRef"
-            class="canvas-tabs-scroll">
+            class="canvas-tabs-scroll"
+            role="tablist">
             <div
                 v-for="(canvas, index) in ss.canvases.value"
                 :key="canvas.id"
+                role="tab"
+                :aria-selected="canvas.id === ss.activeCanvasId.value"
+                tabindex="0"
                 class="canvas-tab"
                 :class="{
                     'active': canvas.id === ss.activeCanvasId.value,
@@ -168,6 +174,8 @@ function ctxDelete() {
                 @drop.prevent="onDrop($event, index)"
                 @dragend="onDragEnd"
                 @click="ss.switchCanvas(canvas.id)"
+                @keydown.enter.prevent="ss.switchCanvas(canvas.id)"
+                @keydown.space.prevent="ss.switchCanvas(canvas.id)"
                 @dblclick="startRename(canvas.id, canvas.name)"
                 @contextmenu.prevent="onContextMenu($event, canvas.id)">
                 <template v-if="renamingId === canvas.id">
@@ -287,9 +295,11 @@ function ctxDelete() {
                     >Delete</button
                 >
             </div>
+            <!-- Backdrop that closes the menu on any click; nothing to announce. -->
             <div
                 v-if="contextMenu"
                 class="canvas-ctx-backdrop"
+                role="presentation"
                 @click="contextMenu = null"
                 @contextmenu.prevent="contextMenu = null"></div>
         </Teleport>
@@ -300,12 +310,12 @@ function ctxDelete() {
 .canvas-tabs {
     display: flex;
     align-items: center;
-    height: 32px;
-    min-height: 32px;
+    height: $size-19;
+    min-height: $size-19;
     background: $bg-tertiary;
-    border-top: 1px solid $border-color;
-    padding: 0 4px;
-    gap: 2px;
+    border-top: $border-width-thin $border-color;
+    padding: 0 $space-3;
+    gap: $space-1;
     user-select: none;
     -webkit-app-region: no-drag;
 }
@@ -313,7 +323,7 @@ function ctxDelete() {
 .canvas-tabs-scroll {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: $space-1;
     overflow-x: auto;
     flex: 1;
     min-width: 0;
@@ -326,17 +336,17 @@ function ctxDelete() {
 .canvas-tab {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
+    gap: $space-3;
+    padding: $space-3 $space-9;
+    border-radius: $border-radius-md;
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
     color: $text-muted;
     cursor: pointer;
     white-space: nowrap;
     transition:
-        background 0.15s,
-        color 0.15s;
+        background $duration-base,
+        color $duration-base;
     position: relative;
 
     &:hover {
@@ -357,45 +367,45 @@ function ctxDelete() {
     }
 
     &.dragging {
-        opacity: 0.4;
+        opacity: $opacity-low;
     }
 
     &.drop-before::before,
     &.drop-after::after {
         content: '';
         position: absolute;
-        top: 4px;
-        bottom: 4px;
-        width: 2px;
+        top: $size-3;
+        bottom: $size-3;
+        width: $size-1;
         background: $accent-color;
-        border-radius: 1px;
+        border-radius: $border-radius-hairline;
         pointer-events: none;
     }
 
     &.drop-before::before {
-        left: -2px;
+        left: -$size-1;
     }
 
     &.drop-after::after {
-        right: -2px;
+        right: -$size-1;
     }
 }
 
 .canvas-tab-label {
-    max-width: 140px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    max-width: $size-23;
+
+    @include truncate;
 }
 
 .canvas-tab-rename {
     background: transparent;
-    border: 1px solid $accent-color;
-    border-radius: 3px;
+    border: $border-width-thin $accent-color;
+    border-radius: $border-radius-xs;
     color: $text-primary;
-    font-size: 12px;
-    font-weight: 500;
-    padding: 0 4px;
-    width: 100px;
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    padding: 0 $space-3;
+    width: $size-22;
     outline: none;
     font-family: inherit;
 }
@@ -404,22 +414,22 @@ function ctxDelete() {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
+    width: $size-11;
+    height: $size-11;
+    border-radius: $border-radius-sm;
     border: none;
     background: transparent;
     color: $text-muted;
     padding: 0;
     cursor: pointer;
-    opacity: 0;
+    opacity: $opacity-none;
     transition:
-        opacity 0.15s,
-        background 0.15s;
+        opacity $duration-base,
+        background $duration-base;
 
     .canvas-tab:hover &,
     .canvas-tab.active & {
-        opacity: 1;
+        opacity: $opacity-full;
     }
 
     &:hover {
@@ -432,17 +442,17 @@ function ctxDelete() {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
+    width: $size-15;
+    height: $size-15;
+    border-radius: $border-radius-md;
     border: none;
     background: transparent;
     color: $text-muted;
     cursor: pointer;
     flex-shrink: 0;
     transition:
-        background 0.15s,
-        color 0.15s;
+        background $duration-base,
+        color $duration-base;
     padding: 0;
 
     &:hover:not(:disabled) {
@@ -451,7 +461,7 @@ function ctxDelete() {
     }
 
     &:disabled {
-        opacity: 0.35;
+        opacity: $opacity-subtle;
         cursor: not-allowed;
     }
 }
@@ -463,26 +473,26 @@ function ctxDelete() {
 .zoom-controls {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: $space-1;
     flex-shrink: 0;
-    margin-right: 8px;
+    margin-right: $space-7;
 }
 
 .zoom-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 5px;
+    width: $size-14;
+    height: $size-14;
+    border-radius: $border-radius;
     border: none;
     background: transparent;
     color: $text-muted;
     cursor: pointer;
     padding: 0;
     transition:
-        background 0.15s,
-        color 0.15s;
+        background $duration-base,
+        color $duration-base;
 
     &:hover:not(:disabled) {
         background: $bg-hover;
@@ -490,26 +500,26 @@ function ctxDelete() {
     }
 
     &:disabled {
-        opacity: 0.35;
+        opacity: $opacity-subtle;
         cursor: not-allowed;
     }
 }
 
 .zoom-label {
-    font-size: 11px;
-    font-weight: 500;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
     color: $text-muted;
-    min-width: 40px;
+    min-width: $size-21;
     text-align: center;
     border: none;
     background: transparent;
     cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 4px;
+    padding: $space-1 $space-3;
+    border-radius: $border-radius-sm;
     font-family: inherit;
     transition:
-        background 0.15s,
-        color 0.15s;
+        background $duration-base,
+        color $duration-base;
 
     &:hover {
         background: $bg-hover;
@@ -517,34 +527,34 @@ function ctxDelete() {
     }
 }
 
-/* Context menu */
+/* ––––– Context menu ––––– */
 .canvas-ctx-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 9999;
+    z-index: $z-modal;
 }
 
 .canvas-ctx-menu {
     position: fixed;
-    z-index: 10000;
+    z-index: $z-modal-raised;
     background: $bg-primary;
-    border: 1px solid $border-color;
-    border-radius: 8px;
+    border: $border-width-thin $border-color;
+    border-radius: $border-radius-lg;
     box-shadow: $shadow-lg;
-    padding: 4px;
-    min-width: 140px;
+    padding: $space-3;
+    min-width: $size-23;
 
     button {
         display: block;
         width: 100%;
         text-align: left;
-        padding: 6px 12px;
-        font-size: 12px;
-        font-weight: 500;
+        padding: $space-5 $space-11;
+        font-size: $font-size-base;
+        font-weight: $font-weight-medium;
         border: none;
         background: transparent;
         color: $text-primary;
-        border-radius: 5px;
+        border-radius: $border-radius;
         cursor: pointer;
         font-family: inherit;
 
@@ -554,6 +564,7 @@ function ctxDelete() {
 
         &.danger {
             color: $danger-color;
+
             &:hover {
                 background: $danger-color-alpha;
             }
@@ -564,32 +575,26 @@ function ctxDelete() {
 .unsaved-message {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 500;
-    padding: 0 9px;
-    height: 22px;
-    border-radius: 11px;
-    background: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    color: #b45309;
+    gap: $space-5;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    padding: 0 $space-8;
+    height: $size-14;
+    border-radius: $border-radius-3xl;
+    background: $formula-bg;
+    border: $border-width-thin $formula-border;
+    color: $formula-text;
     flex-shrink: 0;
-    margin-right: 8px;
+    margin-right: $space-7;
     cursor: default;
     -webkit-app-region: no-drag;
 
-    [data-theme='dark'] & {
-        background: rgba(245, 158, 11, 0.12);
-        border-color: rgba(245, 158, 11, 0.3);
-        color: #fbbf24;
-    }
-
     &::before {
         content: '';
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #f59e0b;
+        width: $size-5;
+        height: $size-5;
+        border-radius: $border-radius-round;
+        background: $formula-dot;
         flex-shrink: 0;
     }
 }

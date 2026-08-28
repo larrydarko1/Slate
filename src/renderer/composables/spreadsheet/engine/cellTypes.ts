@@ -17,34 +17,13 @@ export type CellDataType =
     | 'url'
     | 'empty';
 
-export interface TypedValue {
+export type TypedValue = {
     type: CellDataType;
     numericValue: number | null; // underlying number (null for text/empty)
     rawInput: string; // what the user originally typed
-}
+};
 
 // ── Constants ───────────────────────────────────────────────────────────────────
-
-/**
- * Priority for type coercion (higher = more specific).
- * When two numeric types meet, we promote to the higher-priority one.
- *
- * percent > currency > float > integer
- *
- * The "first cell" rule: the first operand's type is preferred.
- * If both are currency but different, the first one wins.
- */
-export const TYPE_PRIORITY: Record<CellDataType, number> = {
-    empty: 0,
-    boolean: 1,
-    integer: 2,
-    float: 3,
-    currency_eur: 4,
-    currency_usd: 4,
-    percent: 5,
-    text: 6,
-    url: 6,
-};
 
 // Currency regex patterns
 const CURRENCY_USD_PATTERNS = [
@@ -113,17 +92,17 @@ export function detectType(raw: string): TypedValue {
 
     // Integer (no decimal point, no leading zeros except "0" itself)
     if (/^-?\d+$/.test(trimmed)) {
-        const n = parseInt(trimmed, 10);
-        if (!isNaN(n)) {
-            return { type: 'integer', numericValue: n, rawInput: trimmed };
+        const parsed = parseInt(trimmed, 10);
+        if (!isNaN(parsed)) {
+            return { type: 'integer', numericValue: parsed, rawInput: trimmed };
         }
     }
 
     // Float
     if (/^-?\d+\.\d+$/.test(trimmed) || /^-?\.\d+$/.test(trimmed)) {
-        const n = parseFloat(trimmed);
-        if (!isNaN(n)) {
-            return { type: 'float', numericValue: n, rawInput: trimmed };
+        const parsed = parseFloat(trimmed);
+        if (!isNaN(parsed)) {
+            return { type: 'float', numericValue: parsed, rawInput: trimmed };
         }
     }
 
@@ -198,13 +177,13 @@ export function resolveType(first: CellDataType, second: CellDataType): CellData
  */
 export function resolveTypeList(types: CellDataType[]): CellDataType | null {
     let result: CellDataType = 'empty';
-    for (const t of types) {
-        if (t === 'empty') continue;
+    for (const candidate of types) {
+        if (candidate === 'empty') continue;
         if (result === 'empty') {
-            result = t;
+            result = candidate;
             continue;
         }
-        const resolved = resolveType(result, t);
+        const resolved = resolveType(result, candidate);
         if (resolved === null) return null;
         result = resolved;
     }
@@ -224,7 +203,7 @@ export function formatValue(value: number | null, type: CellDataType, decimalPla
             return Math.round(value).toString();
 
         case 'float': {
-            if (decimalPlaces != null) {
+            if (decimalPlaces !== undefined) {
                 return value.toFixed(decimalPlaces);
             }
             // Show up to 10 significant decimal places, trim trailing zeros
@@ -254,7 +233,7 @@ export function formatValue(value: number | null, type: CellDataType, decimalPla
 
         case 'percent': {
             const pct = value * 100;
-            if (decimalPlaces != null) {
+            if (decimalPlaces !== undefined) {
                 return `${pct.toFixed(decimalPlaces)}%`;
             }
             if (Number.isInteger(pct) || Math.abs(pct - Math.round(pct)) < 1e-9) {
@@ -264,7 +243,7 @@ export function formatValue(value: number | null, type: CellDataType, decimalPla
         }
 
         case 'boolean':
-            return value ? 'TRUE' : 'FALSE';
+            return value !== 0 ? 'TRUE' : 'FALSE';
 
         default:
             return value.toString();
@@ -277,10 +256,13 @@ export function formatValue(value: number | null, type: CellDataType, decimalPla
 export function formatCellDisplay(value: unknown, type: CellDataType, decimalPlaces?: number): string {
     if (value === null || value === undefined) return '';
 
-    if (type === 'text' || type === 'url') return String(value);
+    if (type === 'text' || type === 'url') return toDisplayString(value);
+    // A boolean-typed cell does not always hold a JS boolean — a formula result
+    // or an imported file can leave a 0/1 or a string behind, so fall back to
+    // the value's own truthiness.
     if (type === 'boolean') {
-        if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
-        return value ? 'TRUE' : 'FALSE';
+        const isFalsy = value === false || value === 0 || value === '' || Number.isNaN(value);
+        return isFalsy ? 'FALSE' : 'TRUE';
     }
     if (type === 'empty') return '';
 
@@ -293,7 +275,7 @@ export function formatCellDisplay(value: unknown, type: CellDataType, decimalPla
         return value;
     }
 
-    return String(value);
+    return toDisplayString(value);
 }
 
 /**
@@ -356,26 +338,26 @@ export function coerceToType(
         if (typeof value === 'number') {
             return { numericValue: value, display: formatValue(value, toType) };
         }
-        return { numericValue: null, display: String(value ?? '') };
+        return { numericValue: null, display: toDisplayString(value) };
     }
 
     // Text → numeric: attempt parse
     if (fromType === 'text' && isNumericType(toType)) {
-        const parsed = parseFloat(String(value));
+        const parsed = parseFloat(toDisplayString(value));
         if (isNaN(parsed)) return null; // → #N/A
         return { numericValue: parsed, display: formatValue(parsed, toType) };
     }
 
     // Numeric → numeric conversions (always possible)
     if (isNumericType(fromType) && isNumericType(toType)) {
-        const num = typeof value === 'number' ? value : parseFloat(String(value));
+        const num = typeof value === 'number' ? value : parseFloat(toDisplayString(value));
         if (isNaN(num)) return null;
         return { numericValue: num, display: formatValue(num, toType) };
     }
 
     // Numeric → text
     if (isNumericType(fromType) && toType === 'text') {
-        return { numericValue: typeof value === 'number' ? value : null, display: String(value ?? '') };
+        return { numericValue: typeof value === 'number' ? value : null, display: toDisplayString(value) };
     }
 
     return null;
@@ -383,10 +365,22 @@ export function coerceToType(
 
 // ── Currency parsers ───────────────────────────────────────────────────────────
 
+/**
+ * Stringifies a value the display layer received as `unknown`. Plain `String()`
+ * would print `[object Object]` for anything structured, which is worse than
+ * useless in a cell.
+ */
+function toDisplayString(value: unknown): string {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    if (value === null || value === undefined) return '';
+    return JSON.stringify(value) ?? '';
+}
+
 function parseCurrencyUSD(raw: string): number | null {
     const cleaned = raw.replace(/[$,]/g, '');
-    const n = parseFloat(cleaned);
-    return isNaN(n) ? null : n;
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? null : parsed;
 }
 
 function parseCurrencyEUR(raw: string): number | null {
@@ -402,6 +396,6 @@ function parseCurrencyEUR(raw: string): number | null {
         cleaned = cleaned.replace(',', '.');
     }
 
-    const n = parseFloat(cleaned);
-    return isNaN(n) ? null : n;
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? null : parsed;
 }

@@ -1,17 +1,16 @@
 /**
  * Core spreadsheet data types, constants, and factory functions.
- *
  * Owns: all domain types (Canvas, SpreadsheetTable, Cell, TextBox, ChartObject,
  *       and their subtypes), zoom constants, ID generation, and factory helpers.
  * Does NOT own: formula evaluation (engine/), rendering (components/),
  *               reactive state (composables/).
  */
 
-import type { CellDataType } from '../composables/spreadsheet/engine/cellTypes';
+import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 
 export type CellValue = string | number | boolean | null;
 
-export interface Cell {
+export type Cell = {
     value: CellValue;
     formula?: string; // Formula body (without leading '=')
     computed?: CellValue; // Cached result of formula evaluation
@@ -19,9 +18,9 @@ export interface Cell {
     computedType?: CellDataType; // Resolved type after formula evaluation
     format?: CellFormat;
     note?: string; // User-added note / comment on the cell
-}
+};
 
-export interface CellFormat {
+export type CellFormat = {
     bold?: boolean;
     italic?: boolean;
     align?: 'left' | 'center' | 'right';
@@ -29,29 +28,29 @@ export interface CellFormat {
     bgColor?: string;
     fontFamily?: string;
     decimalPlaces?: number;
-}
+};
 
-export interface MergedRegion {
+export type MergedRegion = {
     startCol: number;
     startRow: number;
     endCol: number;
     endRow: number;
-}
+};
 
-export interface SelectionRange {
+export type SelectionRange = {
     tableId: string;
     startCol: number;
     startRow: number;
     endCol: number;
     endRow: number;
-}
+};
 
-export interface Column {
+type Column = {
     id: string;
     width: number;
-}
+};
 
-export interface SpreadsheetTable {
+export type SpreadsheetTable = {
     id: string;
     name: string;
     x: number;
@@ -61,15 +60,15 @@ export interface SpreadsheetTable {
     rows: Cell[][]; // rows[rowIndex][colIndex]
     headerRows: number;
     mergedRegions: MergedRegion[];
-}
+};
 
-export interface CellReference {
+export type CellReference = {
     tableId: string;
     col: number;
     row: number;
-}
+};
 
-export interface TextBox {
+export type TextBox = {
     id: string;
     x: number;
     y: number;
@@ -87,26 +86,26 @@ export interface TextBox {
     borderColor: string;
     borderWidth: number;
     borderRadius: number;
-}
+};
 
-export type ChartType = 'bar' | 'line' | 'pie' | 'doughnut' | 'scatter' | 'area' | 'radar';
+type ChartType = 'bar' | 'line' | 'pie' | 'doughnut' | 'scatter' | 'area' | 'radar';
 
 /** A single cell-range reference for chart data (formula-style ref string) */
-export interface ChartDataRef {
+type ChartDataRef = {
     /** Reference string, e.g. "Table 1::A2:A10", "'Canvas 2'::'Table 1'::C1:C10" */
     refString: string;
-}
+};
 
-export interface ChartDataSource {
+type ChartDataSource = {
     /** Label / category data reference (X axis labels, slice names) */
     labelRef: ChartDataRef | null;
     /** Value series — each entry is one data series plotted on the chart */
     seriesRefs: ChartDataRef[];
     /** Whether the first cell of each range is a header (used for series names) */
     useHeader: boolean;
-}
+};
 
-export interface ChartObject {
+export type ChartObject = {
     id: string;
     x: number;
     y: number;
@@ -120,15 +119,9 @@ export interface ChartObject {
     showGrid: boolean;
     legendPosition: 'top' | 'bottom' | 'left' | 'right';
     colorScheme: string[];
-}
+};
 
-export interface Sheet {
-    id: string;
-    name: string;
-    tables: SpreadsheetTable[];
-}
-
-export interface Canvas {
+export type Canvas = {
     id: string;
     name: string;
     tables: SpreadsheetTable[];
@@ -136,7 +129,7 @@ export interface Canvas {
     charts: ChartObject[];
     canvasOffset: { x: number; y: number };
     canvasZoom: number;
-}
+};
 
 /** Zoom limits */
 export const MIN_ZOOM = 0.25;
@@ -182,10 +175,10 @@ export function generateId(prefix: string): string {
 
 export function indexToColumnLetter(index: number): string {
     let result = '';
-    let n = index;
-    while (n >= 0) {
-        result = String.fromCharCode(65 + (n % 26)) + result;
-        n = Math.floor(n / 26) - 1;
+    let remaining = index;
+    while (remaining >= 0) {
+        result = String.fromCharCode(65 + (remaining % 26)) + result;
+        remaining = Math.floor(remaining / 26) - 1;
     }
     return result;
 }
