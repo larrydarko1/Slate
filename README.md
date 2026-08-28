@@ -1,8 +1,4 @@
-# Slate
-
-![License](https://img.shields.io/github/license/larrydarko1/slate)
-![Issues](https://img.shields.io/github/issues/larrydarko1/slate)
-![Pull Requests](https://img.shields.io/github/issues-pr/larrydarko1/slate)
+<img src="public/banner.png">
 
 Slate is a **free and open-source, canvas-based spreadsheet app** for desktop built with **Electron**, **Vue 3**, and TypeScript. Inspired by Apple Numbers, Slate brings a design-forward, layout-first spreadsheet experience to every platform — tables, charts, and text boxes arranged freely on an infinite canvas.
 
@@ -237,7 +233,7 @@ the same list CI does, so a red check is always reproducible locally:
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+No Contributors. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Code of Conduct
 
@@ -246,7 +242,3 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-
-**Made with Electron, Vue 3, and a love for design-forward software.**
