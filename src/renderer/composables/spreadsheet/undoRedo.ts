@@ -33,7 +33,8 @@ export function createUndoRedo(state: SpreadsheetCoreState, deps: UndoRedoDeps):
     function restoreState(snapshot: string): void {
         state.canvases.value = JSON.parse(snapshot) as Canvas[];
         if (state.canvases.value.find((c): boolean => c.id === state.activeCanvasId.value) === undefined) {
-            state.activeCanvasId.value = state.canvases.value[0].id;
+            const first = state.canvases.value[0];
+            if (first !== undefined) state.activeCanvasId.value = first.id;
         }
         deps.recalculate();
     }

@@ -134,8 +134,8 @@ export function useFillHandle(
         // Determine target column
         const headerCells = gridWrapper.querySelectorAll('thead th.col-header');
         let targetCol = st.currentCol;
-        for (let ci = 0; ci < headerCells.length; ci++) {
-            const rect = headerCells[ci].getBoundingClientRect();
+        for (const [ci, headerCell] of headerCells.entries()) {
+            const rect = headerCell.getBoundingClientRect();
             if (e.clientX >= rect.left && e.clientX < rect.right) {
                 targetCol = ci;
                 break;

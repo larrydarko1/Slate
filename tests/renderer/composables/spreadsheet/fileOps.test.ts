@@ -113,16 +113,16 @@ describe('fileOps', () => {
         it('round-trips a saved workbook', async () => {
             const api = stubApi();
             ss.addTable();
-            const id = ss.tables.value[0].id;
+            const id = ss.tables.value[0]!.id;
             ss.setCellValue(id, 0, 0, '5');
             ss.setCellValue(id, 1, 0, '=A1*3');
             await ss.saveFile();
-            const written = (api.writeFile as ReturnType<typeof vi.fn>).mock.calls[0][1] as string;
+            const written = (api.writeFile as ReturnType<typeof vi.fn>).mock.calls[0]![1] as string;
 
             const reopened = useSpreadsheet();
             stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: written }) } as Partial<Api>);
             expect(await reopened.loadFileFromPath('/tmp/book.slate')).toBe(true);
-            const newId = reopened.tables.value[0].id;
+            const newId = reopened.tables.value[0]!.id;
             expect(reopened.getDisplayValue(newId, 0, 0)).toBe('5');
             expect(reopened.getDisplayValue(newId, 1, 0)).toBe('15');
         });
@@ -191,7 +191,7 @@ describe('fileOps', () => {
                 canvasOffset: { x: 10, y: 20 },
             });
             expect(ss.canvases.value).toHaveLength(1);
-            expect(ss.tables.value[0].name).toBe('Old');
+            expect(ss.tables.value[0]!.name).toBe('Old');
             expect(ss.canvasOffset.value).toEqual({ x: 10, y: 20 });
         });
 
@@ -215,7 +215,7 @@ describe('fileOps', () => {
                     },
                 ],
             });
-            const id = ss.tables.value[0].id;
+            const id = ss.tables.value[0]!.id;
             expect(ss.getCellType(id, 0, 0)).toBe('integer');
             expect(ss.getCellType(id, 1, 0)).toBe('float');
             expect(ss.getCellType(id, 2, 0)).toBe('boolean');
@@ -255,9 +255,9 @@ describe('fileOps', () => {
                     },
                 ],
             });
-            const ds = ss.charts.value[0].dataSource;
+            const ds = ss.charts.value[0]!.dataSource;
             expect(ds?.labelRef?.refString).toBe('Data::A1:A2');
-            expect(ds?.seriesRefs[0].refString).toBe('Data::B1:B2');
+            expect(ds?.seriesRefs[0]!.refString).toBe('Data::B1:B2');
         });
 
         it('drops a chart data source pointing at a table that is gone', async () => {
@@ -274,7 +274,7 @@ describe('fileOps', () => {
                     },
                 ],
             });
-            expect(ss.charts.value[0].dataSource).toBeNull();
+            expect(ss.charts.value[0]!.dataSource).toBeNull();
         });
 
         it('leaves a chart already in the new format alone', async () => {
@@ -296,7 +296,7 @@ describe('fileOps', () => {
                     },
                 ],
             });
-            expect(ss.charts.value[0].dataSource?.labelRef?.refString).toBe('X::A1');
+            expect(ss.charts.value[0]!.dataSource?.labelRef?.refString).toBe('X::A1');
         });
     });
 

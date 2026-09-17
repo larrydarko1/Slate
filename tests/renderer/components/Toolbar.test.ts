@@ -27,7 +27,7 @@ describe('Toolbar', () => {
         localStorage.clear();
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
         wrapper = mount(Toolbar, { global: { provide: { [SPREADSHEET_KEY as symbol]: ss } } });
     });
 
@@ -96,25 +96,25 @@ describe('Toolbar', () => {
 
         it('bolds the active text box rather than a cell', async () => {
             await byTitle('Bold').trigger('click');
-            expect(ss.textBoxes.value[0].fontWeight).toBe('bold');
+            expect(ss.textBoxes.value[0]!.fontWeight).toBe('bold');
         });
 
         it('italicises the active text box', async () => {
             await byTitle('Italic').trigger('click');
-            expect(ss.textBoxes.value[0].fontStyle).toBe('italic');
+            expect(ss.textBoxes.value[0]!.fontStyle).toBe('italic');
         });
 
         it('aligns the active text box', async () => {
             await byTitle('Align Center').trigger('click');
-            expect(ss.textBoxes.value[0].align).toBe('center');
+            expect(ss.textBoxes.value[0]!.align).toBe('center');
         });
 
         it('steps the font size up and down', async () => {
-            const start = ss.textBoxes.value[0].fontSize;
+            const start = ss.textBoxes.value[0]!.fontSize;
             await byTitle('Increase font size').trigger('click');
-            expect(ss.textBoxes.value[0].fontSize).toBeGreaterThan(start);
+            expect(ss.textBoxes.value[0]!.fontSize).toBeGreaterThan(start);
             await byTitle('Decrease font size').trigger('click');
-            expect(ss.textBoxes.value[0].fontSize).toBe(start);
+            expect(ss.textBoxes.value[0]!.fontSize).toBe(start);
         });
     });
 

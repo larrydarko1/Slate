@@ -30,6 +30,16 @@ export type CellFormat = {
     decimalPlaces?: number;
 };
 
+/**
+ * A format change, as the toolbar sends it. An explicit `undefined` means "clear
+ * this property" — the "no colour" and "system default font" actions — which
+ * `CellFormat` itself cannot express: it is the persisted shape, and under
+ * `exactOptionalPropertyTypes` an absent property and one set to `undefined` are
+ * different things. Applying an update drops the cleared keys rather than storing
+ * them, so the two stay the same thing on disk.
+ */
+export type CellFormatUpdate = { [K in keyof CellFormat]?: CellFormat[K] | undefined };
+
 export type MergedRegion = {
     startCol: number;
     startRow: number;

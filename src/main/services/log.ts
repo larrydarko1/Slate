@@ -26,7 +26,7 @@ function write(level: LogLevel, rawEntry: unknown): void {
     if (!parsed.success) {
         log.warn('Discarded a malformed log entry from the renderer', {
             level,
-            issue: parsed.error.issues[0].message,
+            issue: parsed.error.issues[0]?.message ?? 'Invalid log entry',
         });
         return;
     }

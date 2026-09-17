@@ -23,11 +23,11 @@ describe('ResizeHandles', () => {
 
     it('reports the direction and the event it started from', async () => {
         const wrapper = mount(ResizeHandles);
-        await wrapper.findAll('.resize-handle')[0].trigger('mousedown');
+        await wrapper.findAll('.resize-handle')[0]!.trigger('mousedown');
         const emitted = wrapper.emitted('start');
         expect(emitted).toHaveLength(1);
-        expect(emitted?.[0][0]).toBe('e');
-        expect(emitted?.[0][1]).toBeInstanceOf(MouseEvent);
+        expect(emitted?.[0]![0]).toBe('e');
+        expect(emitted?.[0]![1]).toBeInstanceOf(MouseEvent);
     });
 
     it('reports each direction distinctly', async () => {

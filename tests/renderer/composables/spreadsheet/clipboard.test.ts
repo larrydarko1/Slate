@@ -22,7 +22,7 @@ describe('clipboard', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
     });
 
     afterEach(() => {
@@ -106,7 +106,7 @@ describe('clipboard', () => {
             await ss.copyCells();
             ss.selectCell(id, 4, 7);
             await ss.pasteCells();
-            expect(ss.tables.value[0].rows.length).toBeGreaterThanOrEqual(8);
+            expect(ss.tables.value[0]!.rows.length).toBeGreaterThanOrEqual(8);
             expect(ss.getDisplayValue(id, 4, 7)).toBe('a');
         });
 

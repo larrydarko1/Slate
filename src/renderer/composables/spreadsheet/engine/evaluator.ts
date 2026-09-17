@@ -197,9 +197,7 @@ function flattenTypedArgs(args: ASTNode[], ctx: FormulaContext): TypedCellValue[
         if (arg.type === 'range') {
             const vals = ctx.getCellRange(arg.sc, arg.sr, arg.ec, arg.er);
             const types = ctx.getCellRangeTypes(arg.sc, arg.sr, arg.ec, arg.er);
-            for (let i = 0; i < vals.length; i++) {
-                out.push({ value: vals[i], type: types[i] ?? 'empty' });
-            }
+            for (const [i, value] of vals.entries()) out.push({ value, type: types[i] ?? 'empty' });
         } else if (arg.type === 'external_range') {
             if (ctx.resolveExternalCellRange === undefined || ctx.resolveExternalCellRangeTypes === undefined)
                 throw new Error('Cross-table references not supported in this context');
@@ -212,9 +210,7 @@ function flattenTypedArgs(args: ASTNode[], ctx: FormulaContext): TypedCellValue[
                 arg.ec,
                 arg.er,
             );
-            for (let i = 0; i < vals.length; i++) {
-                out.push({ value: vals[i], type: types[i] ?? 'empty' });
-            }
+            for (const [i, value] of vals.entries()) out.push({ value, type: types[i] ?? 'empty' });
         } else {
             const result = evaluate(arg, ctx);
             out.push(result);
@@ -240,6 +236,9 @@ function numericTypedValues(vals: TypedCellValue[]): { nums: number[]; types: Ce
 }
 
 // ── Function dispatch ────────────────────────────────────────────────────────
+
+/** The nth argument, or a blank when the formula supplied none — `=ROUND()` is typable. */
+const argAt = (args: ASTNode[], i: number): ASTNode => args[i] ?? { type: 'string', value: '' };
 
 function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): TypedCellValue {
     switch (name) {
@@ -289,9 +288,9 @@ function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): Typed
             return { value: flattenArgs(args, ctx).filter((v) => v !== null && v !== '').length, type: 'integer' };
         }
         case 'ROUND': {
-            const valR = evaluate(args[0], ctx);
+            const valR = evaluate(argAt(args, 0), ctx);
             const val = toNumber(valR.value);
-            const digits = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 0;
+            const digits = args.length > 1 ? toNumber(evaluateVal(argAt(args, 1), ctx)) : 0;
             const factor = Math.pow(10, digits);
             const rounded = Math.round(val * factor) / factor;
             // A rounded value keeps its own numeric type. When it has none, the digit
@@ -302,43 +301,44 @@ function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): Typed
             return { value: rounded, type: resultType === 'integer' && digits > 0 ? 'float' : resultType };
         }
         case 'ABS': {
-            const valA = evaluate(args[0], ctx);
+            const valA = evaluate(argAt(args, 0), ctx);
             return { value: Math.abs(toNumber(valA.value)), type: isNumericType(valA.type) ? valA.type : 'float' };
         }
         case 'SQRT': {
-            const valS = evaluate(args[0], ctx);
+            const valS = evaluate(argAt(args, 0), ctx);
             const num = toNumber(valS.value);
             return { value: num < 0 ? '#NUM!' : Math.sqrt(num), type: num < 0 ? 'text' : 'float' };
         }
         case 'POWER': {
-            const base = evaluate(args[0], ctx);
-            return { value: Math.pow(toNumber(base.value), toNumber(evaluateVal(args[1], ctx))), type: 'float' };
+            const base = evaluate(argAt(args, 0), ctx);
+            return { value: Math.pow(toNumber(base.value), toNumber(evaluateVal(argAt(args, 1), ctx))), type: 'float' };
         }
         case 'MOD': {
-            const left = toNumber(evaluateVal(args[0], ctx));
-            const right = toNumber(evaluateVal(args[1], ctx));
+            const left = toNumber(evaluateVal(argAt(args, 0), ctx));
+            const right = toNumber(evaluateVal(argAt(args, 1), ctx));
             return { value: right === 0 ? '#DIV/0!' : left % right, type: right === 0 ? 'text' : 'integer' };
         }
         case 'INT': {
-            const valI = evaluate(args[0], ctx);
+            const valI = evaluate(argAt(args, 0), ctx);
             return { value: Math.floor(toNumber(valI.value)), type: 'integer' };
         }
         case 'CEILING': {
-            const val = toNumber(evaluateVal(args[0], ctx));
-            const sig = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 1;
+            const val = toNumber(evaluateVal(argAt(args, 0), ctx));
+            const sig = args.length > 1 ? toNumber(evaluateVal(argAt(args, 1), ctx)) : 1;
             return { value: sig === 0 ? 0 : Math.ceil(val / sig) * sig, type: 'float' };
         }
         case 'FLOOR': {
-            const val = toNumber(evaluateVal(args[0], ctx));
-            const sig = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 1;
+            const val = toNumber(evaluateVal(argAt(args, 0), ctx));
+            const sig = args.length > 1 ? toNumber(evaluateVal(argAt(args, 1), ctx)) : 1;
             return { value: sig === 0 ? 0 : Math.floor(val / sig) * sig, type: 'float' };
         }
 
         // Logic
         case 'IF': {
-            const cond = evaluateVal(args[0], ctx);
+            const cond = evaluateVal(argAt(args, 0), ctx);
             const truthy = isTruthy(cond) && cond !== '#ERROR!';
-            return evaluate(truthy ? args[1] : (args[2] ?? { type: 'boolean', value: false }), ctx);
+            // IF's own default for a missing else-branch is FALSE, not blank.
+            return evaluate(truthy ? argAt(args, 1) : (args[2] ?? { type: 'boolean', value: false }), ctx);
         }
         case 'AND': {
             const vals = flattenArgs(args, ctx);
@@ -349,7 +349,7 @@ function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): Typed
             return { value: vals.some(isTruthy), type: 'boolean' };
         }
         case 'NOT':
-            return { value: !isTruthy(evaluateVal(args[0], ctx)), type: 'boolean' };
+            return { value: !isTruthy(evaluateVal(argAt(args, 0), ctx)), type: 'boolean' };
 
         // Text
         case 'CONCAT': {
@@ -361,27 +361,27 @@ function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): Typed
             };
         }
         case 'UPPER':
-            return { value: String(evaluateVal(args[0], ctx) ?? '').toUpperCase(), type: 'text' };
+            return { value: String(evaluateVal(argAt(args, 0), ctx) ?? '').toUpperCase(), type: 'text' };
         case 'LOWER':
-            return { value: String(evaluateVal(args[0], ctx) ?? '').toLowerCase(), type: 'text' };
+            return { value: String(evaluateVal(argAt(args, 0), ctx) ?? '').toLowerCase(), type: 'text' };
         case 'LEN':
-            return { value: String(evaluateVal(args[0], ctx) ?? '').length, type: 'integer' };
+            return { value: String(evaluateVal(argAt(args, 0), ctx) ?? '').length, type: 'integer' };
         case 'TRIM':
-            return { value: String(evaluateVal(args[0], ctx) ?? '').trim(), type: 'text' };
+            return { value: String(evaluateVal(argAt(args, 0), ctx) ?? '').trim(), type: 'text' };
         case 'LEFT': {
-            const text = String(evaluateVal(args[0], ctx) ?? '');
-            const count = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 1;
+            const text = String(evaluateVal(argAt(args, 0), ctx) ?? '');
+            const count = args.length > 1 ? toNumber(evaluateVal(argAt(args, 1), ctx)) : 1;
             return { value: text.substring(0, count), type: 'text' };
         }
         case 'RIGHT': {
-            const text = String(evaluateVal(args[0], ctx) ?? '');
-            const count = args.length > 1 ? toNumber(evaluateVal(args[1], ctx)) : 1;
+            const text = String(evaluateVal(argAt(args, 0), ctx) ?? '');
+            const count = args.length > 1 ? toNumber(evaluateVal(argAt(args, 1), ctx)) : 1;
             return { value: text.substring(text.length - count), type: 'text' };
         }
         case 'MID': {
-            const text = String(evaluateVal(args[0], ctx) ?? '');
-            const start = toNumber(evaluateVal(args[1], ctx)) - 1;
-            const len = toNumber(evaluateVal(args[2], ctx));
+            const text = String(evaluateVal(argAt(args, 0), ctx) ?? '');
+            const start = toNumber(evaluateVal(argAt(args, 1), ctx)) - 1;
+            const len = toNumber(evaluateVal(argAt(args, 2), ctx));
             return { value: text.substring(start, start + len), type: 'text' };
         }
 

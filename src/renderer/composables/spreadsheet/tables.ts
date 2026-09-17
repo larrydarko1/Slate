@@ -110,7 +110,7 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
     function isRowEmpty(tableId: string, rowIdx: number): boolean {
         const table = deps.findTable(tableId);
         if (table === null || rowIdx < 0 || rowIdx >= table.rows.length) return false;
-        return table.rows[rowIdx].every((cell): boolean => cell.value === null && cell.formula === undefined);
+        return table.rows[rowIdx]?.every((cell): boolean => cell.value === null && cell.formula === undefined) ?? false;
     }
 
     function isColumnEmpty(tableId: string, colIdx: number): boolean {
@@ -118,7 +118,8 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
         if (table === null || colIdx < 0 || colIdx >= table.columns.length) return false;
         return table.rows.every((row): boolean => {
             const cell = row[colIdx];
-            return cell.value === null && cell.formula === undefined;
+            // A row too short to reach this column has nothing in it either.
+            return cell === undefined || (cell.value === null && cell.formula === undefined);
         });
     }
 

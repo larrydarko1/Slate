@@ -39,22 +39,22 @@ describe('CanvasTabs', () => {
         it('switches canvas on click', async () => {
             ss.addCanvas();
             await wrapper.vm.$nextTick();
-            await wrapper.findAll('[role="tab"]')[0].trigger('click');
-            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0].id);
+            await wrapper.findAll('[role="tab"]')[0]!.trigger('click');
+            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0]!.id);
         });
 
         it('switches canvas on Enter', async () => {
             ss.addCanvas();
             await wrapper.vm.$nextTick();
-            await wrapper.findAll('[role="tab"]')[0].trigger('keydown.enter');
-            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0].id);
+            await wrapper.findAll('[role="tab"]')[0]!.trigger('keydown.enter');
+            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0]!.id);
         });
 
         it('switches canvas on Space', async () => {
             ss.addCanvas();
             await wrapper.vm.$nextTick();
-            await wrapper.findAll('[role="tab"]')[0].trigger('keydown.space');
-            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0].id);
+            await wrapper.findAll('[role="tab"]')[0]!.trigger('keydown.space');
+            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0]!.id);
         });
 
         it('adds a canvas from the plus button', async () => {
@@ -79,7 +79,7 @@ describe('CanvasTabs', () => {
             vi.spyOn(window, 'confirm').mockReturnValue(true);
             ss.addCanvas();
             await wrapper.vm.$nextTick();
-            await wrapper.findAll('.canvas-tab-close')[0].trigger('click');
+            await wrapper.findAll('.canvas-tab-close')[0]!.trigger('click');
             expect(ss.canvases.value).toHaveLength(1);
         });
 
@@ -87,7 +87,7 @@ describe('CanvasTabs', () => {
             vi.spyOn(window, 'confirm').mockReturnValue(false);
             ss.addCanvas();
             await wrapper.vm.$nextTick();
-            await wrapper.findAll('.canvas-tab-close')[0].trigger('click');
+            await wrapper.findAll('.canvas-tab-close')[0]!.trigger('click');
             expect(ss.canvases.value).toHaveLength(2);
         });
     });
@@ -103,7 +103,7 @@ describe('CanvasTabs', () => {
             const input = wrapper.find('.canvas-tab-rename');
             await input.setValue('Budget');
             await input.trigger('keydown.enter');
-            expect(ss.canvases.value[0].name).toBe('Budget');
+            expect(ss.canvases.value[0]!.name).toBe('Budget');
         });
 
         it('discards the edit on Escape', async () => {
@@ -111,7 +111,7 @@ describe('CanvasTabs', () => {
             const input = wrapper.find('.canvas-tab-rename');
             await input.setValue('Discarded');
             await input.trigger('keydown.escape');
-            expect(ss.canvases.value[0].name).toBe('Canvas 1');
+            expect(ss.canvases.value[0]!.name).toBe('Canvas 1');
             expect(wrapper.find('.canvas-tab-rename').exists()).toBe(false);
         });
 
@@ -120,7 +120,7 @@ describe('CanvasTabs', () => {
             const input = wrapper.find('.canvas-tab-rename');
             await input.setValue('   ');
             await input.trigger('keydown.enter');
-            expect(ss.canvases.value[0].name).toBe('Canvas 1');
+            expect(ss.canvases.value[0]!.name).toBe('Canvas 1');
         });
     });
 
@@ -133,10 +133,10 @@ describe('CanvasTabs', () => {
             const tabs = wrapper.findAll('[role="tab"]');
 
             const dataTransfer = { effectAllowed: '', setData: vi.fn() };
-            await tabs[0].trigger('dragstart', { dataTransfer });
-            await tabs[2].trigger('dragover', { clientX: 1000 });
-            await tabs[2].trigger('drop');
-            await tabs[2].trigger('dragend');
+            await tabs[0]!.trigger('dragstart', { dataTransfer });
+            await tabs[2]!.trigger('dragover', { clientX: 1000 });
+            await tabs[2]!.trigger('drop');
+            await tabs[2]!.trigger('dragend');
 
             expect(ss.canvases.value.map((c) => c.name)).not.toEqual(names);
         });
@@ -145,10 +145,10 @@ describe('CanvasTabs', () => {
             ss.addCanvas();
             await wrapper.vm.$nextTick();
             const tabs = wrapper.findAll('[role="tab"]');
-            await tabs[0].trigger('dragstart', { dataTransfer: { effectAllowed: '', setData: vi.fn() } });
-            await tabs[1].trigger('dragover', { clientX: 0 });
-            await tabs[1].trigger('dragleave');
-            await tabs[1].trigger('dragend');
+            await tabs[0]!.trigger('dragstart', { dataTransfer: { effectAllowed: '', setData: vi.fn() } });
+            await tabs[1]!.trigger('dragover', { clientX: 0 });
+            await tabs[1]!.trigger('dragleave');
+            await tabs[1]!.trigger('dragend');
             expect(wrapper.find('.drop-before').exists()).toBe(false);
             expect(wrapper.find('.drop-after').exists()).toBe(false);
         });
@@ -157,9 +157,9 @@ describe('CanvasTabs', () => {
     describe('zoom controls', () => {
         it('zooms in and out', async () => {
             const buttons = wrapper.findAll('.zoom-btn');
-            await buttons[1].trigger('click');
+            await buttons[1]!.trigger('click');
             expect(ss.canvasZoom.value).toBeGreaterThan(1);
-            await buttons[0].trigger('click');
+            await buttons[0]!.trigger('click');
             expect(ss.canvasZoom.value).toBe(1);
         });
 
@@ -179,7 +179,7 @@ describe('CanvasTabs', () => {
         it('disables zoom out at the minimum', async () => {
             ss.setZoom(0.25);
             await wrapper.vm.$nextTick();
-            expect(wrapper.findAll('.zoom-btn')[0].attributes('disabled')).toBeDefined();
+            expect(wrapper.findAll('.zoom-btn')[0]!.attributes('disabled')).toBeDefined();
         });
     });
 
@@ -198,7 +198,7 @@ describe('CanvasTabs', () => {
         const items = (): HTMLButtonElement[] => [...(menu()?.querySelectorAll('button') ?? [])];
 
         async function openMenu(index = 0): Promise<void> {
-            await wrapper.findAll('[role="tab"]')[index].trigger('contextmenu', { clientX: 10, clientY: 10 });
+            await wrapper.findAll('[role="tab"]')[index]!.trigger('contextmenu', { clientX: 10, clientY: 10 });
         }
 
         it('opens on right click', async () => {
@@ -209,7 +209,7 @@ describe('CanvasTabs', () => {
 
         it('renames through the menu', async () => {
             await openMenu();
-            items()[0].click();
+            items()[0]!.click();
             await wrapper.vm.$nextTick();
             expect(wrapper.find('.canvas-tab-rename').exists()).toBe(true);
         });
@@ -217,10 +217,10 @@ describe('CanvasTabs', () => {
         it('duplicates through the menu', async () => {
             ss.addTable();
             await openMenu();
-            items()[1].click();
+            items()[1]!.click();
             await wrapper.vm.$nextTick();
             expect(ss.canvases.value).toHaveLength(2);
-            expect(ss.canvases.value[1].tables).toHaveLength(1);
+            expect(ss.canvases.value[1]!.tables).toHaveLength(1);
         });
 
         it('offers delete only when there is more than one canvas', async () => {
@@ -237,7 +237,7 @@ describe('CanvasTabs', () => {
             ss.addCanvas();
             await wrapper.vm.$nextTick();
             await openMenu(1);
-            items()[2].click();
+            items()[2]!.click();
             await wrapper.vm.$nextTick();
             expect(ss.canvases.value).toHaveLength(1);
         });

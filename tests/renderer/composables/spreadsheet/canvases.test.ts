@@ -11,13 +11,13 @@ describe('canvases', () => {
     describe('CRUD', () => {
         it('starts with one canvas', () => {
             expect(ss.canvases.value).toHaveLength(1);
-            expect(ss.canvases.value[0].name).toBe('Canvas 1');
+            expect(ss.canvases.value[0]!.name).toBe('Canvas 1');
         });
 
         it('adds a canvas and switches to it', () => {
             ss.addCanvas();
             expect(ss.canvases.value).toHaveLength(2);
-            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[1].id);
+            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[1]!.id);
         });
 
         it('stops at the canvas limit', () => {
@@ -29,12 +29,12 @@ describe('canvases', () => {
 
         it('removes a canvas', () => {
             ss.addCanvas();
-            ss.removeCanvas(ss.canvases.value[1].id);
+            ss.removeCanvas(ss.canvases.value[1]!.id);
             expect(ss.canvases.value).toHaveLength(1);
         });
 
         it('refuses to remove the last canvas', () => {
-            ss.removeCanvas(ss.canvases.value[0].id);
+            ss.removeCanvas(ss.canvases.value[0]!.id);
             expect(ss.canvases.value).toHaveLength(1);
         });
 
@@ -42,14 +42,14 @@ describe('canvases', () => {
             ss.addCanvas();
             const active = ss.activeCanvasId.value;
             ss.removeCanvas(active);
-            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0].id);
+            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0]!.id);
         });
 
         it('drops the selection when a canvas is removed', () => {
             ss.addTable();
-            ss.selectCell(ss.tables.value[0].id, 0, 0);
+            ss.selectCell(ss.tables.value[0]!.id, 0, 0);
             ss.addCanvas();
-            ss.removeCanvas(ss.canvases.value[1].id);
+            ss.removeCanvas(ss.canvases.value[1]!.id);
             expect(ss.activeCell.value).toBeNull();
             expect(ss.selectionRange.value).toBeNull();
         });
@@ -61,14 +61,14 @@ describe('canvases', () => {
         });
 
         it('renames a canvas', () => {
-            ss.renameCanvas(ss.canvases.value[0].id, 'Budget');
-            expect(ss.canvases.value[0].name).toBe('Budget');
+            ss.renameCanvas(ss.canvases.value[0]!.id, 'Budget');
+            expect(ss.canvases.value[0]!.name).toBe('Budget');
         });
 
         it('ignores a rename to the same name or an unknown canvas', () => {
-            ss.renameCanvas(ss.canvases.value[0].id, 'Canvas 1');
+            ss.renameCanvas(ss.canvases.value[0]!.id, 'Canvas 1');
             ss.renameCanvas('nope', 'X');
-            expect(ss.canvases.value[0].name).toBe('Canvas 1');
+            expect(ss.canvases.value[0]!.name).toBe('Canvas 1');
         });
 
         it('reorders canvases', () => {
@@ -90,15 +90,15 @@ describe('canvases', () => {
     describe('switching', () => {
         it('clears the selection', () => {
             ss.addTable();
-            ss.selectCell(ss.tables.value[0].id, 0, 0);
+            ss.selectCell(ss.tables.value[0]!.id, 0, 0);
             ss.addCanvas();
-            ss.switchCanvas(ss.canvases.value[0].id);
+            ss.switchCanvas(ss.canvases.value[0]!.id);
             expect(ss.activeCell.value).toBeNull();
         });
 
         it('keeps a formula edit alive across the switch', () => {
             ss.addTable();
-            ss.selectCell(ss.tables.value[0].id, 0, 0);
+            ss.selectCell(ss.tables.value[0]!.id, 0, 0);
             ss.startEditing('=');
             ss.toggleFormulaMode();
             ss.addCanvas();
@@ -109,7 +109,7 @@ describe('canvases', () => {
             ss.addTable();
             ss.addCanvas();
             expect(ss.tables.value).toHaveLength(0);
-            ss.switchCanvas(ss.canvases.value[0].id);
+            ss.switchCanvas(ss.canvases.value[0]!.id);
             expect(ss.tables.value).toHaveLength(1);
         });
     });

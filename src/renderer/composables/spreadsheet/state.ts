@@ -62,9 +62,11 @@ type Counters = {
     canvasCount: number;
 };
 
-export const REF_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+// `as const` makes these tuples rather than arrays, so element 0 is known to
+// exist — which is what lets the wrap helpers below fall back without asserting.
+const REF_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'] as const;
 
-export const CHART_REF_COLORS = [
+const CHART_REF_COLORS = [
     '#3b82f6',
     '#ef4444',
     '#22c55e',
@@ -73,7 +75,17 @@ export const CHART_REF_COLORS = [
     '#ec4899',
     '#06b6d4',
     '#f97316',
-];
+] as const;
+
+/** The colour for the nth formula reference, wrapping round the palette. */
+export function refColor(i: number): string {
+    return REF_COLORS[i % REF_COLORS.length] ?? REF_COLORS[0];
+}
+
+/** The colour for the nth chart series reference, wrapping round the palette. */
+export function chartRefColor(i: number): string {
+    return CHART_REF_COLORS[i % CHART_REF_COLORS.length] ?? CHART_REF_COLORS[0];
+}
 
 // ─── State factory ───────────────────────────────────────────────────────────
 
@@ -84,8 +96,13 @@ export function createState(): SpreadsheetCoreState {
     const canvases = ref<Canvas[]>([firstCanvas]);
     const activeCanvasId = ref<string>(firstCanvas.id);
 
+    // There is always a canvas: the list is seeded with `firstCanvas`, `removeCanvas`
+    // refuses to drop the last, and loading a file with none is rejected as
+    // unloadable. `firstCanvas` closes that last gap for the type system without an
+    // assertion — if the list were ever emptied, the app keeps the canvas it started
+    // with rather than tearing down every reader of `activeCanvas`.
     const activeCanvas = computed(
-        () => canvases.value.find((c): boolean => c.id === activeCanvasId.value) ?? canvases.value[0],
+        () => canvases.value.find((c): boolean => c.id === activeCanvasId.value) ?? canvases.value[0] ?? firstCanvas,
     );
     const tables = computed(() => activeCanvas.value.tables);
     const textBoxes = computed(() => activeCanvas.value.textBoxes);

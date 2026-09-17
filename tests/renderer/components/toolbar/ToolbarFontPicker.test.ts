@@ -11,7 +11,7 @@ describe('ToolbarFontPicker', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
         wrapper = mount(ToolbarFontPicker, {
             attachTo: document.body,
             global: { provide: { [SPREADSHEET_KEY as symbol]: ss } },
@@ -42,7 +42,7 @@ describe('ToolbarFontPicker', () => {
         await wrapper.find('.font-selector-btn').trigger('click');
         const active = wrapper.findAll('.font-option').filter((o) => o.classes().includes('active'));
         expect(active).toHaveLength(1);
-        expect(active[0].text()).toBe('Georgia');
+        expect(active[0]!.text()).toBe('Georgia');
     });
 
     it('lists the available fonts', async () => {
@@ -67,7 +67,7 @@ describe('ToolbarFontPicker', () => {
         await wrapper.find('.font-selector-btn').trigger('click');
         const georgia = wrapper.findAll('.font-option').find((i) => i.text() === 'Georgia');
         await georgia?.trigger('click');
-        expect(ss.textBoxes.value[0].fontFamily).toBe('Georgia');
+        expect(ss.textBoxes.value[0]!.fontFamily).toBe('Georgia');
     });
 
     it('closes when clicking away', async () => {

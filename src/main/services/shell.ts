@@ -20,7 +20,9 @@ export function openExternalIfSafe(url: string): void {
 export function register(ipc: IpcMain): void {
     ipc.handle('shell:openExternal', async (_event, rawUrl: unknown): Promise<ShellOpenResult> => {
         const parsed = ExternalUrlSchema.safeParse(rawUrl);
-        if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+        if (!parsed.success) {
+            return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid URL' };
+        }
 
         return await openExternal(parsed.data);
     });

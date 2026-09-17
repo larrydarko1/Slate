@@ -34,11 +34,14 @@ export class Parser {
         this.tokens = tokens;
     }
 
+    /** Reading past the end yields EOF, which every caller already handles. */
+    private static readonly EOF: Token = { type: 'EOF', value: '' };
+
     private peek(): Token {
-        return this.tokens[this.pos];
+        return this.tokens[this.pos] ?? Parser.EOF;
     }
     private advance(): Token {
-        return this.tokens[this.pos++];
+        return this.tokens[this.pos++] ?? Parser.EOF;
     }
     private expect(t: TokenType): Token {
         const tok = this.advance();
@@ -254,7 +257,7 @@ export class Parser {
 }
 
 function parseCellRef(ref: string): { col: number; row: number } {
-    const match = ref.match(/^([A-Z]+)(\d+)$/);
-    if (match === null) throw new Error(`Invalid cell reference: ${ref}`);
-    return { col: columnLetterToIndex(match[1]), row: parseInt(match[2]) - 1 };
+    const [, letters, digits] = ref.match(/^([A-Z]+)(\d+)$/) ?? [];
+    if (letters === undefined || digits === undefined) throw new Error(`Invalid cell reference: ${ref}`);
+    return { col: columnLetterToIndex(letters), row: parseInt(digits) - 1 };
 }

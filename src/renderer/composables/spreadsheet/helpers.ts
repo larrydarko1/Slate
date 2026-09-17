@@ -31,9 +31,15 @@ export type SpreadsheetHelpers = {
  * reference names its canvas; an unqualified one resolves against the canvas it
  * was written on before searching the rest of the workbook.
  */
+/**
+ * Where to look for a table by name. An options bag: a caller passing
+ * `sourceCanvasId: undefined` means the same as one omitting it, so the property
+ * admits `undefined` explicitly rather than making every caller build the object
+ * conditionally.
+ */
 type TableNameScope = {
     canvasName?: string | null;
-    sourceCanvasId?: string;
+    sourceCanvasId?: string | undefined;
 };
 
 export function createHelpers(state: SpreadsheetCoreState): SpreadsheetHelpers {

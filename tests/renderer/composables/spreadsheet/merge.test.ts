@@ -8,18 +8,18 @@ describe('merge', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
     });
 
     describe('mergeCells', () => {
         it('records the region', () => {
             ss.mergeCells(id, 0, 0, 2, 1);
-            expect(ss.tables.value[0].mergedRegions).toEqual([{ startCol: 0, startRow: 0, endCol: 2, endRow: 1 }]);
+            expect(ss.tables.value[0]!.mergedRegions).toEqual([{ startCol: 0, startRow: 0, endCol: 2, endRow: 1 }]);
         });
 
         it('normalises a region drawn backwards', () => {
             ss.mergeCells(id, 2, 1, 0, 0);
-            expect(ss.tables.value[0].mergedRegions[0]).toEqual({ startCol: 0, startRow: 0, endCol: 2, endRow: 1 });
+            expect(ss.tables.value[0]!.mergedRegions[0]).toEqual({ startCol: 0, startRow: 0, endCol: 2, endRow: 1 });
         });
 
         it('keeps the top-left value and clears the rest', () => {
@@ -32,25 +32,25 @@ describe('merge', () => {
 
         it('refuses a single-cell merge', () => {
             ss.mergeCells(id, 0, 0, 0, 0);
-            expect(ss.tables.value[0].mergedRegions).toHaveLength(0);
+            expect(ss.tables.value[0]!.mergedRegions).toHaveLength(0);
         });
 
         it('replaces any region it overlaps', () => {
             ss.mergeCells(id, 0, 0, 1, 1);
             ss.mergeCells(id, 1, 1, 3, 3);
-            expect(ss.tables.value[0].mergedRegions).toHaveLength(1);
-            expect(ss.tables.value[0].mergedRegions[0]).toMatchObject({ startCol: 1, endCol: 3 });
+            expect(ss.tables.value[0]!.mergedRegions).toHaveLength(1);
+            expect(ss.tables.value[0]!.mergedRegions[0]).toMatchObject({ startCol: 1, endCol: 3 });
         });
 
         it('leaves a region it does not touch', () => {
             ss.mergeCells(id, 0, 0, 1, 1);
             ss.mergeCells(id, 3, 3, 4, 4);
-            expect(ss.tables.value[0].mergedRegions).toHaveLength(2);
+            expect(ss.tables.value[0]!.mergedRegions).toHaveLength(2);
         });
 
         it('ignores an unknown table', () => {
             ss.mergeCells('nope', 0, 0, 1, 1);
-            expect(ss.tables.value[0].mergedRegions).toHaveLength(0);
+            expect(ss.tables.value[0]!.mergedRegions).toHaveLength(0);
         });
     });
 
@@ -88,18 +88,18 @@ describe('merge', () => {
         it('removes the region under a cell', () => {
             ss.mergeCells(id, 0, 0, 2, 2);
             ss.unmergeCells(id, 1, 1);
-            expect(ss.tables.value[0].mergedRegions).toHaveLength(0);
+            expect(ss.tables.value[0]!.mergedRegions).toHaveLength(0);
         });
 
         it('does nothing where there is no region', () => {
             ss.mergeCells(id, 0, 0, 1, 1);
             ss.unmergeCells(id, 4, 4);
-            expect(ss.tables.value[0].mergedRegions).toHaveLength(1);
+            expect(ss.tables.value[0]!.mergedRegions).toHaveLength(1);
         });
 
         it('ignores an unknown table', () => {
             ss.unmergeCells('nope', 0, 0);
-            expect(ss.tables.value[0].mergedRegions).toHaveLength(0);
+            expect(ss.tables.value[0]!.mergedRegions).toHaveLength(0);
         });
     });
 
@@ -108,7 +108,7 @@ describe('merge', () => {
             ss.selectCell(id, 0, 0);
             ss.extendSelection(id, 2, 1);
             ss.mergeSelection();
-            expect(ss.tables.value[0].mergedRegions[0]).toEqual({ startCol: 0, startRow: 0, endCol: 2, endRow: 1 });
+            expect(ss.tables.value[0]!.mergedRegions[0]).toEqual({ startCol: 0, startRow: 0, endCol: 2, endRow: 1 });
         });
 
         it('unmerges everything the selection overlaps', () => {
@@ -117,7 +117,7 @@ describe('merge', () => {
             ss.selectCell(id, 0, 0);
             ss.extendSelection(id, 1, 1);
             ss.unmergeSelection();
-            expect(ss.tables.value[0].mergedRegions).toHaveLength(1);
+            expect(ss.tables.value[0]!.mergedRegions).toHaveLength(1);
         });
 
         it('reports whether the selection holds a merge', () => {

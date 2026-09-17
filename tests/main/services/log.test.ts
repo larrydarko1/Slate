@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() };
+type Listener = (event: unknown, ...args: unknown[]) => void;
+
 vi.mock('electron', () => ({}));
+
+const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() };
+
 vi.mock('@/main/lib/logger', () => ({ log }));
 
 const { register } = await import('@/main/services/log');
-
-type Listener = (event: unknown, ...args: unknown[]) => void;
 
 function fakeIpc(): { listeners: Map<string, Listener>; ipc: Parameters<typeof register>[0] } {
     const listeners = new Map<string, Listener>();

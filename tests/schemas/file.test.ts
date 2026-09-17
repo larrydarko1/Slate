@@ -43,7 +43,7 @@ describe('FilePathSchema', () => {
     it('reports why it rejected a path', () => {
         const result = FilePathSchema.safeParse('notes.txt');
         expect(result.success).toBe(false);
-        if (!result.success) expect(result.error.issues[0].message).toContain('.slate');
+        if (!result.success) expect(result.error.issues[0]!.message).toContain('.slate');
     });
 });
 

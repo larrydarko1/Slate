@@ -5,7 +5,7 @@
  */
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
-import type { Cell, CellFormat } from '@/renderer/types/spreadsheet';
+import type { Cell, CellFormat, CellFormatUpdate } from '@/renderer/types/spreadsheet';
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { generateId, createEmptyCell } from '@/renderer/types/spreadsheet';
 import { detectType, formatCellDisplay, getTypeAlignment } from '@/renderer/composables/spreadsheet/engine/cellTypes';
@@ -18,8 +18,8 @@ export type SpreadsheetCells = {
     getCellType: (tableId: string, col: number, row: number) => CellDataType;
     getCellAlignment: (tableId: string, col: number, row: number) => 'left' | 'right' | 'center';
     setCellType: (tableId: string, col: number, row: number, newType: CellDataType) => void;
-    setCellFormat: (tableId: string, col: number, row: number, fmt: Partial<CellFormat>) => void;
-    setSelectionFormat: (fmt: Partial<CellFormat>) => void;
+    setCellFormat: (tableId: string, col: number, row: number, fmt: CellFormatUpdate) => void;
+    setSelectionFormat: (fmt: CellFormatUpdate) => void;
     findActiveCellFormat: () => CellFormat | null;
     setCellNote: (tableId: string, col: number, row: number, note: string) => void;
     getCellNote: (tableId: string, col: number, row: number) => string;
@@ -39,7 +39,8 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
         const table = deps.findTable(tableId);
         if (table === null || row < 0 || row >= table.rows.length || col < 0 || col >= table.columns.length)
             return null;
-        return table.rows[row][col];
+        // The bounds above are the table's; a row loaded short of them is still ragged.
+        return table.rows[row]?.[col] ?? null;
     }
 
     function setCellValue(tableId: string, col: number, row: number, raw: string): void {
@@ -53,16 +54,19 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
             for (const tableRow of table.rows) tableRow.push(createEmptyCell());
         }
 
-        const cell = table.rows[row][col];
+        const cell = table.rows[row]?.[col];
+        if (cell === undefined) return;
 
         if (raw.startsWith('=')) {
             cell.formula = raw.substring(1);
             cell.value = null;
             cell.cellType = 'empty';
         } else {
-            cell.formula = undefined;
-            cell.computed = undefined;
-            cell.computedType = undefined;
+            // Deleted, not set to `undefined`: these are optional properties, and a
+            // key holding `undefined` is a different thing from an absent one.
+            delete cell.formula;
+            delete cell.computed;
+            delete cell.computedType;
 
             if (raw === '') {
                 cell.value = null;
@@ -149,14 +153,18 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
         deps.recalculate();
     }
 
-    function setCellFormat(tableId: string, col: number, row: number, fmt: Partial<CellFormat>): void {
+    function setCellFormat(tableId: string, col: number, row: number, fmt: CellFormatUpdate): void {
         deps.pushUndo();
         const cell = findCell(tableId, col, row);
         if (cell === null) return;
-        cell.format = { ...cell.format, ...fmt };
+        // Merge, then drop whatever the update cleared — a key held at `undefined`
+        // would survive the next spread and outlive the property it came from.
+        cell.format = Object.fromEntries(
+            Object.entries({ ...cell.format, ...fmt }).filter(([, value]) => value !== undefined),
+        );
     }
 
-    function setSelectionFormat(fmt: Partial<CellFormat>): void {
+    function setSelectionFormat(fmt: CellFormatUpdate): void {
         const sr = deps.findNormalizedSelection();
         if (sr === null) return;
         deps.pushUndo();
@@ -180,7 +188,8 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
         deps.pushUndo();
         const cell = findCell(tableId, col, row);
         if (cell === null) return;
-        cell.note = note !== '' ? note : undefined;
+        if (note !== '') cell.note = note;
+        else delete cell.note;
     }
 
     function getCellNote(tableId: string, col: number, row: number): string {
@@ -191,7 +200,7 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
     function removeCellNote(tableId: string, col: number, row: number): void {
         deps.pushUndo();
         const cell = findCell(tableId, col, row);
-        if (cell !== null) cell.note = undefined;
+        if (cell !== null) delete cell.note;
     }
 
     function cellHasNote(tableId: string, col: number, row: number): boolean {

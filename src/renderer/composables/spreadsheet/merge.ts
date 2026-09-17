@@ -68,8 +68,9 @@ export function createMerge(_state: SpreadsheetCoreState, deps: MergeDeps): Spre
         for (let rowIdx = sr; rowIdx <= er; rowIdx++) {
             for (let colIdx = sc; colIdx <= ec; colIdx++) {
                 if (rowIdx === sr && colIdx === sc) continue;
-                if (table.rows[rowIdx]?.[colIdx] !== undefined) {
-                    table.rows[rowIdx][colIdx] = createEmptyCell();
+                const row = table.rows[rowIdx];
+                if (row?.[colIdx] !== undefined) {
+                    row[colIdx] = createEmptyCell();
                 }
             }
         }

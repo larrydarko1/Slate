@@ -1,5 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 
+type Api = {
+    isElectron: () => boolean;
+    log: Record<'error' | 'warn' | 'info' | 'debug', (message: string, details?: Record<string, unknown>) => void>;
+    showSaveDialog: (p?: string) => unknown;
+    showOpenDialog: () => unknown;
+    writeFile: (p: string, c: string) => unknown;
+    readFile: (p: string) => unknown;
+    onOpenFile: (cb: (p: string) => void) => () => void;
+    openExternal: (url: string) => unknown;
+};
+
 const exposeInMainWorld = vi.fn();
 const invoke = vi.fn().mockResolvedValue(undefined);
 const send = vi.fn();
@@ -16,20 +27,19 @@ vi.mock('electron', () => ({
     },
 }));
 
-await import('@/preload/index');
-
-type Api = {
-    isElectron: () => boolean;
-    log: Record<'error' | 'warn' | 'info' | 'debug', (message: string, details?: Record<string, unknown>) => void>;
-    showSaveDialog: (p?: string) => unknown;
-    showOpenDialog: () => unknown;
-    writeFile: (p: string, c: string) => unknown;
-    readFile: (p: string) => unknown;
-    onOpenFile: (cb: (p: string) => void) => () => void;
-    openExternal: (url: string) => unknown;
+/**
+ * The preload module publishes the bridge as an import side effect, so what it
+ * exposed can only be read back once that import has resolved. Reading the spy
+ * through this arrow is what keeps the two in order: as separate statements the
+ * dependency runs through `exposeInMainWorld`'s recorded calls rather than
+ * through a binding, which nothing — reader or tool — can see.
+ */
+const loadBridge = async (): Promise<[string, Api]> => {
+    await import('@/preload/index');
+    return exposeInMainWorld.mock.calls[0] as [string, Api];
 };
 
-const [namespace, api] = exposeInMainWorld.mock.calls[0] as [string, Api];
+const [namespace, api] = await loadBridge();
 
 describe('preload bridge', () => {
     it('exposes one namespace on the window', () => {

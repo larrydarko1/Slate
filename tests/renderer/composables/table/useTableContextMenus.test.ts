@@ -28,7 +28,7 @@ describe('useTableContextMenus', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        table = ref(ss.tables.value[0]);
+        table = ref(ss.tables.value[0]!);
         open = vi.fn();
         openNoteEditor = vi.fn<(ci: number, ri: number, e?: MouseEvent) => void>();
         const ctxMenu = ref({ open, close: vi.fn() } as ContextMenuApi) as Ref<ContextMenuApi | null>;

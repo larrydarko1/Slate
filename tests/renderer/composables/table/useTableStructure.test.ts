@@ -23,7 +23,7 @@ describe('useTableStructure', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        table = ref(ss.tables.value[0]);
+        table = ref(ss.tables.value[0]!);
         editingName = ref(false);
         structure = useTableStructure(table, ss, editingName);
     });
@@ -71,22 +71,22 @@ describe('useTableStructure', () => {
         it('widens the column by the pointer delta', () => {
             structure.startColResize(1, new MouseEvent('mousedown', { clientX: 200, clientY: 0 }));
             mouse('mousemove', 260, 0);
-            expect(table.value.columns[1].width).toBe(180);
+            expect(table.value.columns[1]!.width).toBe(180);
         });
 
         it('holds a minimum width', () => {
             structure.startColResize(1, new MouseEvent('mousedown', { clientX: 200, clientY: 0 }));
             mouse('mousemove', -500, 0);
-            expect(table.value.columns[1].width).toBe(10);
+            expect(table.value.columns[1]!.width).toBe(10);
         });
 
         it('stops resizing after mouseup', () => {
             structure.startColResize(0, new MouseEvent('mousedown', { clientX: 0, clientY: 0 }));
             mouse('mousemove', 20, 0);
-            const width = table.value.columns[0].width;
+            const width = table.value.columns[0]!.width;
             mouse('mouseup', 20, 0);
             mouse('mousemove', 400, 0);
-            expect(table.value.columns[0].width).toBe(width);
+            expect(table.value.columns[0]!.width).toBe(width);
         });
     });
 

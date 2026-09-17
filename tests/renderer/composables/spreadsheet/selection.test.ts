@@ -8,7 +8,7 @@ describe('selection', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
     });
 
     describe('selectCell', () => {
@@ -26,7 +26,7 @@ describe('selection', () => {
 
         it('clears an active text box and chart', () => {
             ss.addTextBox();
-            ss.selectTextBox(ss.textBoxes.value[0].id);
+            ss.selectTextBox(ss.textBoxes.value[0]!.id);
             ss.selectCell(id, 0, 0);
             expect(ss.activeTextBoxId.value).toBeNull();
             expect(ss.activeChartId.value).toBeNull();
@@ -36,7 +36,7 @@ describe('selection', () => {
             ss.addTable();
             const second = ss.tables.value[1];
             ss.selectCell(id, 0, 0);
-            expect(ss.tables.value[0].zIndex).toBeGreaterThan(second.zIndex);
+            expect(ss.tables.value[0]!.zIndex).toBeGreaterThan(second!.zIndex);
         });
 
         it('commits an open edit first', () => {
@@ -106,7 +106,7 @@ describe('selection', () => {
         it('does nothing when the anchor is in another table', () => {
             ss.addTable();
             ss.selectCell(id, 0, 0);
-            ss.extendSelection(ss.tables.value[1].id, 2, 2);
+            ss.extendSelection(ss.tables.value[1]!.id, 2, 2);
             expect(ss.selectionRange.value).toMatchObject({ tableId: id, endCol: 0, endRow: 0 });
         });
 

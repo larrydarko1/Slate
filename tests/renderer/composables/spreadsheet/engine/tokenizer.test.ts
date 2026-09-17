@@ -174,7 +174,7 @@ describe('punctuation', () => {
         [':', 'COLON'],
     ])('tokenizes %s as %s', (input, expectedType) => {
         const tokens = tokenize(input);
-        expect(tokens[0].type).toBe(expectedType);
+        expect(tokens[0]!.type).toBe(expectedType);
     });
 });
 
@@ -199,7 +199,7 @@ describe('whitespace', () => {
 describe('EOF', () => {
     it('always ends with EOF', () => {
         const tokens = tokenize('1');
-        expect(tokens[tokens.length - 1].type).toBe('EOF');
+        expect(tokens[tokens.length - 1]!.type).toBe('EOF');
     });
 
     it('returns only EOF for empty input', () => {

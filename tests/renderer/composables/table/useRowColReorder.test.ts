@@ -50,7 +50,7 @@ describe('useRowColReorder', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        table = ref(ss.tables.value[0]);
+        table = ref(ss.tables.value[0]!);
         id = table.value.id;
         reorder = useRowColReorder(table, ss, ref(buildGrid(5, 8)));
         for (let r = 0; r < 4; r++) ss.setCellValue(id, 0, r, `r${r}`);

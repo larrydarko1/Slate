@@ -3,6 +3,9 @@ import { evaluateFormulaTyped, type FormulaContext } from '@/renderer/composable
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { CellValue } from '@/renderer/types/spreadsheet';
 
+/** The context every case that reads no cell shares. */
+const emptyCtx = gridContext([]);
+
 // ── Test helpers ─────────────────────────────────────────────────────────────
 
 /** The value half of a typed evaluation — what most of these cases assert on. */
@@ -37,8 +40,6 @@ function gridContext(grid: CellValue[][], types?: CellDataType[][]): FormulaCont
         },
     };
 }
-
-const emptyCtx = gridContext([]);
 
 // ── Arithmetic ───────────────────────────────────────────────────────────────
 

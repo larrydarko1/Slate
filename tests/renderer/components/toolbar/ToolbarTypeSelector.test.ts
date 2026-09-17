@@ -11,7 +11,7 @@ describe('ToolbarTypeSelector', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
         wrapper = mount(ToolbarTypeSelector, {
             attachTo: document.body,
             global: { provide: { [SPREADSHEET_KEY as symbol]: ss } },
@@ -82,10 +82,10 @@ describe('ToolbarTypeSelector', () => {
         ss.selectCell(id, 0, 0);
         await wrapper.vm.$nextTick();
         const buttons = wrapper.findAll('.decimal-btn');
-        await buttons[1].trigger('click');
+        await buttons[1]!.trigger('click');
         const increased = ss.findCell(id, 0, 0)?.format?.decimalPlaces;
         expect(increased).toBeGreaterThan(0);
-        await buttons[0].trigger('click');
+        await buttons[0]!.trigger('click');
         expect(ss.findCell(id, 0, 0)?.format?.decimalPlaces).toBeLessThan(increased ?? 0);
     });
 });

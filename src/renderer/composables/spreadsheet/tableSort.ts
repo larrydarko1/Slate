@@ -51,13 +51,13 @@ export function createTableSort(deps: SortDeps): TableSort {
             .map((row, i): { row: Cell[]; origIdx: number } => ({ row, origIdx: i + headerCount }));
         indexed.sort((a, b): number => compareValues(getSortValue(a.row), getSortValue(b.row)));
 
-        for (let i = 0; i < indexed.length; i++) {
-            table.rows[headerCount + i] = indexed[i].row;
+        for (const [i, entry] of indexed.entries()) {
+            table.rows[headerCount + i] = entry.row;
         }
 
         const rowMap = new Map<number, number>();
-        for (let i = 0; i < indexed.length; i++) {
-            rowMap.set(indexed[i].origIdx, headerCount + i);
+        for (const [i, entry] of indexed.entries()) {
+            rowMap.set(entry.origIdx, headerCount + i);
         }
         for (let i = 0; i < headerCount; i++) {
             rowMap.set(i, i);

@@ -18,15 +18,15 @@ describe('tables', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = firstTable(ss).id;
+        id = firstTable(ss)!.id;
     });
 
     describe('CRUD', () => {
         it('creates a table with the default 5x8 grid', () => {
             const table = firstTable(ss);
-            expect(table.columns).toHaveLength(5);
-            expect(table.rows).toHaveLength(8);
-            expect(table.rows[0]).toHaveLength(5);
+            expect(table!.columns).toHaveLength(5);
+            expect(table!.rows).toHaveLength(8);
+            expect(table!.rows[0]).toHaveLength(5);
         });
 
         it('numbers each new table', () => {
@@ -36,14 +36,14 @@ describe('tables', () => {
 
         it('stacks each new table above the last', () => {
             ss.addTable();
-            expect(ss.tables.value[1].zIndex).toBeGreaterThan(ss.tables.value[0].zIndex);
+            expect(ss.tables.value[1]!.zIndex).toBeGreaterThan(ss.tables.value[0]!.zIndex);
         });
 
         it('removes a table', () => {
             ss.addTable();
             ss.removeTable(id);
             expect(ss.tables.value).toHaveLength(1);
-            expect(ss.tables.value[0].name).toBe('Table 2');
+            expect(ss.tables.value[0]!.name).toBe('Table 2');
         });
 
         it('clears the active cell when its table is removed', () => {
@@ -55,46 +55,46 @@ describe('tables', () => {
         it('leaves the active cell alone when a different table is removed', () => {
             ss.addTable();
             ss.selectCell(id, 1, 1);
-            ss.removeTable(ss.tables.value[1].id);
+            ss.removeTable(ss.tables.value[1]!.id);
             expect(ss.activeCell.value).toEqual({ tableId: id, col: 1, row: 1 });
         });
 
         it('renames a table', () => {
             ss.renameTable(id, 'Sales');
-            expect(firstTable(ss).name).toBe('Sales');
+            expect(firstTable(ss)!.name).toBe('Sales');
         });
 
         it('rewrites references when a table is renamed', () => {
             ss.addTable();
             const other = ss.tables.value[1];
             ss.setCellValue(id, 0, 0, '7');
-            ss.setCellValue(other.id, 0, 0, '=Table 1::A1');
+            ss.setCellValue(other!.id, 0, 0, '=Table 1::A1');
             ss.renameTable(id, 'Renamed');
-            expect(ss.getRawValue(other.id, 0, 0)).toContain('Renamed');
-            expect(ss.getDisplayValue(other.id, 0, 0)).toBe('7');
+            expect(ss.getRawValue(other!.id, 0, 0)).toContain('Renamed');
+            expect(ss.getDisplayValue(other!.id, 0, 0)).toBe('7');
         });
 
         it('ignores a rename to the same name', () => {
             ss.renameTable(id, 'Table 1');
-            expect(firstTable(ss).name).toBe('Table 1');
+            expect(firstTable(ss)!.name).toBe('Table 1');
         });
 
         it('ignores a rename of an unknown table', () => {
             ss.renameTable('nope', 'X');
-            expect(firstTable(ss).name).toBe('Table 1');
+            expect(firstTable(ss)!.name).toBe('Table 1');
         });
 
         it('moves a table', () => {
             ss.moveTable(id, 42, 84);
-            expect(firstTable(ss).x).toBe(42);
-            expect(firstTable(ss).y).toBe(84);
+            expect(firstTable(ss)!.x).toBe(42);
+            expect(firstTable(ss)!.y).toBe(84);
         });
 
         it('ignores a move of an unknown table', () => {
-            const { x, y } = firstTable(ss);
+            const { x, y } = firstTable(ss)!;
             ss.moveTable('nope', 1, 1);
-            expect(firstTable(ss).x).toBe(x);
-            expect(firstTable(ss).y).toBe(y);
+            expect(firstTable(ss)!.x).toBe(x);
+            expect(firstTable(ss)!.y).toBe(y);
         });
     });
 
@@ -102,21 +102,21 @@ describe('tables', () => {
         it('appends a row the width of the table', () => {
             ss.addRow(id);
             const table = firstTable(ss);
-            expect(table.rows).toHaveLength(9);
-            expect(table.rows[8]).toHaveLength(5);
+            expect(table!.rows).toHaveLength(9);
+            expect(table!.rows[8]).toHaveLength(5);
         });
 
         it('appends a column to every row', () => {
             ss.addColumn(id);
             const table = firstTable(ss);
-            expect(table.columns).toHaveLength(6);
-            expect(table.rows.every((r) => r.length === 6)).toBe(true);
+            expect(table!.columns).toHaveLength(6);
+            expect(table!.rows.every((r) => r.length === 6)).toBe(true);
         });
 
         it('ignores add on an unknown table', () => {
             ss.addRow('nope');
             ss.addColumn('nope');
-            expect(firstTable(ss).rows).toHaveLength(8);
+            expect(firstTable(ss)!.rows).toHaveLength(8);
         });
 
         it('reports an untouched row as empty', () => {
@@ -147,13 +147,13 @@ describe('tables', () => {
 
         it('trims a trailing empty row', () => {
             expect(ss.removeLastRowIfEmpty(id)).toBe(true);
-            expect(firstTable(ss).rows).toHaveLength(7);
+            expect(firstTable(ss)!.rows).toHaveLength(7);
         });
 
         it('refuses to trim a trailing row that holds a value', () => {
             ss.setCellValue(id, 0, 7, 'keep');
             expect(ss.removeLastRowIfEmpty(id)).toBe(false);
-            expect(firstTable(ss).rows).toHaveLength(8);
+            expect(firstTable(ss)!.rows).toHaveLength(8);
         });
 
         it('refuses to trim a trailing row covered by a merge', () => {
@@ -163,7 +163,7 @@ describe('tables', () => {
 
         it('refuses to trim the last remaining row', () => {
             for (let i = 0; i < 7; i++) ss.removeLastRowIfEmpty(id);
-            expect(firstTable(ss).rows).toHaveLength(1);
+            expect(firstTable(ss)!.rows).toHaveLength(1);
             expect(ss.removeLastRowIfEmpty(id)).toBe(false);
         });
 
@@ -175,7 +175,7 @@ describe('tables', () => {
 
         it('trims a trailing empty column the same way', () => {
             expect(ss.removeLastColumnIfEmpty(id)).toBe(true);
-            expect(firstTable(ss).columns).toHaveLength(4);
+            expect(firstTable(ss)!.columns).toHaveLength(4);
             ss.setCellValue(id, 3, 0, 'keep');
             expect(ss.removeLastColumnIfEmpty(id)).toBe(false);
         });
@@ -196,14 +196,14 @@ describe('tables', () => {
             ss.setCellValue(id, 0, 1, 'b');
             ss.deleteRow(id, 0);
             expect(ss.getDisplayValue(id, 0, 0)).toBe('b');
-            expect(firstTable(ss).rows).toHaveLength(7);
+            expect(firstTable(ss)!.rows).toHaveLength(7);
         });
 
         it('refuses to delete the only row', () => {
             for (let i = 0; i < 7; i++) ss.deleteRow(id, 0);
-            expect(firstTable(ss).rows).toHaveLength(1);
+            expect(firstTable(ss)!.rows).toHaveLength(1);
             ss.deleteRow(id, 0);
-            expect(firstTable(ss).rows).toHaveLength(1);
+            expect(firstTable(ss)!.rows).toHaveLength(1);
         });
 
         it('deletes a column and shifts the ones right of it left', () => {
@@ -211,32 +211,32 @@ describe('tables', () => {
             ss.setCellValue(id, 1, 0, 'b');
             ss.deleteColumn(id, 0);
             expect(ss.getDisplayValue(id, 0, 0)).toBe('b');
-            expect(firstTable(ss).columns).toHaveLength(4);
+            expect(firstTable(ss)!.columns).toHaveLength(4);
         });
 
         it('refuses to delete the only column', () => {
             for (let i = 0; i < 4; i++) ss.deleteColumn(id, 0);
-            expect(firstTable(ss).columns).toHaveLength(1);
+            expect(firstTable(ss)!.columns).toHaveLength(1);
             ss.deleteColumn(id, 0);
-            expect(firstTable(ss).columns).toHaveLength(1);
+            expect(firstTable(ss)!.columns).toHaveLength(1);
         });
 
         it('drops a single-row merge when that row is deleted', () => {
             ss.mergeCells(id, 0, 2, 2, 2);
             ss.deleteRow(id, 2);
-            expect(firstTable(ss).mergedRegions).toHaveLength(0);
+            expect(firstTable(ss)!.mergedRegions).toHaveLength(0);
         });
 
         it('shrinks a multi-row merge when a row inside it is deleted', () => {
             ss.mergeCells(id, 0, 1, 1, 3);
             ss.deleteRow(id, 2);
-            expect(firstTable(ss).mergedRegions[0]).toMatchObject({ startRow: 1, endRow: 2 });
+            expect(firstTable(ss)!.mergedRegions[0]).toMatchObject({ startRow: 1, endRow: 2 });
         });
 
         it('shifts a merge up when a row above it is deleted', () => {
             ss.mergeCells(id, 0, 4, 1, 5);
             ss.deleteRow(id, 0);
-            expect(firstTable(ss).mergedRegions[0]).toMatchObject({ startRow: 3, endRow: 4 });
+            expect(firstTable(ss)!.mergedRegions[0]).toMatchObject({ startRow: 3, endRow: 4 });
         });
 
         it('inserts a row at a position', () => {
@@ -244,7 +244,7 @@ describe('tables', () => {
             ss.insertRowAt(id, 0);
             expect(ss.getDisplayValue(id, 0, 0)).toBe('');
             expect(ss.getDisplayValue(id, 0, 1)).toBe('a');
-            expect(firstTable(ss).rows).toHaveLength(9);
+            expect(firstTable(ss)!.rows).toHaveLength(9);
         });
 
         it('inserts a column at a position', () => {
@@ -252,7 +252,7 @@ describe('tables', () => {
             ss.insertColumnAt(id, 0);
             expect(ss.getDisplayValue(id, 0, 0)).toBe('');
             expect(ss.getDisplayValue(id, 1, 0)).toBe('a');
-            expect(firstTable(ss).columns).toHaveLength(6);
+            expect(firstTable(ss)!.columns).toHaveLength(6);
         });
 
         /**
@@ -376,7 +376,7 @@ describe('tables', () => {
             ss.extendRowSelection(id, 1);
             ss.deleteSelectedRows();
             expect(ss.getDisplayValue(id, 0, 0)).toBe('c');
-            expect(firstTable(ss).rows).toHaveLength(6);
+            expect(firstTable(ss)!.rows).toHaveLength(6);
         });
 
         it('deletes every selected column', () => {
@@ -386,14 +386,14 @@ describe('tables', () => {
             ss.extendColumnSelection(id, 1);
             ss.deleteSelectedColumns();
             expect(ss.getDisplayValue(id, 0, 0)).toBe('c');
-            expect(firstTable(ss).columns).toHaveLength(3);
+            expect(firstTable(ss)!.columns).toHaveLength(3);
         });
 
         it('does nothing with no selection', () => {
             ss.deleteSelectedRows();
             ss.deleteSelectedColumns();
-            expect(firstTable(ss).rows).toHaveLength(8);
-            expect(firstTable(ss).columns).toHaveLength(5);
+            expect(firstTable(ss)!.rows).toHaveLength(8);
+            expect(firstTable(ss)!.columns).toHaveLength(5);
         });
     });
 });

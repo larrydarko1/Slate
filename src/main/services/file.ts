@@ -64,7 +64,9 @@ export function register(ipc: IpcMain, getWindows: () => BrowserWindow[]): void 
     // a spreadsheet the user already had.
     ipc.handle('file:write', (_event, rawFilePath: unknown, rawContent: unknown): FileWriteResult => {
         const parsed = FileWriteArgsSchema.safeParse({ filePath: rawFilePath, content: rawContent });
-        if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+        if (!parsed.success) {
+            return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid arguments' };
+        }
 
         const { filePath, content } = parsed.data;
         const tmpPath = `${filePath}.tmp`;
@@ -85,7 +87,9 @@ export function register(ipc: IpcMain, getWindows: () => BrowserWindow[]): void 
 
     ipc.handle('file:read', async (_event, rawFilePath: unknown): Promise<FileReadResult> => {
         const parsed = FilePathSchema.safeParse(rawFilePath);
-        if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+        if (!parsed.success) {
+            return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid arguments' };
+        }
 
         try {
             return { success: true, content: await fs.readFile(parsed.data, 'utf8') };

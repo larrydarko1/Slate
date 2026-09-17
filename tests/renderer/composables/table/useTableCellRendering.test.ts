@@ -13,7 +13,7 @@ describe('useTableCellRendering', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        table = ref(ss.tables.value[0]);
+        table = ref(ss.tables.value[0]!);
         inFillPreview = new Set();
         render = useTableCellRendering(table, ss, (ci, ri) => inFillPreview.has(`${ci},${ri}`));
     });
@@ -119,8 +119,8 @@ describe('useTableCellRendering', () => {
         it('writes the highlight into the cell style', () => {
             ss.addChart();
             ss.setChartDataRef('labels', "'Table 1'::A1");
-            expect(render.cellTdStyle(0, 0).boxShadow).toContain('inset 0 0 0 2px');
-            expect(render.cellTdStyle(4, 4).boxShadow).toBeUndefined();
+            expect(render.cellTdStyle(0, 0)['boxShadow']).toContain('inset 0 0 0 2px');
+            expect(render.cellTdStyle(4, 4)['boxShadow']).toBeUndefined();
         });
     });
 
@@ -139,16 +139,16 @@ describe('useTableCellRendering', () => {
 
         it('turns a background colour into half-opacity rgba', () => {
             ss.setCellFormat(table.value.id, 0, 0, { bgColor: '#3b82f6' });
-            expect(render.cellTdStyle(0, 0).backgroundColor).toBe('rgba(59, 130, 246, 0.5)');
+            expect(render.cellTdStyle(0, 0)['backgroundColor']).toBe('rgba(59, 130, 246, 0.5)');
         });
 
         it('sizes a plain cell to its column', () => {
-            expect(render.cellTdStyle(0, 0).width).toBe('120px');
+            expect(render.cellTdStyle(0, 0)['width']).toBe('120px');
         });
 
         it('sizes a merged origin to the whole span', () => {
             ss.mergeCells(table.value.id, 0, 1, 2, 3);
-            expect(render.cellTdStyle(0, 1).width).toBe('360px');
+            expect(render.cellTdStyle(0, 1)['width']).toBe('360px');
         });
 
         it('spans a merged origin across its region', () => {
@@ -175,7 +175,7 @@ describe('useTableCellRendering', () => {
                 return Promise.resolve({ success: true });
             };
             const calls: string[] = [];
-            window.electronAPI = { openExternal } as unknown as typeof window.electronAPI;
+            window.electronAPI = { openExternal } as unknown as NonNullable<typeof window.electronAPI>;
             render.openCellUrl('https://example.com');
             expect(calls).toEqual(['https://example.com']);
             delete (window as { electronAPI?: unknown }).electronAPI;

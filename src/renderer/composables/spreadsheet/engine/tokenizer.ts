@@ -44,52 +44,59 @@ export function tokenize(src: string): Token[] {
     const tokens: Token[] = [];
     let pos = 0;
 
+    /**
+     * The character at `i`, or '' once past the end. Every test below is a
+     * character class, and '' matches none of them — so the end of input falls
+     * out of each loop on its own, the way the explicit bounds checks intend.
+     */
+    const at = (i: number): string => src[i] ?? '';
+
     /** Consumes the run of digits at `pos`, if any, and returns it. */
     function takeDigits(): string {
         let digits = '';
-        while (pos < src.length && /\d/.test(src[pos])) digits += src[pos++];
+        while (pos < src.length && /\d/.test(at(pos))) digits += at(pos++);
         return digits;
     }
 
     while (pos < src.length) {
         // whitespace
-        if (/\s/.test(src[pos])) {
+        if (/\s/.test(at(pos))) {
             pos++;
             continue;
         }
 
         // number
-        if (/\d/.test(src[pos])) {
+        if (/\d/.test(at(pos))) {
             let digits = '';
-            while (pos < src.length && /[\d.]/.test(src[pos])) digits += src[pos++];
+            while (pos < src.length && /[\d.]/.test(at(pos))) digits += at(pos++);
             tokens.push({ type: 'NUMBER', value: digits, num: parseFloat(digits) });
             continue;
         }
 
         // string
-        if (src[pos] === '"') {
+        if (at(pos) === '"') {
             pos++;
             let text = '';
-            while (pos < src.length && src[pos] !== '"') text += src[pos++];
+            while (pos < src.length && at(pos) !== '"') text += at(pos++);
             pos++; // closing "
             tokens.push({ type: 'STRING', value: text });
             continue;
         }
 
         // single-quoted name (for table/canvas references like 'Table 1')
-        if (src[pos] === "'") {
+        if (at(pos) === "'") {
             pos++;
             let quoted = '';
-            while (pos < src.length && src[pos] !== "'") quoted += src[pos++];
+            while (pos < src.length && at(pos) !== "'") quoted += at(pos++);
             pos++; // closing '
             tokens.push({ type: 'QUOTED_NAME', value: quoted });
             continue;
         }
 
         // word (cell ref, identifier, boolean)
-        if (/[A-Za-z_]/.test(src[pos])) {
+        if (/[A-Za-z_]/.test(at(pos))) {
             let word = '';
-            while (pos < src.length && /[A-Za-z_]/.test(src[pos])) word += src[pos++];
+            while (pos < src.length && /[A-Za-z_]/.test(at(pos))) word += at(pos++);
             const up = word.toUpperCase();
 
             if (up === 'TRUE' || up === 'FALSE') {
@@ -109,7 +116,7 @@ export function tokenize(src: string): Token[] {
         }
 
         // operators & punctuation
-        const char = src[pos];
+        const char = at(pos);
         switch (char) {
             case '+':
                 tokens.push({ type: 'PLUS', value: char });

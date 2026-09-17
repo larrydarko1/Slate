@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+type Handler = (event: unknown, ...args: unknown[]) => unknown;
+
 const openExternal = vi.fn();
+
 vi.mock('electron', () => ({ shell: { openExternal: (url: string) => openExternal(url) } }));
 
 const { register, openExternalIfSafe } = await import('@/main/services/shell');
-
-type Handler = (event: unknown, ...args: unknown[]) => unknown;
 
 /** A stand-in IpcMain that keeps the handlers so a test can invoke one. */
 function fakeIpc(): { handlers: Map<string, Handler>; ipc: Parameters<typeof register>[0] } {

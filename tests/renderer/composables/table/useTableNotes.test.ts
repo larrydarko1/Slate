@@ -20,7 +20,7 @@ describe('useTableNotes', () => {
         vi.useFakeTimers();
         ss = useSpreadsheet();
         ss.addTable();
-        table = ref(ss.tables.value[0]);
+        table = ref(ss.tables.value[0]!);
         notes = useTableNotes(table, ss);
     });
 

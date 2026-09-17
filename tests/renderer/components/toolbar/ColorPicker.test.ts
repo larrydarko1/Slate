@@ -31,25 +31,25 @@ describe('ColorPicker', () => {
 
     it('asks to open when the arrow is clicked', async () => {
         const wrapper = mountPicker();
-        await wrapper.findAll('button')[1].trigger('click');
+        await wrapper.findAll('button')[1]!.trigger('click');
         expect(wrapper.emitted('update:open')?.[0]).toEqual([true]);
     });
 
     it('asks to close when clicked again', async () => {
         const wrapper = mountPicker({ open: true });
-        await wrapper.findAll('button')[1].trigger('click');
+        await wrapper.findAll('button')[1]!.trigger('click');
         expect(wrapper.emitted('update:open')?.[0]).toEqual([false]);
     });
 
     it('applies the last colour from the main button', async () => {
         const wrapper = mountPicker({ lastColor: '#00ff00' });
-        await wrapper.findAll('button')[0].trigger('click');
+        await wrapper.findAll('button')[0]!.trigger('click');
         expect(wrapper.emitted('apply')?.[0]).toEqual(['#00ff00']);
     });
 
     it('applies a swatch', async () => {
         const wrapper = mountPicker({ open: true });
-        await wrapper.findAll('.color-swatch')[1].trigger('click');
+        await wrapper.findAll('.color-swatch')[1]!.trigger('click');
         expect(wrapper.emitted('apply')?.[0]).toEqual(['#00ff00']);
     });
 
@@ -103,10 +103,10 @@ describe('ColorPicker', () => {
 
         const inputs = wrapper.findAll('.color-custom-input');
         const labels = wrapper.findAll('.color-custom-label');
-        expect(inputs[0].attributes('id')).toBeTruthy();
-        expect(inputs[0].attributes('id')).not.toBe(inputs[1].attributes('id'));
-        expect(labels[0].attributes('for')).toBe(inputs[0].attributes('id'));
-        expect(labels[1].attributes('for')).toBe(inputs[1].attributes('id'));
+        expect(inputs[0]!.attributes('id')).toBeTruthy();
+        expect(inputs[0]!.attributes('id')).not.toBe(inputs[1]!.attributes('id'));
+        expect(labels[0]!.attributes('for')).toBe(inputs[0]!.attributes('id'));
+        expect(labels[1]!.attributes('for')).toBe(inputs[1]!.attributes('id'));
     });
 
     it('disables both buttons when disabled', () => {

@@ -217,8 +217,8 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
                 beginAtZero: true,
             };
             if (isScatter) {
-                xScale.type = 'linear';
-                xScale.beginAtZero = true;
+                xScale['type'] = 'linear';
+                xScale['beginAtZero'] = true;
             }
             scales = { x: xScale, y: yScale };
         }
@@ -244,7 +244,7 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
                     },
                 },
             },
-            scales: scales as ChartOptions['scales'],
+            scales: scales as NonNullable<ChartOptions['scales']>,
         };
     });
 

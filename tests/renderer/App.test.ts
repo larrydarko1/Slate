@@ -87,10 +87,10 @@ describe('App', () => {
         it('merges the selection', async () => {
             await wrapper.vm.$nextTick();
             const cells = wrapper.findAll('.cell');
-            await cells[0].trigger('mousedown');
-            await cells[6].trigger('mouseover', { buttons: 1 });
+            await cells[0]!.trigger('mousedown');
+            await cells[6]!.trigger('mouseover', { buttons: 1 });
             await byTitle('Merge cells').trigger('click');
-            expect(wrapper.findAll('.cell')[0].attributes('colspan')).toBe('2');
+            expect(wrapper.findAll('.cell')[0]!.attributes('colspan')).toBe('2');
         });
     });
 

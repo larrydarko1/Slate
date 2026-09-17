@@ -21,12 +21,12 @@ describe('CanvasChart', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        tableId = ss.tables.value[0].id;
+        tableId = ss.tables.value[0]!.id;
         ss.renameTable(tableId, 'Data');
         for (let r = 0; r < 3; r++) ss.setCellValue(tableId, 0, r, String(r + 1));
         ss.addChart();
         wrapper = mount(CanvasChart, {
-            props: { chart: ss.charts.value[0] },
+            props: { chart: ss.charts.value[0]! },
             global: {
                 provide: { [SPREADSHEET_KEY as symbol]: ss },
             },
@@ -59,7 +59,7 @@ describe('CanvasChart', () => {
     it('selects itself on mousedown', async () => {
         ss.activeChartId.value = null;
         await chartEl().trigger('mousedown');
-        expect(ss.activeChartId.value).toBe(ss.charts.value[0].id);
+        expect(ss.activeChartId.value).toBe(ss.charts.value[0]!.id);
     });
 
     it('shows the config panel only when active', async () => {
@@ -71,7 +71,7 @@ describe('CanvasChart', () => {
 
     it('edits the title in place', async () => {
         await wrapper.find('.chart-title-input').setValue('Revenue');
-        expect(ss.charts.value[0].title).toBe('Revenue');
+        expect(ss.charts.value[0]!.title).toBe('Revenue');
     });
 
     it('shows resize handles only when active', async () => {
@@ -82,17 +82,17 @@ describe('CanvasChart', () => {
     });
 
     it('resizes from a handle, holding the minimum', async () => {
-        const { width } = ss.charts.value[0];
-        await wrapper.findAll('.resize-handle')[0].trigger('mousedown', { clientX: 0, clientY: 0 });
+        const { width } = ss.charts.value[0]!;
+        await wrapper.findAll('.resize-handle')[0]!.trigger('mousedown', { clientX: 0, clientY: 0 });
         document.dispatchEvent(new MouseEvent('mousemove', { clientX: 60, clientY: 0 }));
-        expect(ss.charts.value[0].width).toBe(width + 60);
+        expect(ss.charts.value[0]!.width).toBe(width + 60);
     });
 
     it('drags to a new position', async () => {
-        const { x } = ss.charts.value[0];
+        const { x } = ss.charts.value[0]!;
         await chartEl().trigger('mousedown', { clientX: 0, clientY: 0 });
         document.dispatchEvent(new MouseEvent('mousemove', { clientX: 15, clientY: 0 }));
-        expect(ss.charts.value[0].x).toBe(x + 15);
+        expect(ss.charts.value[0]!.x).toBe(x + 15);
     });
 
     it('deletes itself from its own button', async () => {

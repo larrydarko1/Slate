@@ -8,7 +8,7 @@ describe('cells', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
     });
 
     describe('findCell', () => {
@@ -32,13 +32,13 @@ describe('cells', () => {
     describe('setCellValue', () => {
         it('grows the table to reach a row beyond the end', () => {
             ss.setCellValue(id, 0, 20, 'far');
-            expect(ss.tables.value[0].rows.length).toBe(21);
+            expect(ss.tables.value[0]!.rows.length).toBe(21);
             expect(ss.getDisplayValue(id, 0, 20)).toBe('far');
         });
 
         it('grows the table to reach a column beyond the end', () => {
             ss.setCellValue(id, 9, 0, 'far');
-            expect(ss.tables.value[0].columns.length).toBe(10);
+            expect(ss.tables.value[0]!.columns.length).toBe(10);
             expect(ss.getDisplayValue(id, 9, 0)).toBe('far');
         });
 

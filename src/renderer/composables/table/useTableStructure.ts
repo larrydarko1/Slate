@@ -58,8 +58,10 @@ export function useTableStructure(
     let resizeState: { colIdx: number; startX: number; origWidth: number } | null = null;
 
     function startColResize(ci: number, e: MouseEvent): void {
+        const col = table.value.columns[ci];
+        if (col === undefined) return;
         ss.startUndoBatch();
-        resizeState = { colIdx: ci, startX: e.clientX, origWidth: table.value.columns[ci].width };
+        resizeState = { colIdx: ci, startX: e.clientX, origWidth: col.width };
         document.addEventListener('mousemove', onResizeMove);
         document.addEventListener('mouseup', onResizeEnd);
     }
@@ -69,7 +71,8 @@ export function useTableStructure(
         const zoom = ss.canvasZoom.value;
         const dx = (e.clientX - resizeState.startX) / zoom;
         const newW = Math.max(10, resizeState.origWidth + dx);
-        table.value.columns[resizeState.colIdx].width = newW;
+        const col = table.value.columns[resizeState.colIdx];
+        if (col !== undefined) col.width = newW;
     }
 
     function onResizeEnd(): void {

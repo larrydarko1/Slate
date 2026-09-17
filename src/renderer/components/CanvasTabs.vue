@@ -83,10 +83,10 @@ function startRename(id: string, currentName: string): void {
     renamingId.value = id;
     renameValue.value = currentName;
     void nextTick((): void => {
-        const inputs = renameInputRef.value;
-        if (inputs !== null && inputs.length > 0) {
-            inputs[0].focus();
-            inputs[0].select();
+        const input = renameInputRef.value?.[0];
+        if (input !== undefined) {
+            input.focus();
+            input.select();
         }
     });
 }

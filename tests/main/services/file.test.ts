@@ -1,24 +1,28 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+type Handler = (event: unknown, ...args: unknown[]) => unknown;
+
 const showSaveDialog = vi.fn();
 const showOpenDialog = vi.fn();
+
+vi.mock('electron', () => ({ dialog: { showSaveDialog, showOpenDialog } }));
+
+const readFile = vi.fn();
+
+vi.mock('fs/promises', () => ({ default: { readFile: (...a: unknown[]) => readFile(...a) } }));
+
 const writeFileSync = vi.fn();
 const renameSync = vi.fn();
 const unlinkSync = vi.fn();
-const readFile = vi.fn();
-
-vi.mock('electron', () => ({ dialog: { showSaveDialog, showOpenDialog } }));
 const fsMock = {
     writeFileSync: (...a: unknown[]) => writeFileSync(...a),
     renameSync: (...a: unknown[]) => renameSync(...a),
     unlinkSync: (...a: unknown[]) => unlinkSync(...a),
 };
+
 vi.mock('fs', () => ({ ...fsMock, default: fsMock }));
-vi.mock('fs/promises', () => ({ default: { readFile: (...a: unknown[]) => readFile(...a) } }));
 
 const { register } = await import('@/main/services/file');
-
-type Handler = (event: unknown, ...args: unknown[]) => unknown;
 
 describe('file service', () => {
     let handlers: Map<string, Handler>;

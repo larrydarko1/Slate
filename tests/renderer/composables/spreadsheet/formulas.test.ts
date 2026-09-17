@@ -8,7 +8,7 @@ describe('formulas', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
         ss.selectCell(id, 0, 0);
     });
 
@@ -29,24 +29,24 @@ describe('formulas', () => {
 
         it('qualifies a table on the same canvas', () => {
             ss.addTable();
-            const other = ss.tables.value[1].id;
+            const other = ss.tables.value[1]!.id;
             ss.renameTable(other, 'Other');
             expect(ss.buildCellReferenceString(other, 0, 0)).toBe('Other::A1');
         });
 
         it('quotes a name that is not a bare identifier', () => {
             ss.addTable();
-            const other = ss.tables.value[1].id;
+            const other = ss.tables.value[1]!.id;
             expect(ss.buildCellReferenceString(other, 0, 0)).toBe("'Table 2'::A1");
         });
 
         it('qualifies a table on another canvas with the canvas name too', () => {
             ss.addCanvas();
             ss.addTable();
-            const remote = ss.tables.value[0].id;
+            const remote = ss.tables.value[0]!.id;
             ss.renameTable(remote, 'Remote');
-            ss.renameCanvas(ss.canvases.value[1].id, 'Two');
-            ss.switchCanvas(ss.canvases.value[0].id);
+            ss.renameCanvas(ss.canvases.value[1]!.id, 'Two');
+            ss.switchCanvas(ss.canvases.value[0]!.id);
             ss.selectCell(id, 0, 0);
             expect(ss.buildCellReferenceString(remote, 0, 0)).toBe('Two::Remote::A1');
         });
@@ -97,7 +97,7 @@ describe('formulas', () => {
             ss.insertCellReference(id, 1, 0);
             ss.insertCellReference(id, 2, 0);
             expect(ss.formulaRefs.value).toHaveLength(2);
-            expect(ss.formulaRefs.value[0].color).not.toBe(ss.formulaRefs.value[1].color);
+            expect(ss.formulaRefs.value[0]!.color).not.toBe(ss.formulaRefs.value[1]!.color);
         });
 
         it('does nothing outside formula mode', () => {
@@ -127,10 +127,10 @@ describe('formulas', () => {
 
         it('marks a qualified reference as one token', () => {
             ss.addTable();
-            ss.renameTable(ss.tables.value[1].id, 'Other');
+            ss.renameTable(ss.tables.value[1]!.id, 'Other');
             const refs = ss.getFormulaTokens('=Other::A1').filter((t) => t.isRef);
             expect(refs).toHaveLength(1);
-            expect(refs[0].text).toBe('Other::A1');
+            expect(refs[0]!.text).toBe('Other::A1');
         });
     });
 
@@ -151,14 +151,14 @@ describe('formulas', () => {
 
         it('resolves a table-qualified reference', () => {
             ss.addTable();
-            const other = ss.tables.value[1].id;
+            const other = ss.tables.value[1]!.id;
             ss.renameTable(other, 'Other');
             expect(ss.resolveRefString('Other::A1')).toMatchObject({ tableId: other });
         });
 
         it('resolves a canvas-qualified reference', () => {
             ss.renameTable(id, 'Home');
-            ss.renameCanvas(ss.canvases.value[0].id, 'One');
+            ss.renameCanvas(ss.canvases.value[0]!.id, 'One');
             expect(ss.resolveRefString('One::Home::A1')).toMatchObject({ tableId: id });
         });
 

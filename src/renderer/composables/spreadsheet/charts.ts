@@ -6,7 +6,7 @@
  */
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
-import { CHART_REF_COLORS } from '@/renderer/composables/spreadsheet/state';
+import { chartRefColor } from '@/renderer/composables/spreadsheet/state';
 import type { ChartObject, SpreadsheetTable, CellValue } from '@/renderer/types/spreadsheet';
 import { createDefaultChart, indexToColumnLetter, columnLetterToIndex } from '@/renderer/types/spreadsheet';
 
@@ -160,11 +160,13 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
                 ds.labelRef = { refString: existing !== '' ? `${existing},${refStr}` : refStr };
             }
         } else if (mode.startsWith('series:')) {
-            const idx = parseInt(mode.split(':')[1]);
+            const idx = parseInt(mode.split(':')[1] ?? '');
             while (ds.seriesRefs.length <= idx) {
                 ds.seriesRefs.push({ refString: '' });
             }
-            const existing = ds.seriesRefs[idx].refString;
+            const series = ds.seriesRefs[idx];
+            if (series === undefined) return;
+            const existing = series.refString;
             if (isDragging && existing !== '') {
                 const parts = splitChartRefs(existing);
                 parts[parts.length - 1] = refStr;
@@ -207,37 +209,36 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
     ): { tableId: string; startCol: number; startRow: number; endCol: number; endRow: number } | null {
         if (refString === '') return null;
         const parts = refString.split('::');
-        const cellPart = parts[parts.length - 1];
+        const cellPart = parts[parts.length - 1] ?? '';
 
         const rangeParts = cellPart.split(':');
-        const startMatch = rangeParts[0].match(/^([A-Z]+)(\d+)$/);
-        if (startMatch === null) return null;
+        const [, startLetters, startDigits] = (rangeParts[0] ?? '').match(/^([A-Z]+)(\d+)$/) ?? [];
+        if (startLetters === undefined || startDigits === undefined) return null;
 
-        const startCol = columnLetterToIndex(startMatch[1]);
-        const startRow = parseInt(startMatch[2]) - 1;
+        const startCol = columnLetterToIndex(startLetters);
+        const startRow = parseInt(startDigits) - 1;
         let endCol = startCol;
         let endRow = startRow;
 
         if (rangeParts.length === 2) {
-            const endMatch = rangeParts[1].match(/^([A-Z]+)(\d+)$/);
-            if (endMatch !== null) {
-                endCol = columnLetterToIndex(endMatch[1]);
-                endRow = parseInt(endMatch[2]) - 1;
+            const [, endLetters, endDigits] = (rangeParts[1] ?? '').match(/^([A-Z]+)(\d+)$/) ?? [];
+            if (endLetters !== undefined && endDigits !== undefined) {
+                endCol = columnLetterToIndex(endLetters);
+                endRow = parseInt(endDigits) - 1;
             }
         }
 
         const unquote = (s: string): string => (s.startsWith("'") && s.endsWith("'") ? s.slice(1, -1) : s);
 
         if (parts.length === 2) {
-            const tableName = unquote(parts[0]);
-            const table = deps.findTableByName(tableName);
+            const table = deps.findTableByName(unquote(parts[0] ?? ''));
             if (table === null) return null;
             return { tableId: table.id, startCol, startRow, endCol, endRow };
         }
 
         if (parts.length === 3) {
-            const canvasName = unquote(parts[0]);
-            const tableName = unquote(parts[1]);
+            const canvasName = unquote(parts[0] ?? '');
+            const tableName = unquote(parts[1] ?? '');
             const table = deps.findTableByName(tableName, { canvasName });
             if (table === null) return null;
             return { tableId: table.id, startCol, startRow, endCol, endRow };
@@ -335,7 +336,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
         ds.seriesRefs.forEach((sref, i): void => {
             if (sref.refString === '') return;
             const refs = splitChartRefs(sref.refString);
-            const color = CHART_REF_COLORS[i % CHART_REF_COLORS.length];
+            const color = chartRefColor(i);
             for (const ref of refs) {
                 const resolved = resolveChartRef(ref);
                 if (resolved !== null) {
@@ -391,7 +392,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
         if (mode === 'labels') {
             ds.labelRef = refString !== '' ? { refString } : null;
         } else if (mode.startsWith('series:')) {
-            const idx = parseInt(mode.split(':')[1]);
+            const idx = parseInt(mode.split(':')[1] ?? '');
             while (ds.seriesRefs.length <= idx) {
                 ds.seriesRefs.push({ refString: '' });
             }

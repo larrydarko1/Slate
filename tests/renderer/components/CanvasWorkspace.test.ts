@@ -91,7 +91,7 @@ describe('CanvasWorkspace', () => {
         it('clears the selection when the background is clicked', async () => {
             ss.addTable();
             await wrapper.vm.$nextTick();
-            ss.selectCell(ss.tables.value[0].id, 0, 0);
+            ss.selectCell(ss.tables.value[0]!.id, 0, 0);
             await wrapper.get('.canvas-bg').trigger('mousedown', { button: 0, clientX: 0, clientY: 0 });
             expect(ss.activeCell.value).toBeNull();
         });

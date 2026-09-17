@@ -90,7 +90,8 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
             if (found === null) return null;
             const table = found.table;
             if (row < 0 || row >= table.rows.length || col < 0 || col >= table.columns.length) return null;
-            return table.rows[row][col];
+            // The bounds above are the table's; a row loaded short of them is still ragged.
+            return table.rows[row]?.[col] ?? null;
         }
 
         function resolveCellValue(tableId: string, col: number, row: number): CellValue {
@@ -208,9 +209,9 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
         }
 
         function resolveFormulasIn(table: SpreadsheetTable): void {
-            for (let rowIdx = 0; rowIdx < table.rows.length; rowIdx++) {
+            for (const [rowIdx, row] of table.rows.entries()) {
                 for (let colIdx = 0; colIdx < table.columns.length; colIdx++) {
-                    if (table.rows[rowIdx][colIdx].formula !== undefined) {
+                    if (row[colIdx]?.formula !== undefined) {
                         resolveCellValue(table.id, colIdx, rowIdx);
                     }
                 }
@@ -256,14 +257,14 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                 continue;
             }
 
-            const letters = cellRefMatch[1].toUpperCase();
+            const letters = (cellRefMatch[1] ?? '').toUpperCase();
             const isFunction = /^\s*\(/.test(formula.substring(pos + cellRefMatch[0].length));
             const qualified = result.length >= 2 && result.slice(-2) === '::';
 
             if (isFunction || FORMULA_KEYWORDS.includes(letters) || qualified) {
                 result += cellRefMatch[0];
             } else {
-                const [col, row] = move(columnLetterToIndex(letters), parseInt(cellRefMatch[2]) - 1);
+                const [col, row] = move(columnLetterToIndex(letters), parseInt(cellRefMatch[2] ?? '') - 1);
                 result += indexToColumnLetter(col) + (row + 1);
             }
             pos += cellRefMatch[0].length;

@@ -5,7 +5,7 @@
  */
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
-import { REF_COLORS } from '@/renderer/composables/spreadsheet/state';
+import { refColor } from '@/renderer/composables/spreadsheet/state';
 import type { Cell } from '@/renderer/types/spreadsheet';
 import { indexToColumnLetter, columnLetterToIndex } from '@/renderer/types/spreadsheet';
 
@@ -14,22 +14,36 @@ export type SpreadsheetFormulas = {
     insertCellReference: (tableId: string, col: number, row: number) => void;
     buildCellReferenceString: (targetTableId: string, col: number, row: number) => string;
     getFormulaTokens: (formulaOverride?: string) => FormulaToken[];
-    resolveRefString: (
-        refText: string,
-    ) => { tableId: string; col: number; row: number; endCol?: number; endRow?: number; isRange?: boolean } | null;
+    resolveRefString: (refText: string) => ResolvedRef | null;
     getFormulaHighlights: () => { tableId: string; col: number; row: number; color: string }[];
 };
 
+/** A span of the formula being edited. A token that is not a ref carries none of the rest. */
 export type FormulaToken = {
     text: string;
     isRef: boolean;
-    color?: string;
-    tableId?: string;
-    col?: number;
-    row?: number;
-    endCol?: number;
-    endRow?: number;
-    isRange?: boolean;
+    color?: string | undefined;
+    tableId?: string | undefined;
+    col?: number | undefined;
+    row?: number | undefined;
+    endCol?: number | undefined;
+    endRow?: number | undefined;
+    isRange?: boolean | undefined;
+};
+
+/**
+ * A reference resolved to coordinates. The end coordinates are absent for a
+ * single-cell reference, and spelling them `| undefined` is deliberate: they are
+ * computed as "the range's end, or nothing", so callers assign the result of that
+ * choice directly rather than building the object one branch at a time.
+ */
+type ResolvedRef = {
+    tableId: string;
+    col: number;
+    row: number;
+    endCol?: number | undefined;
+    endRow?: number | undefined;
+    isRange?: boolean | undefined;
 };
 
 type FormulasDeps = {
@@ -72,7 +86,7 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
         const refStr = buildCellReferenceString(tableId, col, row);
         if (refStr === '') return;
 
-        const color = REF_COLORS[state.formulaRefs.value.length % REF_COLORS.length];
+        const color = refColor(state.formulaRefs.value.length);
         state.formulaRefs.value.push({ tableId, col, row, refString: refStr, color });
 
         const current = state.editValue.value;
@@ -82,8 +96,9 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
         }
 
         const trimmed = current.trimEnd();
-        const lastChar = trimmed[trimmed.length - 1];
+        const lastChar = trimmed[trimmed.length - 1] ?? '';
 
+        // `''` has to be excluded first: every string contains the empty string.
         if (lastChar !== '' && '+-*/^(,'.includes(lastChar)) {
             state.editValue.value = current + refStr;
         } else {
@@ -91,36 +106,26 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
         }
     }
 
-    function resolveRefString(
-        refText: string,
-    ): { tableId: string; col: number; row: number; endCol?: number; endRow?: number; isRange?: boolean } | null {
+    function resolveRefString(refText: string): ResolvedRef | null {
         if (state.activeCell.value === null) return null;
 
         const parts = refText.split('::');
-        const cellPart = parts[parts.length - 1];
+        const cellPart = parts[parts.length - 1] ?? '';
 
         const rangeMatch = cellPart.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
         const singleMatch = rangeMatch === null ? cellPart.match(/^([A-Z]+)(\d+)$/) : null;
 
-        const cellMatch = rangeMatch ?? singleMatch;
-        if (cellMatch === null) return null;
+        const [, startLetters, startDigits] = rangeMatch ?? singleMatch ?? [];
+        if (startLetters === undefined || startDigits === undefined) return null;
 
-        const col = columnLetterToIndex(cellMatch[1]);
-        const row = parseInt(cellMatch[2]) - 1;
-        const endCol = rangeMatch !== null ? columnLetterToIndex(rangeMatch[3]) : undefined;
-        const endRow = rangeMatch !== null ? parseInt(rangeMatch[4]) - 1 : undefined;
-        const isRange = !(rangeMatch === null);
+        const col = columnLetterToIndex(startLetters);
+        const row = parseInt(startDigits) - 1;
+        const [, , , endLetters, endDigits] = rangeMatch ?? [];
+        const endCol = endLetters !== undefined ? columnLetterToIndex(endLetters) : undefined;
+        const endRow = endDigits !== undefined ? parseInt(endDigits) - 1 : undefined;
+        const isRange = rangeMatch !== null;
 
-        const buildResult = (
-            tableId: string,
-        ): {
-            tableId: string;
-            col: number;
-            row: number;
-            endCol: number | undefined;
-            endRow: number | undefined;
-            isRange: boolean;
-        } => ({ tableId, col, row, endCol, endRow, isRange });
+        const buildResult = (tableId: string): ResolvedRef => ({ tableId, col, row, endCol, endRow, isRange });
 
         if (parts.length === 1) {
             return buildResult(state.activeCell.value.tableId);
@@ -129,15 +134,14 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
         const unquote = (s: string): string => (s.startsWith("'") && s.endsWith("'") ? s.slice(1, -1) : s);
 
         if (parts.length === 2) {
-            const tableName = unquote(parts[0]);
-            const table = deps.findTableByName(tableName);
+            const table = deps.findTableByName(unquote(parts[0] ?? ''));
             if (table === null) return null;
             return buildResult(table.id);
         }
 
         if (parts.length === 3) {
-            const canvasName = unquote(parts[0]);
-            const tableName = unquote(parts[1]);
+            const canvasName = unquote(parts[0] ?? '');
+            const tableName = unquote(parts[1] ?? '');
             const table = deps.findTableByName(tableName, { canvasName });
             if (table === null) return null;
             return buildResult(table.id);
@@ -163,7 +167,7 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
             }
             const refText = match[0];
             const resolved = resolveRefString(refText);
-            const color = REF_COLORS[colorIdx % REF_COLORS.length];
+            const color = refColor(colorIdx);
             tokens.push({
                 text: refText,
                 isRef: true,

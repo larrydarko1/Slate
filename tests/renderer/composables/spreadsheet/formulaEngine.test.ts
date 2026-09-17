@@ -23,7 +23,7 @@ describe('formulaEngine', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
     });
 
     describe('recalculation', () => {
@@ -56,7 +56,7 @@ describe('formulaEngine', () => {
 
         it('reads a cell in another table on the same canvas', () => {
             ss.addTable();
-            const other = ss.tables.value[1].id;
+            const other = ss.tables.value[1]!.id;
             ss.renameTable(other, 'Other');
             ss.setCellValue(other, 0, 0, '11');
             ss.setCellValue(id, 0, 0, '=Other::A1');
@@ -65,15 +65,15 @@ describe('formulaEngine', () => {
 
         it('reads a cell on another canvas', () => {
             ss.renameTable(id, 'Home');
-            ss.renameCanvas(ss.canvases.value[0].id, 'One');
+            ss.renameCanvas(ss.canvases.value[0]!.id, 'One');
             ss.addCanvas();
             ss.addTable();
-            const remote = ss.tables.value[0].id;
+            const remote = ss.tables.value[0]!.id;
             ss.renameTable(remote, 'Remote');
             ss.setCellValue(remote, 0, 0, '=One::Home::A1');
-            ss.switchCanvas(ss.canvases.value[0].id);
+            ss.switchCanvas(ss.canvases.value[0]!.id);
             ss.setCellValue(id, 0, 0, '7');
-            ss.switchCanvas(ss.canvases.value[1].id);
+            ss.switchCanvas(ss.canvases.value[1]!.id);
             expect(ss.getDisplayValue(remote, 0, 0)).toBe('7');
         });
 
@@ -86,7 +86,7 @@ describe('formulaEngine', () => {
     describe('renaming', () => {
         it('rewrites references when a table is renamed', () => {
             ss.addTable();
-            const other = ss.tables.value[1].id;
+            const other = ss.tables.value[1]!.id;
             ss.renameTable(other, 'Src');
             ss.setCellValue(other, 0, 0, '3');
             ss.setCellValue(id, 0, 0, '=Src::A1');
@@ -97,7 +97,7 @@ describe('formulaEngine', () => {
 
         it('quotes a new name that needs it', () => {
             ss.addTable();
-            const other = ss.tables.value[1].id;
+            const other = ss.tables.value[1]!.id;
             ss.renameTable(other, 'Src');
             ss.setCellValue(id, 0, 0, '=Src::A1');
             ss.renameTable(other, 'New Name');
@@ -106,12 +106,12 @@ describe('formulaEngine', () => {
 
         it('rewrites references when a canvas is renamed', () => {
             ss.renameTable(id, 'Home');
-            ss.renameCanvas(ss.canvases.value[0].id, 'One');
+            ss.renameCanvas(ss.canvases.value[0]!.id, 'One');
             ss.addCanvas();
             ss.addTable();
-            const remote = ss.tables.value[0].id;
+            const remote = ss.tables.value[0]!.id;
             ss.setCellValue(remote, 0, 0, '=One::Home::A1');
-            ss.renameCanvas(ss.canvases.value[0].id, 'Renamed');
+            ss.renameCanvas(ss.canvases.value[0]!.id, 'Renamed');
             expect(ss.getRawValue(remote, 0, 0)).toBe('=Renamed::Home::A1');
         });
 
@@ -119,12 +119,12 @@ describe('formulaEngine', () => {
             ss.addChart();
             ss.setChartDataRef('labels', "'Table 1'::A1:A3");
             ss.renameTable(id, 'Data');
-            expect(ss.charts.value[0].dataSource?.labelRef?.refString).toBe('Data::A1:A3');
+            expect(ss.charts.value[0]!.dataSource?.labelRef?.refString).toBe('Data::A1:A3');
         });
 
         it('leaves a name that only appears as text alone', () => {
             ss.addTable();
-            const other = ss.tables.value[1].id;
+            const other = ss.tables.value[1]!.id;
             ss.renameTable(other, 'Src');
             ss.setCellValue(id, 0, 0, '="Src is a table"');
             ss.renameTable(other, 'Dest');
@@ -209,8 +209,8 @@ describe('formulaEngine', () => {
                 ],
             } as unknown as Parameters<typeof engine.remapAllFormulasInTable>[0];
             engine.remapAllFormulasInTable(table, (col) => col + 1, null);
-            expect(table.rows[0][0].formula).toBe('B1');
-            expect(table.rows[1][0].formula).toBe('C2');
+            expect(table.rows[0]![0]!.formula).toBe('B1');
+            expect(table.rows[1]![0]!.formula).toBe('C2');
         });
     });
 });

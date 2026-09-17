@@ -9,9 +9,9 @@ describe('charts', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        tableId = ss.tables.value[0].id;
+        tableId = ss.tables.value[0]!.id;
         ss.addChart();
-        chartId = ss.charts.value[0].id;
+        chartId = ss.charts.value[0]!.id;
     });
 
     describe('CRUD', () => {
@@ -54,7 +54,7 @@ describe('charts', () => {
             ss.moveChart('nope', 1, 1);
             ss.resizeChart('nope', 1, 1);
             ss.updateChart('nope', { title: 'x' });
-            expect(ss.charts.value[0].title).not.toBe('x');
+            expect(ss.charts.value[0]!.title).not.toBe('x');
         });
 
         it('selecting a chart drops the cell selection', () => {
@@ -92,38 +92,38 @@ describe('charts', () => {
         it('writes a picked range into the label ref', () => {
             ss.startChartDataSelection('labels');
             ss.handleChartCellSelection(tableId, 0, 0, 0, 3);
-            expect(ss.charts.value[0].dataSource?.labelRef?.refString).toBe("'Table 1'::A1:A4");
+            expect(ss.charts.value[0]!.dataSource?.labelRef?.refString).toBe("'Table 1'::A1:A4");
         });
 
         it('writes a picked range into a series ref', () => {
             ss.startChartDataSelection('series:0');
             ss.handleChartCellSelection(tableId, 1, 0, 1, 3);
-            expect(ss.charts.value[0].dataSource?.seriesRefs[0].refString).toBe("'Table 1'::B1:B4");
+            expect(ss.charts.value[0]!.dataSource?.seriesRefs[0]!.refString).toBe("'Table 1'::B1:B4");
         });
 
         it('appends a second pick as another comma-separated ref', () => {
             ss.startChartDataSelection('labels');
             ss.handleChartCellSelection(tableId, 0, 0, 0, 1);
             ss.handleChartCellSelection(tableId, 2, 0, 2, 1);
-            expect(ss.charts.value[0].dataSource?.labelRef?.refString).toBe("'Table 1'::A1:A2,'Table 1'::C1:C2");
+            expect(ss.charts.value[0]!.dataSource?.labelRef?.refString).toBe("'Table 1'::A1:A2,'Table 1'::C1:C2");
         });
 
         it('replaces the last ref while a drag is still live', () => {
             ss.startChartDataSelection('labels');
             ss.handleChartCellSelection(tableId, 0, 0, 0, 1);
             ss.handleChartCellSelection(tableId, 0, 0, 0, 3, true);
-            expect(ss.charts.value[0].dataSource?.labelRef?.refString).toBe("'Table 1'::A1:A4");
+            expect(ss.charts.value[0]!.dataSource?.labelRef?.refString).toBe("'Table 1'::A1:A4");
         });
 
         it('does nothing when not armed', () => {
             ss.handleChartCellSelection(tableId, 0, 0, 0, 1);
-            expect(ss.charts.value[0].dataSource?.labelRef).toBeFalsy();
+            expect(ss.charts.value[0]!.dataSource?.labelRef).toBeFalsy();
         });
 
         it('ignores a pick on an unknown table', () => {
             ss.startChartDataSelection('labels');
             ss.handleChartCellSelection('nope', 0, 0, 0, 1);
-            expect(ss.charts.value[0].dataSource?.labelRef).toBeFalsy();
+            expect(ss.charts.value[0]!.dataSource?.labelRef).toBeFalsy();
         });
     });
 
@@ -218,25 +218,25 @@ describe('charts', () => {
     describe('series', () => {
         it('adds and removes a series', () => {
             ss.addChartSeries();
-            expect(ss.charts.value[0].dataSource?.seriesRefs).toHaveLength(1);
+            expect(ss.charts.value[0]!.dataSource?.seriesRefs).toHaveLength(1);
             ss.addChartSeries();
-            expect(ss.charts.value[0].dataSource?.seriesRefs).toHaveLength(2);
+            expect(ss.charts.value[0]!.dataSource?.seriesRefs).toHaveLength(2);
             ss.removeChartSeries(0);
-            expect(ss.charts.value[0].dataSource?.seriesRefs).toHaveLength(1);
+            expect(ss.charts.value[0]!.dataSource?.seriesRefs).toHaveLength(1);
         });
 
         it('sets a ref directly', () => {
             ss.addChartSeries();
             ss.setChartDataRef('series:0', 'Table 1::A1:A3');
-            expect(ss.charts.value[0].dataSource?.seriesRefs[0].refString).toBe('Table 1::A1:A3');
+            expect(ss.charts.value[0]!.dataSource?.seriesRefs[0]!.refString).toBe('Table 1::A1:A3');
             ss.setChartDataRef('labels', 'Table 1::B1:B3');
-            expect(ss.charts.value[0].dataSource?.labelRef?.refString).toBe('Table 1::B1:B3');
+            expect(ss.charts.value[0]!.dataSource?.labelRef?.refString).toBe('Table 1::B1:B3');
         });
 
         it('clears the label ref when set to nothing', () => {
             ss.setChartDataRef('labels', 'Table 1::A1');
             ss.setChartDataRef('labels', '');
-            expect(ss.charts.value[0].dataSource?.labelRef).toBeNull();
+            expect(ss.charts.value[0]!.dataSource?.labelRef).toBeNull();
         });
 
         it('does nothing with no chart selected', () => {

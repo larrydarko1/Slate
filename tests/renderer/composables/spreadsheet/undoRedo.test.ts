@@ -15,7 +15,7 @@ describe('undoRedo', () => {
     beforeEach(async () => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
         await settle();
     });
 
@@ -98,8 +98,8 @@ describe('undoRedo', () => {
         ss.endUndoBatch();
         expect(ss.tables.value[0]).toMatchObject({ x: 30, y: 30 });
         ss.undo();
-        expect(ss.tables.value[0].x).not.toBe(10);
-        expect(ss.tables.value[0].x).not.toBe(20);
+        expect(ss.tables.value[0]!.x).not.toBe(10);
+        expect(ss.tables.value[0]!.x).not.toBe(20);
     });
 
     it('starts a fresh step after the batch closes', async () => {
@@ -126,6 +126,6 @@ describe('undoRedo', () => {
         await settle();
         ss.undo();
         expect(ss.canvases.value).toHaveLength(1);
-        expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0].id);
+        expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0]!.id);
     });
 });

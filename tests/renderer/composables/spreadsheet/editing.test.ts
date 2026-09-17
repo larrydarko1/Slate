@@ -8,7 +8,7 @@ describe('editing', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
     });
 
     describe('startEditing', () => {
@@ -74,9 +74,9 @@ describe('editing', () => {
             ss.startEditing('=');
             ss.toggleFormulaMode();
             ss.addCanvas();
-            expect(ss.activeCanvasId.value).not.toBe(ss.canvases.value[0].id);
+            expect(ss.activeCanvasId.value).not.toBe(ss.canvases.value[0]!.id);
             ss.commitEdit();
-            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0].id);
+            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0]!.id);
         });
 
         it('commits a non-formula edit as soon as the canvas changes', () => {
@@ -106,7 +106,7 @@ describe('editing', () => {
             ss.toggleFormulaMode();
             ss.addCanvas();
             ss.cancelEdit();
-            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0].id);
+            expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0]!.id);
         });
     });
 

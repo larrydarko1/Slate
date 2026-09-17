@@ -47,7 +47,8 @@ export function createCanvases(state: SpreadsheetCoreState, deps: CanvasesDeps):
         if (idx < 0) return;
         state.canvases.value.splice(idx, 1);
         if (state.activeCanvasId.value === canvasId) {
-            state.activeCanvasId.value = state.canvases.value[Math.min(idx, state.canvases.value.length - 1)].id;
+            const next = state.canvases.value[Math.min(idx, state.canvases.value.length - 1)];
+            if (next !== undefined) state.activeCanvasId.value = next.id;
         }
         state.activeCell.value = null;
         state.selectionRange.value = null;
@@ -126,6 +127,7 @@ export function createCanvases(state: SpreadsheetCoreState, deps: CanvasesDeps):
         if (fromIndex < 0 || toIndex < 0) return;
         if (fromIndex >= state.canvases.value.length || toIndex >= state.canvases.value.length) return;
         const [moved] = state.canvases.value.splice(fromIndex, 1);
+        if (moved === undefined) return;
         state.canvases.value.splice(toIndex, 0, moved);
     }
 

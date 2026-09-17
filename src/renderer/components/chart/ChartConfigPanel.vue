@@ -2,23 +2,18 @@
 import { useId } from 'vue';
 import type { ChartObject } from '@/renderer/types/spreadsheet';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import { chartRefColor } from '@/renderer/composables/spreadsheet/state';
 
 const props = defineProps<{ chart: ChartObject }>();
-
-const CHART_REF_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
 const ss = injectSpreadsheet();
 
 const uid = useId();
 
-function seriesColor(i: number): string {
-    return CHART_REF_COLORS[i % CHART_REF_COLORS.length];
-}
-
 function refFieldStyle(mode: string): Record<string, string> {
     const isPicking = ss.chartSelectionMode.value === mode;
     if (!isPicking) return {};
-    const color = mode === 'labels' ? '#94a3b8' : seriesColor(parseInt(mode.split(':')[1] ?? '0'));
+    const color = mode === 'labels' ? '#94a3b8' : chartRefColor(parseInt(mode.split(':')[1] ?? '0'));
     return {
         borderColor: color,
         boxShadow: '0 0 0 1px ' + color,
@@ -138,7 +133,7 @@ function onGridToggle(e: Event): void {
                 @click="onRefFieldClick('series:' + i)">
                 <span
                     class="ref-color-dot"
-                    :style="{ background: seriesColor(i) }"></span>
+                    :style="{ background: chartRefColor(i) }"></span>
                 <input
                     class="ref-input"
                     :value="sref.refString"

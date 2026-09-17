@@ -8,6 +8,8 @@ import type { ChartObject } from '@/renderer/types/spreadsheet';
 // ChartType is module-private in the source; the chart's own field is the contract.
 type ChartType = ChartObject['chartType'];
 
+type Dataset = { label?: string; data: unknown[]; backgroundColor?: unknown; fill?: boolean; tension?: number };
+
 /**
  * The composable installs a MutationObserver in onMounted, so it has to run
  * inside a real component instance — otherwise that half never executes and the
@@ -26,8 +28,6 @@ function mountWith(chart: Ref<ChartObject>, ss: SpreadsheetState) {
     return { api, wrapper };
 }
 
-type Dataset = { label?: string; data: unknown[]; backgroundColor?: unknown; fill?: boolean; tension?: number };
-
 describe('useChartData', () => {
     let ss: SpreadsheetState;
     let chart: Ref<ChartObject>;
@@ -36,7 +36,7 @@ describe('useChartData', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
         ss.renameTable(id, 'Data');
         ss.setCellValue(id, 0, 0, 'Month');
         ss.setCellValue(id, 1, 0, 'Sales');
@@ -45,7 +45,7 @@ describe('useChartData', () => {
             ss.setCellValue(id, 1, r, String(r * 10));
         }
         ss.addChart();
-        chart = ref(ss.charts.value[0]);
+        chart = ref(ss.charts.value[0]!);
     });
 
     function withRefs(type: ChartType = 'bar', useHeader = true): void {
@@ -94,8 +94,8 @@ describe('useChartData', () => {
             withRefs('bar', true);
             const { api } = mountWith(chart, ss);
             const datasets = api.chartData.value?.datasets as Dataset[];
-            expect(datasets[0].label).toBe('Sales');
-            expect(datasets[0].data).toEqual([10, 20, 30]);
+            expect(datasets[0]!.label).toBe('Sales');
+            expect(datasets[0]!.data).toEqual([10, 20, 30]);
             expect(api.chartData.value?.labels).toEqual(['M1', 'M2', 'M3']);
         });
 
@@ -103,8 +103,8 @@ describe('useChartData', () => {
             withRefs('bar', false);
             const { api } = mountWith(chart, ss);
             const datasets = api.chartData.value?.datasets as Dataset[];
-            expect(datasets[0].label).toBe('Series 1');
-            expect(datasets[0].data).toHaveLength(4);
+            expect(datasets[0]!.label).toBe('Series 1');
+            expect(datasets[0]!.data).toHaveLength(4);
         });
 
         it('numbers the labels when none are given', () => {
@@ -117,16 +117,16 @@ describe('useChartData', () => {
 
         it('fills a line chart only in area mode', () => {
             withRefs('line');
-            expect((mountWith(chart, ss).api.chartData.value?.datasets as Dataset[])[0].fill).toBe(false);
+            expect((mountWith(chart, ss).api.chartData.value?.datasets as Dataset[])[0]!.fill).toBe(false);
             withRefs('area');
-            expect((mountWith(chart, ss).api.chartData.value?.datasets as Dataset[])[0].fill).toBe(true);
+            expect((mountWith(chart, ss).api.chartData.value?.datasets as Dataset[])[0]!.fill).toBe(true);
         });
 
         it('curves a line but not a bar', () => {
             withRefs('line');
-            expect((mountWith(chart, ss).api.chartData.value?.datasets as Dataset[])[0].tension).toBe(0.3);
+            expect((mountWith(chart, ss).api.chartData.value?.datasets as Dataset[])[0]!.tension).toBe(0.3);
             withRefs('bar');
-            expect((mountWith(chart, ss).api.chartData.value?.datasets as Dataset[])[0].tension).toBe(0);
+            expect((mountWith(chart, ss).api.chartData.value?.datasets as Dataset[])[0]!.tension).toBe(0);
         });
 
         it('gives a pie one dataset with a colour per slice', () => {
@@ -134,14 +134,14 @@ describe('useChartData', () => {
             const { api } = mountWith(chart, ss);
             const datasets = api.chartData.value?.datasets as Dataset[];
             expect(datasets).toHaveLength(1);
-            expect(datasets[0].data).toEqual([10, 20, 30]);
-            expect(datasets[0].backgroundColor).toHaveLength(3);
+            expect(datasets[0]!.data).toEqual([10, 20, 30]);
+            expect(datasets[0]!.backgroundColor).toHaveLength(3);
         });
 
         it('builds x/y points for a scatter', () => {
             withRefs('scatter');
             const { api } = mountWith(chart, ss);
-            const points = (api.chartData.value?.datasets as Dataset[])[0].data as { x: number; y: number }[];
+            const points = (api.chartData.value?.datasets as Dataset[])[0]!.data as { x: number; y: number }[];
             // The labels are 'M1'..'M3', which are not numbers, so each point
             // falls back to its ordinal x position.
             expect(points).toEqual([
@@ -155,28 +155,28 @@ describe('useChartData', () => {
             for (let r = 1; r <= 3; r++) ss.setCellValue(id, 0, r, String(r * 5));
             withRefs('scatter');
             const { api } = mountWith(chart, ss);
-            const points = (api.chartData.value?.datasets as Dataset[])[0].data as { x: number }[];
+            const points = (api.chartData.value?.datasets as Dataset[])[0]!.data as { x: number }[];
             expect(points.map((p) => p.x)).toEqual([5, 10, 15]);
         });
 
         it('gives a radar a filled dataset', () => {
             withRefs('radar');
             const { api } = mountWith(chart, ss);
-            expect((api.chartData.value?.datasets as Dataset[])[0].fill).toBe(true);
+            expect((api.chartData.value?.datasets as Dataset[])[0]!.fill).toBe(true);
         });
 
         it('reads a computed formula as a number', () => {
             ss.setCellValue(id, 1, 3, '=B2+B3');
             withRefs('bar');
             const { api } = mountWith(chart, ss);
-            expect((api.chartData.value?.datasets as Dataset[])[0].data).toEqual([10, 20, 30]);
+            expect((api.chartData.value?.datasets as Dataset[])[0]!.data).toEqual([10, 20, 30]);
         });
 
         it('treats text as zero', () => {
             ss.setCellValue(id, 1, 2, 'not a number');
             withRefs('bar');
             const { api } = mountWith(chart, ss);
-            expect((api.chartData.value?.datasets as Dataset[])[0].data).toEqual([10, 0, 30]);
+            expect((api.chartData.value?.datasets as Dataset[])[0]!.data).toEqual([10, 0, 30]);
         });
 
         it('skips a series with an empty reference', () => {
@@ -206,7 +206,7 @@ describe('useChartData', () => {
             withRefs('bar');
             ss.updateChart(chart.value.id, { showGrid: false });
             const scales = mountWith(chart, ss).api.chartOptions.value.scales as Record<string, { display: boolean }>;
-            expect(scales.x.display).toBe(false);
+            expect(scales['x']!.display).toBe(false);
         });
 
         it('gives a pie no scales at all', () => {
@@ -223,7 +223,7 @@ describe('useChartData', () => {
         it('makes the scatter x axis linear', () => {
             withRefs('scatter');
             const scales = mountWith(chart, ss).api.chartOptions.value.scales as Record<string, { type?: string }>;
-            expect(scales.x.type).toBe('linear');
+            expect(scales['x']!.type).toBe('linear');
         });
     });
 

@@ -51,10 +51,11 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
             for (let colIdx = sr.startCol; colIdx <= sr.endCol; colIdx++) {
                 const raw = deps.getRawValue(sr.tableId, colIdx, rowIdx);
                 const cell = deps.findCell(sr.tableId, colIdx, rowIdx);
-                rowCells.push({
-                    raw,
-                    format: cell?.format !== undefined ? { ...cell.format } : undefined,
-                });
+                const copied: ClipboardCell = { raw };
+                // Set only when there is one: an absent format and a `format` key
+                // holding `undefined` are different things to the paste side.
+                if (cell?.format !== undefined) copied.format = { ...cell.format };
+                rowCells.push(copied);
                 tsvCols.push(deps.getDisplayValue(sr.tableId, colIdx, rowIdx));
             }
             rows.push(rowCells);
@@ -124,9 +125,8 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
             return '=' + deps.shiftFormulaReferences(raw.substring(1), colDelta, rowDelta);
         }
 
-        for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
-            for (let colIdx = 0; colIdx < data[rowIdx].length; colIdx++) {
-                const entry = data[rowIdx][colIdx];
+        for (const [rowIdx, dataRow] of data.entries()) {
+            for (const [colIdx, entry] of dataRow.entries()) {
                 deps.setCellValue(
                     tableId,
                     startCol + colIdx,

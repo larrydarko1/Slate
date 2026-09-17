@@ -11,7 +11,7 @@ describe('FormulaBar', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        id = ss.tables.value[0].id;
+        id = ss.tables.value[0]!.id;
         wrapper = mount(FormulaBar, { global: { provide: { [SPREADSHEET_KEY as symbol]: ss } } });
     });
 

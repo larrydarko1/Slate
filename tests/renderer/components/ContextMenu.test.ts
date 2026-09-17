@@ -59,7 +59,7 @@ describe('ContextMenu', () => {
         api.open(0, 0, ITEMS());
         await wrapper.vm.$nextTick();
         const item = document.body.querySelectorAll('[role="menuitem"]')[0];
-        item.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        item!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
         await wrapper.vm.$nextTick();
         expect(action).toHaveBeenCalledTimes(1);
     });
@@ -75,7 +75,7 @@ describe('ContextMenu', () => {
         api.open(0, 0, ITEMS());
         await wrapper.vm.$nextTick();
         const items = document.body.querySelectorAll('[role="menuitem"]');
-        expect(items[1].classList.contains('danger')).toBe(true);
+        expect(items[1]!.classList.contains('danger')).toBe(true);
     });
 
     it('closes on a click outside', async () => {

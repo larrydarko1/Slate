@@ -41,18 +41,18 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
         return (rows ?? []).map((row: unknown[]): Cell[] =>
             row.map((cell: unknown): Cell => {
                 const raw = cell as Record<string, unknown>;
-                if (raw.cellType === undefined) {
-                    if (raw.value === null || raw.value === undefined) {
-                        raw.cellType = 'empty';
-                    } else if (typeof raw.value === 'boolean') {
-                        raw.cellType = 'boolean';
-                    } else if (typeof raw.value === 'number') {
-                        raw.cellType = Number.isInteger(raw.value) ? 'integer' : 'float';
-                    } else if (typeof raw.value === 'string') {
-                        const detected = detectType(raw.value);
-                        raw.cellType = detected.type;
+                if (raw['cellType'] === undefined) {
+                    const value = raw['value'];
+                    if (value === null || value === undefined) {
+                        raw['cellType'] = 'empty';
+                    } else if (typeof value === 'boolean') {
+                        raw['cellType'] = 'boolean';
+                    } else if (typeof value === 'number') {
+                        raw['cellType'] = Number.isInteger(value) ? 'integer' : 'float';
+                    } else if (typeof value === 'string') {
+                        raw['cellType'] = detectType(value).type;
                     } else {
-                        raw.cellType = 'text';
+                        raw['cellType'] = 'text';
                     }
                 }
                 return raw as unknown as Cell;
@@ -63,8 +63,8 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
     function migrateTable(t: Record<string, unknown>): SpreadsheetTable {
         return {
             ...t,
-            mergedRegions: (t.mergedRegions as unknown[]) ?? [],
-            rows: migrateTableRows(t.rows as unknown[][]),
+            mergedRegions: (t['mergedRegions'] as unknown[]) ?? [],
+            rows: migrateTableRows(t['rows'] as unknown[][]),
         } as SpreadsheetTable;
     }
 
@@ -72,17 +72,17 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
         chart: Record<string, unknown>,
         allTables: SpreadsheetTable[],
     ): Record<string, unknown> {
-        if (chart.dataSource === undefined || chart.dataSource === null) return chart;
-        const ds = chart.dataSource as Record<string, unknown>;
+        if (chart['dataSource'] === undefined || chart['dataSource'] === null) return chart;
+        const ds = chart['dataSource'] as Record<string, unknown>;
 
         // Already new format
         if ('labelRef' in ds || 'seriesRefs' in ds) return chart;
 
         // Old format: { tableId, labelCol, valueCols, useHeader }
         if ('tableId' in ds && 'valueCols' in ds) {
-            const table = allTables.find((t): boolean => t.id === ds.tableId);
+            const table = allTables.find((t): boolean => t.id === ds['tableId']);
             if (table === undefined) {
-                chart.dataSource = null;
+                chart['dataSource'] = null;
                 return chart;
             }
             const rowCount = table.rows.length;
@@ -94,12 +94,12 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
                 return `${quoteIfNeeded(tableName)}::${colLetter}1:${colLetter}${rowCount}`;
             };
 
-            chart.dataSource = {
-                labelRef: { refString: buildRef((ds.labelCol as number) ?? 0) },
-                seriesRefs: ((ds.valueCols as number[]) ?? []).map((col: number): { refString: string } => ({
+            chart['dataSource'] = {
+                labelRef: { refString: buildRef((ds['labelCol'] as number) ?? 0) },
+                seriesRefs: ((ds['valueCols'] as number[]) ?? []).map((col: number): { refString: string } => ({
                     refString: buildRef(col),
                 })),
-                useHeader: (ds.useHeader as boolean) ?? true,
+                useHeader: (ds['useHeader'] as boolean) ?? true,
             };
         }
 
@@ -112,39 +112,44 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
         try {
             const data = JSON.parse(jsonContent) as Record<string, unknown>;
 
-            if (data.version === '2.0' && Array.isArray(data.canvases)) {
-                const rawCanvases = data.canvases as Record<string, unknown>[];
+            // An empty canvas list is not a loadable document: the whole state model
+            // assumes an active canvas exists, so it is rejected here rather than
+            // leaving every reader of `activeCanvas` to cope with its absence.
+            if (data['version'] === '2.0' && Array.isArray(data['canvases']) && data['canvases'].length > 0) {
+                const rawCanvases = data['canvases'] as Record<string, unknown>[];
                 state.canvases.value = rawCanvases.map((cv) => {
-                    const tables = ((cv.tables as unknown[]) ?? []).map(
+                    const tables = ((cv['tables'] as unknown[]) ?? []).map(
                         (t): SpreadsheetTable => migrateTable(t as Record<string, unknown>),
                     );
-                    const charts = ((cv.charts as unknown[]) ?? []).map(
+                    const charts = ((cv['charts'] as unknown[]) ?? []).map(
                         (ch): Record<string, unknown> => migrateChartDataSource(ch as Record<string, unknown>, tables),
                     );
                     return {
-                        id: cv.id as string,
-                        name: cv.name as string,
-                        canvasOffset: (cv.canvasOffset as { x: number; y: number }) ?? { x: 0, y: 0 },
-                        canvasZoom: (cv.canvasZoom as number) ?? 1.0,
+                        id: cv['id'] as string,
+                        name: cv['name'] as string,
+                        canvasOffset: (cv['canvasOffset'] as { x: number; y: number }) ?? { x: 0, y: 0 },
+                        canvasZoom: (cv['canvasZoom'] as number) ?? 1.0,
                         tables,
-                        textBoxes: (cv.textBoxes as unknown[]) ?? [],
+                        textBoxes: (cv['textBoxes'] as unknown[]) ?? [],
                         charts,
                     };
                 }) as typeof state.canvases.value;
 
                 state.counters.canvasCount = state.canvases.value.length;
-                state.activeCanvasId.value = (data.activeCanvasId as string) ?? state.canvases.value[0].id;
+                // A v2.0 file with an empty `canvases` array names no active canvas.
+                state.activeCanvasId.value =
+                    (data['activeCanvasId'] as string | undefined) ?? state.canvases.value[0]?.id ?? '';
                 deps.recalculateMaxZ();
                 state.counters.tableCount = state.canvases.value.reduce((sum, cv): number => sum + cv.tables.length, 0);
-            } else if (Array.isArray(data.tables)) {
+            } else if (Array.isArray(data['tables'])) {
                 // V1 format — single canvas, migrate
-                const migrated = (data.tables as unknown[]).map(
+                const migrated = (data['tables'] as unknown[]).map(
                     (t): SpreadsheetTable => migrateTable(t as Record<string, unknown>),
                 );
                 const canvas = createDefaultCanvas('Canvas 1');
                 canvas.tables = migrated;
-                if (data.canvasOffset !== undefined && data.canvasOffset !== null) {
-                    canvas.canvasOffset = data.canvasOffset as { x: number; y: number };
+                if (data['canvasOffset'] !== undefined && data['canvasOffset'] !== null) {
+                    canvas.canvasOffset = data['canvasOffset'] as { x: number; y: number };
                 }
                 state.canvases.value = [canvas];
                 state.counters.canvasCount = 1;
@@ -208,6 +213,7 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
         if (result.canceled || result.filePaths.length === 0) return false;
 
         const filePath = result.filePaths[0];
+        if (filePath === undefined) return false;
         return loadFileFromPath(filePath);
     }
 

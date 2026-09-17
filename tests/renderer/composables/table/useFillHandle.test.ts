@@ -54,7 +54,7 @@ describe('useFillHandle', () => {
     beforeEach(() => {
         ss = useSpreadsheet();
         ss.addTable();
-        table = ref(ss.tables.value[0]);
+        table = ref(ss.tables.value[0]!);
         id = table.value.id;
         fill = useFillHandle(table, ss, ref(buildGrid(5, 8)));
     });
@@ -77,7 +77,7 @@ describe('useFillHandle', () => {
 
         it('marks nothing when another table holds the selection', () => {
             ss.addTable();
-            ss.selectCell(ss.tables.value[1].id, 0, 0);
+            ss.selectCell(ss.tables.value[1]!.id, 0, 0);
             expect(fill.isSelectionCorner(0, 0)).toBe(false);
         });
     });

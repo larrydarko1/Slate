@@ -5,6 +5,9 @@ import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cel
 import type { CellValue } from '@/renderer/types/spreadsheet';
 import type { ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
 
+/** The context every case that reads no cell shares. */
+const emptyCtx = gridContext([]);
+
 // ── Test helpers ─────────────────────────────────────────────────────────────
 
 function gridContext(grid: CellValue[][], types?: CellDataType[][]): FormulaContext {
@@ -26,8 +29,6 @@ function gridContext(grid: CellValue[][], types?: CellDataType[][]): FormulaCont
         },
     };
 }
-
-const emptyCtx = gridContext([]);
 
 // ── Numeric coercion in arithmetic ───────────────────────────────────────────
 

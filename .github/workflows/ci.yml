@@ -79,8 +79,11 @@ jobs:
             - name: Dead code check
               run: npm run dead:check
 
+            - name: tsconfig check
+              run: npm run tsconfig:check
+
             - name: Type check
-              run: npx vue-tsc -b
+              run: npm run typecheck
 
             - name: Build
               run: npx electron-vite build
