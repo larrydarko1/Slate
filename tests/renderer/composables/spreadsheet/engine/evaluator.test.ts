@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toNumber, evaluate, evaluateVal } from '@/renderer/composables/spreadsheet/engine/evaluator';
+import { evaluate } from '@/renderer/composables/spreadsheet/engine/evaluator';
 import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { CellValue } from '@/renderer/types/spreadsheet';
@@ -29,16 +29,33 @@ function gridContext(grid: CellValue[][], types?: CellDataType[][]): FormulaCont
 
 const emptyCtx = gridContext([]);
 
-// ── toNumber ─────────────────────────────────────────────────────────────────
+// ── Numeric coercion in arithmetic ───────────────────────────────────────────
 
-describe('toNumber', () => {
-    it('returns 0 for null', () => expect(toNumber(null)).toBe(0));
-    it('returns 0 for empty string', () => expect(toNumber('')).toBe(0));
-    it('passes through numbers', () => expect(toNumber(42)).toBe(42));
-    it('converts true to 1', () => expect(toNumber(true)).toBe(1));
-    it('converts false to 0', () => expect(toNumber(false)).toBe(0));
-    it('parses numeric strings', () => expect(toNumber('3.14')).toBeCloseTo(3.14));
-    it('returns 0 for non-numeric strings', () => expect(toNumber('abc')).toBe(0));
+/**
+ * The evaluator coerces an operand to a number only once the type layer has
+ * approved the operation, so these go through arithmetic on a numeric-typed
+ * cell — the path a stray value in a numeric column actually takes.
+ */
+describe('numeric coercion of cell values', () => {
+    /** `value` + 0, with the cell declared 'integer' by gridContext's default. */
+    const plusZero = (value: CellValue): CellValue =>
+        evaluate(
+            {
+                type: 'binary',
+                op: '+',
+                left: { type: 'cell_ref', col: 0, row: 0 },
+                right: { type: 'number', value: 0 },
+            },
+            gridContext([[value]]),
+        ).value;
+
+    it('treats null as 0', () => expect(plusZero(null)).toBe(0));
+    it('treats an empty string as 0', () => expect(plusZero('')).toBe(0));
+    it('passes through numbers', () => expect(plusZero(42)).toBe(42));
+    it('treats true as 1', () => expect(plusZero(true)).toBe(1));
+    it('treats false as 0', () => expect(plusZero(false)).toBe(0));
+    it('parses numeric strings', () => expect(plusZero('3.14')).toBeCloseTo(3.14));
+    it('treats non-numeric strings as 0', () => expect(plusZero('abc')).toBe(0));
 });
 
 // ── Literal evaluation ──────────────────────────────────────────────────────
@@ -152,15 +169,15 @@ describe('binary arithmetic', () => {
     });
 
     it('subtracts', () => {
-        expect(evaluateVal({ type: 'binary', op: '-', left: num(10), right: num(3) }, emptyCtx)).toBe(7);
+        expect(evaluate({ type: 'binary', op: '-', left: num(10), right: num(3) }, emptyCtx).value).toBe(7);
     });
 
     it('multiplies', () => {
-        expect(evaluateVal({ type: 'binary', op: '*', left: num(4), right: num(5) }, emptyCtx)).toBe(20);
+        expect(evaluate({ type: 'binary', op: '*', left: num(4), right: num(5) }, emptyCtx).value).toBe(20);
     });
 
     it('divides', () => {
-        expect(evaluateVal({ type: 'binary', op: '/', left: num(20), right: num(4) }, emptyCtx)).toBe(5);
+        expect(evaluate({ type: 'binary', op: '/', left: num(20), right: num(4) }, emptyCtx).value).toBe(5);
     });
 
     it('returns #DIV/0! on division by zero', () => {
@@ -1052,14 +1069,5 @@ describe('unknown function', () => {
         const r = evaluate({ type: 'function', name: 'NOSUCH', args: [] }, emptyCtx);
         expect(r.value).toBe('#NAME? (NOSUCH)');
         expect(r.type).toBe('text');
-    });
-});
-
-// ── evaluateVal ──────────────────────────────────────────────────────────────
-
-describe('evaluateVal', () => {
-    it('returns just the value (not the typed wrapper)', () => {
-        const v = evaluateVal({ type: 'number', value: 42 }, emptyCtx);
-        expect(v).toBe(42);
     });
 });

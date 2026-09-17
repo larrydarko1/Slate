@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { tokenize } from '@/renderer/composables/spreadsheet/engine/tokenizer';
-import { Parser, parseCellRef, type ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
+import { Parser, type ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -8,35 +8,6 @@ import { Parser, parseCellRef, type ASTNode } from '@/renderer/composables/sprea
 function parse(src: string): ASTNode {
     return new Parser(tokenize(src)).parse();
 }
-
-// ── parseCellRef ─────────────────────────────────────────────────────────────
-
-describe('parseCellRef', () => {
-    it('parses A1 → col 0, row 0', () => {
-        expect(parseCellRef('A1')).toEqual({ col: 0, row: 0 });
-    });
-
-    it('parses B2 → col 1, row 1', () => {
-        expect(parseCellRef('B2')).toEqual({ col: 1, row: 1 });
-    });
-
-    it('parses Z1 → col 25, row 0', () => {
-        expect(parseCellRef('Z1')).toEqual({ col: 25, row: 0 });
-    });
-
-    it('parses AA1 → col 26, row 0', () => {
-        expect(parseCellRef('AA1')).toEqual({ col: 26, row: 0 });
-    });
-
-    it('parses AB23 → col 27, row 22', () => {
-        expect(parseCellRef('AB23')).toEqual({ col: 27, row: 22 });
-    });
-
-    it('throws on invalid ref', () => {
-        expect(() => parseCellRef('123')).toThrow('Invalid cell reference');
-        expect(() => parseCellRef('')).toThrow('Invalid cell reference');
-    });
-});
 
 // ── Literals ─────────────────────────────────────────────────────────────────
 
@@ -81,6 +52,16 @@ describe('cell references', () => {
 
     it('parses B2', () => {
         expect(parse('B2')).toEqual({ type: 'cell_ref', col: 1, row: 1 });
+    });
+
+    // Column letters are base-26: Z is the last single letter, AA the first double.
+    it('parses the last single-letter column', () => {
+        expect(parse('Z1')).toEqual({ type: 'cell_ref', col: 25, row: 0 });
+    });
+
+    it('parses a two-letter column', () => {
+        expect(parse('AA1')).toEqual({ type: 'cell_ref', col: 26, row: 0 });
+        expect(parse('AB23')).toEqual({ type: 'cell_ref', col: 27, row: 22 });
     });
 });
 

@@ -17,14 +17,6 @@ export type TypedCellValue = {
     type: CellDataType;
 };
 
-export function toNumber(v: CellValue): number {
-    if (v === null || v === '') return 0;
-    if (typeof v === 'boolean') return v ? 1 : 0;
-    if (typeof v === 'number') return v;
-    const parsed = Number(v);
-    return isNaN(parsed) ? 0 : parsed;
-}
-
 // ── Main evaluator (type-aware) ──────────────────────────────────────────────
 
 export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
@@ -156,8 +148,17 @@ export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
     }
 }
 
-/** Convenience: evaluate and return just the value (for backward compat) */
-export function evaluateVal(node: ASTNode, ctx: FormulaContext): CellValue {
+/** Coerce to a number. Reached only after the type layer has approved the operation. */
+function toNumber(v: CellValue): number {
+    if (v === null || v === '') return 0;
+    if (typeof v === 'boolean') return v ? 1 : 0;
+    if (typeof v === 'number') return v;
+    const parsed = Number(v);
+    return isNaN(parsed) ? 0 : parsed;
+}
+
+/** Convenience: evaluate and return just the value. */
+function evaluateVal(node: ASTNode, ctx: FormulaContext): CellValue {
     return evaluate(node, ctx).value;
 }
 

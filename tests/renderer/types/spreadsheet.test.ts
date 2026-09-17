@@ -11,7 +11,6 @@ import {
     MIN_ZOOM,
     MAX_ZOOM,
     ZOOM_STEP,
-    ZOOM_PRESETS,
     MAX_CANVASES,
 } from '@/renderer/types/spreadsheet';
 
@@ -232,11 +231,5 @@ describe('zoom constants', () => {
     it('MIN_ZOOM is 0.25', () => expect(MIN_ZOOM).toBe(0.25));
     it('MAX_ZOOM is 4.0', () => expect(MAX_ZOOM).toBe(4.0));
     it('ZOOM_STEP is 0.1', () => expect(ZOOM_STEP).toBe(0.1));
-    it('ZOOM_PRESETS includes 1.0', () => expect(ZOOM_PRESETS).toContain(1.0));
-    it('ZOOM_PRESETS are sorted ascending', () => {
-        for (let i = 1; i < ZOOM_PRESETS.length; i++) {
-            expect(ZOOM_PRESETS[i]).toBeGreaterThan(ZOOM_PRESETS[i - 1]);
-        }
-    });
     it('MAX_CANVASES is 10', () => expect(MAX_CANVASES).toBe(10));
 });

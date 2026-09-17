@@ -1,39 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FilePathSchema, FileWriteArgsSchema, isSafeFileName } from '@/schemas/file';
-
-describe('isSafeFileName', () => {
-    it('accepts a plain filename', () => {
-        expect(isSafeFileName('document.slate')).toBe(true);
-    });
-
-    it('accepts a filename with spaces', () => {
-        expect(isSafeFileName('my document.slate')).toBe(true);
-    });
-
-    it('accepts a filename with dots', () => {
-        expect(isSafeFileName('v1.2.3.slate')).toBe(true);
-    });
-
-    it('rejects an empty string', () => {
-        expect(isSafeFileName('')).toBe(false);
-    });
-
-    it('rejects a segment with forward slashes', () => {
-        expect(isSafeFileName('sub/file.slate')).toBe(false);
-    });
-
-    it('rejects a segment with backslashes', () => {
-        expect(isSafeFileName('sub\\file.slate')).toBe(false);
-    });
-
-    it('rejects a bare dot', () => {
-        expect(isSafeFileName('.')).toBe(false);
-    });
-
-    it('rejects a bare dot-dot', () => {
-        expect(isSafeFileName('..')).toBe(false);
-    });
-});
+import { FilePathSchema, FileWriteArgsSchema } from '@/schemas/file';
 
 describe('FilePathSchema', () => {
     it('accepts an absolute .slate path', () => {
@@ -42,6 +8,14 @@ describe('FilePathSchema', () => {
 
     it('accepts a bare .slate filename', () => {
         expect(FilePathSchema.safeParse('budget.slate').success).toBe(true);
+    });
+
+    it('accepts a filename with spaces', () => {
+        expect(FilePathSchema.safeParse('my document.slate').success).toBe(true);
+    });
+
+    it('accepts a filename with dots', () => {
+        expect(FilePathSchema.safeParse('v1.2.3.slate').success).toBe(true);
     });
 
     it('rejects a non-string', () => {

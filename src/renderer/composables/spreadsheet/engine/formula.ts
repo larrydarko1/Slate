@@ -58,19 +58,6 @@ export type TypedResult = {
     type: CellDataType;
 };
 
-// ── Public API ───────────────────────────────────────────────────────────────
-
-export function evaluateFormula(formulaBody: string, ctx: FormulaContext): CellValue {
-    try {
-        const tokens = tokenize(formulaBody);
-        const ast = new Parser(tokens).parse();
-        return evaluate(ast, ctx).value;
-    } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
-        return `#ERROR! ${msg}`;
-    }
-}
-
 /** Type-aware formula evaluation — returns both value and resolved type */
 export function evaluateFormulaTyped(formulaBody: string, ctx: FormulaContext): TypedResult {
     try {

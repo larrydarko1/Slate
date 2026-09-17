@@ -67,7 +67,7 @@ export const SLATE_EXTENSION = '.slate';
  * Note this answers a question about one *segment*, not about a whole path —
  * `FilePathSchema` is what applies it to every segment of a path.
  */
-export function isSafeFileName(name: string): boolean {
+function isSafeFileName(name: string): boolean {
     if (name === '' || name === '.' || name === '..') return false;
     return !name.includes('/') && !name.includes('\\');
 }

@@ -26,8 +26,6 @@ export type ASTNode =
     | { type: 'unary'; op: string; operand: ASTNode }
     | { type: 'function'; name: string; args: ASTNode[] };
 
-// ── Parser (recursive-descent) ───────────────────────────────────────────────
-
 export class Parser {
     private tokens: Token[];
     private pos = 0;
@@ -255,9 +253,7 @@ export class Parser {
     }
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-export function parseCellRef(ref: string): { col: number; row: number } {
+function parseCellRef(ref: string): { col: number; row: number } {
     const match = ref.match(/^([A-Z]+)(\d+)$/);
     if (match === null) throw new Error(`Invalid cell reference: ${ref}`);
     return { col: columnLetterToIndex(match[1]), row: parseInt(match[2]) - 1 };

@@ -1,6 +1,6 @@
 /**
- * cellTypes — type detection, formatting, coercion, and hierarchy for cell values.
- * Owns: CellDataType, detectCellType, formatCellValue, coerceToCellType, getTypeLabel.
+ * cellTypes — type detection, formatting, and hierarchy for cell values.
+ * Owns: CellDataType, detectType, formatCellDisplay, resolveType, getTypeLabel.
  * Does NOT own: formula parsing (parser.ts), evaluation (evaluator.ts).
  */
 
@@ -125,13 +125,6 @@ export function isNumericType(t: CellDataType): boolean {
 }
 
 /**
- * Returns true if the type is a currency type.
- */
-export function isCurrencyType(t: CellDataType): boolean {
-    return t === 'currency_eur' || t === 'currency_usd';
-}
-
-/**
  * Resolve the result type when two typed values interact in a formula.
  * - first: the left operand / first cell in chain (has priority)
  * - second: the right operand
@@ -188,66 +181,6 @@ export function resolveTypeList(types: CellDataType[]): CellDataType | null {
         result = resolved;
     }
     return result;
-}
-
-// ── Formatting ─────────────────────────────────────────────────────────────────
-
-/**
- * Format a numeric value according to the given cell type.
- */
-export function formatValue(value: number | null, type: CellDataType, decimalPlaces?: number): string {
-    if (value === null || value === undefined) return '';
-
-    switch (type) {
-        case 'integer':
-            return Math.round(value).toString();
-
-        case 'float': {
-            if (decimalPlaces !== undefined) {
-                return value.toFixed(decimalPlaces);
-            }
-            // Show up to 10 significant decimal places, trim trailing zeros
-            if (Number.isInteger(value)) return value.toFixed(1);
-            return parseFloat(value.toFixed(10)).toString();
-        }
-
-        case 'currency_usd': {
-            const dp = decimalPlaces ?? 2;
-            const abs = Math.abs(value);
-            const formatted = abs.toLocaleString('en-US', {
-                minimumFractionDigits: dp,
-                maximumFractionDigits: dp,
-            });
-            return value < 0 ? `-$${formatted}` : `$${formatted}`;
-        }
-
-        case 'currency_eur': {
-            const dp = decimalPlaces ?? 2;
-            const abs = Math.abs(value);
-            const formatted = abs.toLocaleString('de-DE', {
-                minimumFractionDigits: dp,
-                maximumFractionDigits: dp,
-            });
-            return value < 0 ? `-€${formatted}` : `€${formatted}`;
-        }
-
-        case 'percent': {
-            const pct = value * 100;
-            if (decimalPlaces !== undefined) {
-                return `${pct.toFixed(decimalPlaces)}%`;
-            }
-            if (Number.isInteger(pct) || Math.abs(pct - Math.round(pct)) < 1e-9) {
-                return `${Math.round(pct)}%`;
-            }
-            return `${parseFloat(pct.toFixed(10))}%`;
-        }
-
-        case 'boolean':
-            return value !== 0 ? 'TRUE' : 'FALSE';
-
-        default:
-            return value.toString();
-    }
 }
 
 /**
@@ -325,45 +258,70 @@ export function getTypeLabel(type: CellDataType): string {
 }
 
 /**
- * Attempt to convert a numeric value to a target type.
- * Returns the formatted display string or '#N/A' on failure.
+ * Returns true if the type is a currency type.
  */
-export function coerceToType(
-    value: unknown,
-    fromType: CellDataType,
-    toType: CellDataType,
-): { numericValue: number | null; display: string } | null {
-    // Same type → no conversion needed
-    if (fromType === toType) {
-        if (typeof value === 'number') {
-            return { numericValue: value, display: formatValue(value, toType) };
-        }
-        return { numericValue: null, display: toDisplayString(value) };
-    }
-
-    // Text → numeric: attempt parse
-    if (fromType === 'text' && isNumericType(toType)) {
-        const parsed = parseFloat(toDisplayString(value));
-        if (isNaN(parsed)) return null; // → #N/A
-        return { numericValue: parsed, display: formatValue(parsed, toType) };
-    }
-
-    // Numeric → numeric conversions (always possible)
-    if (isNumericType(fromType) && isNumericType(toType)) {
-        const num = typeof value === 'number' ? value : parseFloat(toDisplayString(value));
-        if (isNaN(num)) return null;
-        return { numericValue: num, display: formatValue(num, toType) };
-    }
-
-    // Numeric → text
-    if (isNumericType(fromType) && toType === 'text') {
-        return { numericValue: typeof value === 'number' ? value : null, display: toDisplayString(value) };
-    }
-
-    return null;
+function isCurrencyType(t: CellDataType): boolean {
+    return t === 'currency_eur' || t === 'currency_usd';
 }
 
-// ── Currency parsers ───────────────────────────────────────────────────────────
+/**
+ * Format a numeric value according to the given cell type.
+ * Internal: `formatCellDisplay` is the entry point callers use.
+ */
+function formatValue(value: number | null, type: CellDataType, decimalPlaces?: number): string {
+    if (value === null || value === undefined) return '';
+
+    switch (type) {
+        case 'integer':
+            return Math.round(value).toString();
+
+        case 'float': {
+            if (decimalPlaces !== undefined) {
+                return value.toFixed(decimalPlaces);
+            }
+            // Show up to 10 significant decimal places, trim trailing zeros
+            if (Number.isInteger(value)) return value.toFixed(1);
+            return parseFloat(value.toFixed(10)).toString();
+        }
+
+        case 'currency_usd': {
+            const dp = decimalPlaces ?? 2;
+            const abs = Math.abs(value);
+            const formatted = abs.toLocaleString('en-US', {
+                minimumFractionDigits: dp,
+                maximumFractionDigits: dp,
+            });
+            return value < 0 ? `-$${formatted}` : `$${formatted}`;
+        }
+
+        case 'currency_eur': {
+            const dp = decimalPlaces ?? 2;
+            const abs = Math.abs(value);
+            const formatted = abs.toLocaleString('de-DE', {
+                minimumFractionDigits: dp,
+                maximumFractionDigits: dp,
+            });
+            return value < 0 ? `-€${formatted}` : `€${formatted}`;
+        }
+
+        case 'percent': {
+            const pct = value * 100;
+            if (decimalPlaces !== undefined) {
+                return `${pct.toFixed(decimalPlaces)}%`;
+            }
+            if (Number.isInteger(pct) || Math.abs(pct - Math.round(pct)) < 1e-9) {
+                return `${Math.round(pct)}%`;
+            }
+            return `${parseFloat(pct.toFixed(10))}%`;
+        }
+
+        case 'boolean':
+            return value !== 0 ? 'TRUE' : 'FALSE';
+
+        default:
+            return value.toString();
+    }
+}
 
 /**
  * Stringifies a value the display layer received as `unknown`. Plain `String()`
