@@ -18,12 +18,12 @@ const on = vi.fn();
 const removeListener = vi.fn();
 
 vi.mock('electron', () => ({
-    contextBridge: { exposeInMainWorld: (...a: unknown[]) => exposeInMainWorld(...a) },
+    contextBridge: { exposeInMainWorld: (...a: unknown[]): unknown => exposeInMainWorld(...a) },
     ipcRenderer: {
-        invoke: (...a: unknown[]) => invoke(...a),
-        send: (...a: unknown[]) => send(...a),
-        on: (...a: unknown[]) => on(...a),
-        removeListener: (...a: unknown[]) => removeListener(...a),
+        invoke: (...a: unknown[]): unknown => invoke(...a),
+        send: (...a: unknown[]): unknown => send(...a),
+        on: (...a: unknown[]): unknown => on(...a),
+        removeListener: (...a: unknown[]): unknown => removeListener(...a),
     },
 }));
 
@@ -114,7 +114,7 @@ describe('preload bridge', () => {
             on.mockClear();
             removeListener.mockClear();
             const off = api.onOpenFile(() => {});
-            const registered = on.mock.calls.at(-1)?.[1];
+            const registered: unknown = on.mock.calls.at(-1)?.[1];
             off();
             expect(removeListener).toHaveBeenCalledWith('file:opened', registered);
         });

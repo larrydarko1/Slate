@@ -131,7 +131,7 @@ describe('App', () => {
             expect(wrapper.find('.zoom-label').text()).toBe('100%');
         });
 
-        it('stops listening once unmounted', async () => {
+        it('stops listening once unmounted', () => {
             wrapper.unmount();
             expect(() => press('=')).not.toThrow();
             wrapper = mount(App, { attachTo: document.body });

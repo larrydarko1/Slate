@@ -4,7 +4,7 @@ type Handler = (event: unknown, ...args: unknown[]) => unknown;
 
 const openExternal = vi.fn();
 
-vi.mock('electron', () => ({ shell: { openExternal: (url: string) => openExternal(url) } }));
+vi.mock('electron', () => ({ shell: { openExternal: (url: string): unknown => openExternal(url) } }));
 
 const { register, openExternalIfSafe } = await import('@/main/services/shell');
 

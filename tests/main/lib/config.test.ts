@@ -8,8 +8,12 @@ async function loadConfig(env: Record<string, string | undefined>): Promise<{ re
     vi.resetModules();
     const original = { ...process.env };
     Object.assign(process.env, env);
+    // `Object.assign` writes the `undefined`s through as real keys, and a var set to
+    // the empty string is not the same as one that is unset — which is the
+    // distinction half these cases turn on. Reflect rather than `delete` because the
+    // key is computed, and `process.env` has no API for removing one by name.
     for (const [key, value] of Object.entries(env)) {
-        if (value === undefined) delete process.env[key];
+        if (value === undefined) Reflect.deleteProperty(process.env, key);
     }
     try {
         const { config } = await import('@/main/lib/config');

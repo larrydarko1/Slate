@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 
 type Api = NonNullable<typeof window.electronAPI>;
@@ -19,17 +19,20 @@ function stubApi(overrides: Partial<Api> = {}): Api {
         onOpenFile: vi.fn().mockReturnValue(() => {}),
         openExternal: vi.fn().mockResolvedValue({ success: true }),
         ...overrides,
-    } as unknown as Api;
+    };
     window.electronAPI = api;
     return api;
 }
 
 describe('fileOps', () => {
     let ss: SpreadsheetState;
+    // Held rather than re-read off `window`: asserting on `window.alert` passes the
+    // method around unbound, and the spy is what the cases actually mean.
+    let alert: MockInstance<typeof window.alert>;
 
     beforeEach(() => {
         ss = useSpreadsheet();
-        vi.spyOn(window, 'alert').mockImplementation(() => {});
+        alert = vi.spyOn(window, 'alert').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -91,21 +94,21 @@ describe('fileOps', () => {
         it('gives up when the dialog is cancelled', async () => {
             const api = stubApi({
                 showSaveDialog: vi.fn().mockResolvedValue({ canceled: true }),
-            } as Partial<Api>);
+            });
             expect(await ss.saveFile()).toBe(false);
             expect(api.writeFile).not.toHaveBeenCalled();
         });
 
         it('reports a write failure', async () => {
-            stubApi({ writeFile: vi.fn().mockResolvedValue({ success: false, error: 'disk full' }) } as Partial<Api>);
+            stubApi({ writeFile: vi.fn().mockResolvedValue({ success: false, error: 'disk full' }) });
             expect(await ss.saveFile()).toBe(false);
-            expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('disk full'));
+            expect(alert).toHaveBeenCalledWith(expect.stringContaining('disk full'));
         });
 
         it('refuses outside Electron', async () => {
             delete (window as { electronAPI?: Api }).electronAPI;
             expect(await ss.saveFile()).toBe(false);
-            expect(window.alert).toHaveBeenCalled();
+            expect(alert).toHaveBeenCalled();
         });
     });
 
@@ -120,7 +123,7 @@ describe('fileOps', () => {
             const written = (api.writeFile as ReturnType<typeof vi.fn>).mock.calls[0]![1] as string;
 
             const reopened = useSpreadsheet();
-            stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: written }) } as Partial<Api>);
+            stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: written }) });
             expect(await reopened.loadFileFromPath('/tmp/book.slate')).toBe(true);
             const newId = reopened.tables.value[0]!.id;
             expect(reopened.getDisplayValue(newId, 0, 0)).toBe('5');
@@ -133,7 +136,7 @@ describe('fileOps', () => {
                     success: true,
                     content: JSON.stringify({ version: '2.0', canvases: [], activeCanvasId: 'x' }),
                 }),
-            } as Partial<Api>);
+            });
             await ss.openFile();
             expect(api.showOpenDialog).toHaveBeenCalled();
             expect(api.readFile).toHaveBeenCalledWith('/tmp/book.slate');
@@ -142,19 +145,19 @@ describe('fileOps', () => {
         it('gives up when the open dialog is cancelled', async () => {
             const api = stubApi({
                 showOpenDialog: vi.fn().mockResolvedValue({ canceled: true, filePaths: [] }),
-            } as Partial<Api>);
+            });
             expect(await ss.openFile()).toBe(false);
             expect(api.readFile).not.toHaveBeenCalled();
         });
 
         it('reports a read failure', async () => {
-            stubApi({ readFile: vi.fn().mockResolvedValue({ success: false, error: 'missing' }) } as Partial<Api>);
+            stubApi({ readFile: vi.fn().mockResolvedValue({ success: false, error: 'missing' }) });
             expect(await ss.loadFileFromPath('/tmp/x.slate')).toBe(false);
-            expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('missing'));
+            expect(alert).toHaveBeenCalledWith(expect.stringContaining('missing'));
         });
 
         it('reports unparseable content', async () => {
-            stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: 'not json' }) } as Partial<Api>);
+            stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: 'not json' }) });
             expect(await ss.loadFileFromPath('/tmp/x.slate')).toBe(false);
             expect(window.electronAPI?.log.error).toHaveBeenCalledWith('Failed to load file', expect.any(Object));
         });
@@ -170,7 +173,7 @@ describe('fileOps', () => {
         async function load(content: unknown): Promise<boolean> {
             stubApi({
                 readFile: vi.fn().mockResolvedValue({ success: true, content: JSON.stringify(content) }),
-            } as Partial<Api>);
+            });
             return await ss.loadFileFromPath('/tmp/x.slate');
         }
 

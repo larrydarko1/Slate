@@ -9,15 +9,15 @@ vi.mock('electron', () => ({ dialog: { showSaveDialog, showOpenDialog } }));
 
 const readFile = vi.fn();
 
-vi.mock('fs/promises', () => ({ default: { readFile: (...a: unknown[]) => readFile(...a) } }));
+vi.mock('fs/promises', () => ({ default: { readFile: (...a: unknown[]): unknown => readFile(...a) } }));
 
 const writeFileSync = vi.fn();
 const renameSync = vi.fn();
 const unlinkSync = vi.fn();
 const fsMock = {
-    writeFileSync: (...a: unknown[]) => writeFileSync(...a),
-    renameSync: (...a: unknown[]) => renameSync(...a),
-    unlinkSync: (...a: unknown[]) => unlinkSync(...a),
+    writeFileSync: (...a: unknown[]): unknown => writeFileSync(...a),
+    renameSync: (...a: unknown[]): unknown => renameSync(...a),
+    unlinkSync: (...a: unknown[]): unknown => unlinkSync(...a),
 };
 
 vi.mock('fs', () => ({ ...fsMock, default: fsMock }));

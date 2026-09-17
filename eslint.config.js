@@ -373,7 +373,10 @@ export default [
 
     // Test files — use a dedicated tsconfig.test.json so the project service
     // can find them without allowDefaultProject hacks.
-    // Strict type rules are relaxed here since test/mock code routinely uses `any`
+    // Tests are held to the same rules as `src/` but one. A mock that drifts out of
+    // shape with the interface it stands in for makes a test pass while production
+    // breaks, so the `no-unsafe-*` family and `no-explicit-any` earn their keep here
+    // more than anywhere: they are what keeps a stub honest about what it replaces.
     {
         files: TEST_FILES,
         languageOptions: {
@@ -385,22 +388,18 @@ export default [
             },
         },
         rules: {
-            '@typescript-eslint/no-explicit-any': 'off',
-            '@typescript-eslint/no-unsafe-assignment': 'off',
-            '@typescript-eslint/no-unsafe-member-access': 'off',
-            '@typescript-eslint/no-unsafe-call': 'off',
-            '@typescript-eslint/no-unsafe-return': 'off',
-            '@typescript-eslint/no-unsafe-argument': 'off',
-            '@typescript-eslint/unbound-method': 'off',
-            '@typescript-eslint/consistent-type-imports': 'off',
-            '@typescript-eslint/strict-boolean-expressions': 'off',
-            '@typescript-eslint/no-empty-function': 'off',
-            '@typescript-eslint/no-dynamic-delete': 'off',
+            // Parity with `src/`, not a relaxation: the same option is set there.
+            // A no-op stub standing in for a dependency the case does not exercise
+            // is the honest way to write one.
+            '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions'] }],
+
+            // it is about where a wrong guess surfaces. In `src/` an unfounded `!` 
+            // reaches a user as a crash; in a test it fails the run before merge — 
+            // so `expect(table!.columns)` is not a hole in the type system, 
+            // it is the test asserting the table exists, which is what
+            // it is there to do. Guarding instead costs three lines for one and
+            // replaces Vitest's assertion diff with a thrown Error.
             '@typescript-eslint/no-non-null-assertion': 'off',
-            '@typescript-eslint/no-unnecessary-type-assertion': 'off',
-            '@typescript-eslint/require-await': 'off',
-            '@typescript-eslint/await-thenable': 'off',
-            '@typescript-eslint/explicit-module-boundary-types': 'off',
         },
     },
 

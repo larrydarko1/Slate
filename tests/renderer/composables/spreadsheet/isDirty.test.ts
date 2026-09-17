@@ -66,9 +66,11 @@ describe('isDirty state management', () => {
         undoRedo.pushUndo();
         expect(state.isDirty.value).toBe(true);
 
-        // Mock window.electronAPI to avoid dependency on Electron IPC
-        const originalAPI = (window as any).electronAPI;
-        (window as any).electronAPI = undefined;
+        // Mock window.electronAPI to avoid dependency on Electron IPC. Deleted
+        // rather than set to `undefined`: the property is optional, and the code
+        // under test asks whether it is there, not what it holds.
+        const originalAPI = window.electronAPI;
+        delete window.electronAPI;
 
         // Call deserialize by recreating a fresh state for load scenario
         const freshSetup = setupState();
@@ -80,7 +82,8 @@ describe('isDirty state management', () => {
         freshSetup.fileOps.newFile();
         expect(freshState.isDirty.value).toBe(false);
 
-        (window as any).electronAPI = originalAPI;
+        if (originalAPI === undefined) delete window.electronAPI;
+        else window.electronAPI = originalAPI;
     });
 
     it('should not be affected by undo/redo after being set', () => {
