@@ -15,7 +15,7 @@ Slate is a **local-first desktop application** for Linux (with macOS supported f
 - ✅ **Deny-all permissions** — both the request and the check handler refuse every web permission at the session level, so the packaged `file://` build and the dev `http://localhost` build answer identically
 - ✅ **Input validation** — every IPC argument arrives as `unknown` and is parsed against a Zod schema in the main process before use ([src/schemas/](../src/schemas/))
 - ✅ **Path containment** — the file channels accept only paths that end in `.slate`, contain no `..` segment, and end in a plain filename; content is capped at 50 MB
-- ✅ **Enforced in CI** — the invariants above are not conventions. [check-electron-security.mjs](../scripts/check/check-electron-security.mjs) asserts the process model, the navigation and permission handlers, the `openExternal` guard and the absence of unescaped HTML sinks; [check-ipc-standards.mjs](../scripts/check/check-ipc-standards.mjs) proves the channel-ownership table is still true. Both run on every push
+- ✅ **Enforced in CI** — the invariants above are not conventions. [check-electron-security.ts](../scripts/check/check-electron-security.ts) asserts the process model, the navigation and permission handlers, the `openExternal` guard and the absence of unescaped HTML sinks; [check-ipc-standards.ts](../scripts/check/check-ipc-standards.ts) proves the channel-ownership table is still true. Both run on every push
 - ✅ **Open source** — fully auditable code
 
 ## Data Privacy
@@ -80,7 +80,7 @@ Also out of scope: the missing code-signing certificate. Releases are unsigned, 
 first launch is expected, and the workaround is documented on the release page.
 
 Dependency advisories with no reachable path in Slate's code are tracked in the audit gate's
-allowlist ([scripts/check/check-audit.mjs](../scripts/check/check-audit.mjs)) rather than reported
+allowlist ([scripts/check/check-audit.ts](../scripts/check/check-audit.ts)) rather than reported
 as vulnerabilities. Each entry carries the reason it cannot be fixed here, and CI fails once the
 advisory stops being reported — upstream shipped a fix, so the waiver has to go.
 

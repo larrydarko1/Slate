@@ -93,10 +93,14 @@ const ALLOWED_EXCLUDES = new Map([
  */
 const VM_ACCESS_BASELINE = 0;
 
-const failures = [];
-const fail = (file, what, why) => failures.push({ file, what, why });
-const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
-const exists = (rel) => fs.existsSync(path.join(ROOT, rel));
+type Failure = { file: string; what: string; why: string };
+
+const failures: Failure[] = [];
+const fail = (file: string, what: string, why: string): void => {
+    failures.push({ file, what, why });
+};
+const read = (rel: string): string => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+const exists = (rel: string): boolean => fs.existsSync(path.join(ROOT, rel));
 
 const repoFiles = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], {
     cwd: ROOT,
@@ -128,7 +132,7 @@ for (const rel of unitTests) {
         );
         continue;
     }
-    const area = rel.split('/')[1];
+    const [, area = ''] = rel.split('/');
     if (!MIRRORED.includes(area)) {
         fail(
             rel,
@@ -156,7 +160,10 @@ for (const rel of E2E_ARTEFACTS) {
         "There is deliberately no E2E suite: Playwright's Electron API is experimental and an earlier attempt here was removed. The standard asks that adding one back be raised first — so raise it, then delete this section along with the paragraph in CONTRIBUTING.md.",
     );
 }
-const manifest = JSON.parse(read('package.json'));
+const manifest = JSON.parse(read('package.json')) as {
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+};
 for (const dep of Object.keys({ ...manifest.dependencies, ...manifest.devDependencies })) {
     if (/^(@playwright\/|playwright)/.test(dep)) {
         fail(
@@ -179,7 +186,7 @@ if (thresholdBlock === null) {
     );
 } else {
     for (const [metric, floor] of Object.entries(MIN_THRESHOLDS)) {
-        const m = new RegExp(`${metric}:\\s*(\\d+)`).exec(thresholdBlock[1]);
+        const m = new RegExp(`${metric}:\\s*(\\d+)`).exec(thresholdBlock[1] ?? '');
         if (m === null) {
             fail(
                 VITEST_CONFIG,
@@ -200,7 +207,7 @@ const excludeBlock = /exclude:\s*\[([\s\S]*?)\]/.exec(configSrc);
 if (excludeBlock === null) {
     fail(VITEST_CONFIG, 'no coverage `exclude` list found', 'This gate can no longer tell whether the list has grown.');
 } else {
-    const listed = [...excludeBlock[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    const listed = [...(excludeBlock[1] ?? '').matchAll(/'([^']+)'/g)].map((m) => m[1] ?? '');
     for (const entry of listed) {
         if (!ALLOWED_EXCLUDES.has(entry)) {
             fail(
@@ -227,7 +234,10 @@ let uncovered = 0;
 const haveCoverage = exists(COVERAGE_SUMMARY);
 
 if (haveCoverage) {
-    const summary = JSON.parse(read(COVERAGE_SUMMARY));
+    const summary = JSON.parse(read(COVERAGE_SUMMARY)) as Record<
+        string,
+        { statements: { total: number; covered: number } }
+    >;
     for (const [key, entry] of Object.entries(summary)) {
         if (key === 'total') continue;
         const rel = path.isAbsolute(key) ? path.relative(ROOT, key) : key;
@@ -285,8 +295,8 @@ for (const rel of unitTests) {
  * are skipped: their `%s` placeholders expand per case at run time.
  */
 for (const rel of unitTests) {
-    const stack = [];
-    const seen = new Map();
+    const stack: { title: string; depth: number }[] = [];
+    const seen = new Map<string, number>();
     let depth = 0;
 
     for (const line of read(rel).split('\n')) {
@@ -294,9 +304,9 @@ for (const rel of unitTests) {
         const cased = /^\s*it\s*\(\s*(['"`])((?:\\.|(?!\1).)*)\1/.exec(line);
 
         if (opened !== null) {
-            stack.push({ title: opened[2], depth });
+            stack.push({ title: opened[2] ?? '', depth });
         } else if (cased !== null) {
-            const key = [...stack.map((s) => s.title), cased[2]].join(' › ');
+            const key = [...stack.map((s) => s.title), cased[2] ?? ''].join(' › ');
             seen.set(key, (seen.get(key) ?? 0) + 1);
         }
 
@@ -304,7 +314,7 @@ for (const rel of unitTests) {
             if (ch === '{' || ch === '(') depth++;
             else if (ch === '}' || ch === ')') depth--;
         }
-        while (stack.length > 0 && depth <= stack[stack.length - 1].depth) stack.pop();
+        while (stack.length > 0 && depth <= (stack.at(-1)?.depth ?? -Infinity)) stack.pop();
     }
 
     for (const [key, count] of seen) {
@@ -319,7 +329,7 @@ for (const rel of unitTests) {
 }
 
 // ── 7. Reaching into component internals, ratcheted ─────────────────────────
-const vmHits = [];
+const vmHits: string[] = [];
 for (const rel of unitTests) {
     read(rel)
         .split('\n')
@@ -337,7 +347,7 @@ if (vmHits.length > VM_ACCESS_BASELINE) {
     }
 } else if (vmHits.length < VM_ACCESS_BASELINE) {
     fail(
-        'scripts/check/check-testing.mjs',
+        'scripts/check/check-testing.ts',
         `VM_ACCESS_BASELINE is ${VM_ACCESS_BASELINE} but only ${vmHits.length} site(s) remain`,
         'Lower it so the ratchet cannot slip back.',
     );

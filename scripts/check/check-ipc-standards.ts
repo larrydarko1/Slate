@@ -32,22 +32,26 @@
  *      whatever actually came over the wire. These handlers join paths and read
  *      files; an unchecked argument is a path-traversal parameter.
  *   8. CHANNEL NAMING: `domain:action`, lowercase domain, camelCase action, and
- *      no verb that merely repeats the domain.                             → check-error-handling.mjs
+ *      no verb that merely repeats the domain.                             → check-error-handling.ts
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { REPO_ROOT as ROOT } from '../lib/repo-root.mjs';
-import { stripComments } from '../lib/strip-comments.mjs';
+import { REPO_ROOT as ROOT } from '../lib/repo-root.ts';
+import { stripComments } from '../lib/strip-comments.ts';
 
 const MAIN_INDEX = 'src/main/index.ts';
 const SERVICES_DIR = 'src/main/services';
 const PRELOAD = 'src/preload/index.ts';
 const API_CONTRACT = 'src/schemas/electron.d.ts';
 
-const failures = [];
-const fail = (file, what, why) => failures.push({ file, what, why });
-const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
-const code = (rel) => stripComments(read(rel));
+type Failure = { file: string; what: string; why: string };
+
+const failures: Failure[] = [];
+const fail = (file: string, what: string, why: string): void => {
+    failures.push({ file, what, why });
+};
+const read = (rel: string): string => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+const code = (rel: string): string => stripComments(read(rel));
 
 // ── Collect the real surface ──────────────────────────────────────────────────
 // The raw source, because rule 1 reads the ownership table out of its header comment.
@@ -60,31 +64,32 @@ const serviceFiles = fs
     .map((f) => `${SERVICES_DIR}/${f}`);
 
 /** channel → owning file, for everything registered with handle() or on(). */
-const handlers = new Map();
+const handlers = new Map<string, string>();
 /** channel → owning file, for everything pushed with webContents.send(). */
-const events = new Map();
+const events = new Map<string, string>();
 
 for (const rel of [MAIN_INDEX, ...serviceFiles]) {
     const source = code(rel);
-    for (const m of source.matchAll(/\b(?:ipcMain|ipc)\.(?:handle|on)\(\s*'([^']+)'/g)) {
-        if (handlers.has(m[1])) {
+    for (const [, channel = ''] of source.matchAll(/\b(?:ipcMain|ipc)\.(?:handle|on)\(\s*'([^']+)'/g)) {
+        const owner = handlers.get(channel);
+        if (owner !== undefined) {
             fail(
                 rel,
-                `registers \`${m[1]}\`, which ${handlers.get(m[1])} already registers`,
+                `registers \`${channel}\`, which ${owner} already registers`,
                 'The second registration throws at startup for handle(), or silently double-fires for on().',
             );
         }
-        handlers.set(m[1], rel);
+        handlers.set(channel, rel);
     }
-    for (const m of source.matchAll(/\.send\(\s*'([^']+)'/g)) events.set(m[1], rel);
+    for (const [, channel = ''] of source.matchAll(/\.send\(\s*'([^']+)'/g)) events.set(channel, rel);
 }
 
 const preloadCode = code(PRELOAD);
 
 /** channel → 'invoke' | 'send' | 'on', as the preload uses it. */
-const preloadChannels = new Map();
-for (const m of preloadCode.matchAll(/ipcRenderer\.(invoke|send|on)\(\s*'([^']+)'/g)) {
-    preloadChannels.set(m[2], m[1]);
+const preloadChannels = new Map<string, string>();
+for (const [, kind = '', channel = ''] of preloadCode.matchAll(/ipcRenderer\.(invoke|send|on)\(\s*'([^']+)'/g)) {
+    preloadChannels.set(channel, kind);
 }
 
 // ── 1. Channel documentation parity ───────────────────────────────────────────
@@ -98,15 +103,16 @@ if (ownershipBlock === null) {
     );
 } else {
     /** `fs-service → file:*, folder:*` → { file: services/fs.ts, patterns: [...] } */
-    const documented = new Map();
-    for (const line of ownershipBlock[1].split('\n')) {
+    const documented = new Map<string, string[]>();
+    for (const line of (ownershipBlock[1] ?? '').split('\n')) {
         // Label, then an optional parenthetical qualifier, then the channel list.
         const m = line.match(/^\s*\*\s+([a-zA-Z]+)(?:-service)?(?:\s+\([^)]*\))?\s+→\s+(.+?)\s*$/);
         if (m === null) continue;
-        const owner = m[1] === 'main' ? MAIN_INDEX : `${SERVICES_DIR}/${m[1]}.ts`;
+        const [, label = '', list = ''] = m;
+        const owner = label === 'main' ? MAIN_INDEX : `${SERVICES_DIR}/${label}.ts`;
         documented.set(
             owner,
-            m[2]
+            list
                 .split(',')
                 .map((p) => p.trim())
                 .filter((p) => p !== ''),
@@ -250,7 +256,7 @@ for (const rel of [MAIN_INDEX, ...serviceFiles]) {
         const signature = body.match(/^(?:async\s*)?\(([^)]*)\)/);
         if (signature === null) continue;
 
-        const params = signature[1]
+        const params = (signature[1] ?? '')
             .split(',')
             .map((p) => p.trim())
             .filter((p) => p !== '' && !p.startsWith('_'));
@@ -271,32 +277,33 @@ for (const rel of [MAIN_INDEX, ...serviceFiles]) {
 // ── 8. Channel naming ─────────────────────────────────────────────────────────
 for (const channel of [...handlers.keys(), ...events.keys()]) {
     const parts = channel.split(':');
+    const owner = handlers.get(channel) ?? events.get(channel) ?? '';
     if (parts.length !== 2) {
         fail(
-            handlers.get(channel) ?? events.get(channel),
+            owner,
             `channel \`${channel}\` is not \`domain:action\``,
             'One colon, two parts. The domain is what groups the channel with its service; without it the surface is a flat list of 60 names.',
         );
         continue;
     }
-    const [domain, action] = parts;
+    const [domain = '', action = ''] = parts;
     if (!/^[a-z][a-zA-Z]*$/.test(domain)) {
         fail(
-            handlers.get(channel) ?? events.get(channel),
+            owner,
             `channel \`${channel}\` has a non-camelCase domain`,
             'Domains are lowercase-initial camelCase (`file`, `systemPrompt`) so they sort and group predictably.',
         );
     }
     if (!/^[a-z][a-zA-Z]*$/.test(action)) {
         fail(
-            handlers.get(channel) ?? events.get(channel),
+            owner,
             `channel \`${channel}\` has a non-camelCase action`,
             'Actions are lowercase-initial camelCase (`login`, `getMeditations`).',
         );
     }
     if (action.toLowerCase().startsWith(domain.toLowerCase()) && action.length > domain.length) {
         fail(
-            handlers.get(channel) ?? events.get(channel),
+            owner,
             `channel \`${channel}\` repeats its domain in the action`,
             `\`${domain}:${action.slice(domain.length).replace(/^./, (c) => c.toLowerCase())}\` says the same thing.`,
         );

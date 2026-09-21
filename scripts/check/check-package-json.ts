@@ -24,7 +24,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { REPO_ROOT as ROOT } from '../lib/repo-root.mjs';
+import { REPO_ROOT as ROOT } from '../lib/repo-root.ts';
 
 const MANIFEST = 'package.json';
 
@@ -106,10 +106,30 @@ const TILDE_ALLOWED = new Map([
     ],
 ]);
 
-const failures = [];
-const fail = (what, why) => failures.push({ what, why });
+type Failure = { what: string; why: string };
 
-const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, MANIFEST), 'utf8'));
+const failures: Failure[] = [];
+const fail = (what: string, why: string): void => {
+    failures.push({ what, why });
+};
+
+/**
+ * The manifest as this gate reads it. Only the dependency maps are typed as what
+ * npm guarantees; everything else stays `unknown`, because checking its shape is
+ * the point of the gate.
+ */
+type Manifest = {
+    [field: string]: unknown;
+    version?: unknown;
+    private?: unknown;
+    main?: unknown;
+    os?: unknown;
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+    build?: { [key: string]: unknown; files?: unknown };
+};
+
+const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, MANIFEST), 'utf8')) as Manifest;
 const keys = Object.keys(pkg);
 
 // ── 1. Required metadata ─────────────────────────────────────────────────────
@@ -135,7 +155,7 @@ if (typeof pkg.version === 'string' && !/^\d+\.\d+\.\d+(-[\w.]+)?$/.test(pkg.ver
 }
 
 // ── 2. Semver prefixes ───────────────────────────────────────────────────────
-for (const field of ['dependencies', 'devDependencies']) {
+for (const field of ['dependencies', 'devDependencies'] as const) {
     for (const [name, range] of Object.entries(pkg[field] ?? {})) {
         if (/^(workspace:|file:|link:|npm:|git\+|\*)/.test(range)) continue;
 
@@ -150,7 +170,7 @@ for (const field of ['dependencies', 'devDependencies']) {
         }
 
         if (name === 'typescript') {
-            fail(`${field}.typescript is "${range}" — it must be "~"`, TILDE_ALLOWED.get('typescript'));
+            fail(`${field}.typescript is "${range}" — it must be "~"`, TILDE_ALLOWED.get('typescript') ?? '');
             continue;
         }
 
@@ -199,7 +219,7 @@ if (typeof pkg.main !== 'string') {
         );
     }
     if (mainInput !== null) {
-        const expected = `out/${mainInput[1].replace(/^src\//, '').replace(/\.ts$/, '.js')}`;
+        const expected = `out/${(mainInput[1] ?? '').replace(/^src\//, '').replace(/\.ts$/, '.js')}`;
         if (pkg.main !== expected) {
             fail(
                 `\`main\` is "${pkg.main}" but electron-vite emits "${expected}"`,
@@ -218,7 +238,7 @@ if (!Array.isArray(buildFiles)) {
     );
 } else {
     const shipsOut = buildFiles.some((entry) =>
-        typeof entry === 'string' ? /(^|\/)out/.test(entry) : entry?.from === 'out',
+        typeof entry === 'string' ? /(^|\/)out/.test(entry) : (entry as { from?: unknown } | null)?.from === 'out',
     );
     if (!shipsOut) {
         fail(
@@ -235,8 +255,8 @@ if (!Array.isArray(buildFiles)) {
 }
 
 // ── 6. `os` agrees with the build targets ────────────────────────────────────
-const OS_TO_TARGET = { darwin: 'mac', linux: 'linux', win32: 'win' };
-const declaredOs = Array.isArray(pkg.os) ? pkg.os : [];
+const OS_TO_TARGET: Record<string, string> = { darwin: 'mac', linux: 'linux', win32: 'win' };
+const declaredOs = Array.isArray(pkg.os) ? pkg.os.filter((entry): entry is string => typeof entry === 'string') : [];
 
 for (const osName of declaredOs) {
     const target = OS_TO_TARGET[osName];

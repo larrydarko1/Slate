@@ -49,7 +49,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { REPO_ROOT as ROOT } from '../lib/repo-root.mjs';
+import { REPO_ROOT as ROOT } from '../lib/repo-root.ts';
 
 const STYLES = 'src/renderer/styles';
 const THEMES = `${STYLES}/_themes.scss`;
@@ -64,11 +64,19 @@ const REFERENCE_THEME = 'dark';
  * Custom properties a component sets itself through a `:style` binding, so they
  * are deliberately absent from the theme palette. Keep the reason with the name.
  */
-const COMPONENT_LOCAL_VARS = new Map();
+const COMPONENT_LOCAL_VARS = new Map<string, string>();
 
-const failures = [];
-const fail = (file, what, why) => failures.push({ file, what, why });
-const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+type Failure = {
+    file: string;
+    what: string;
+    why: string;
+};
+
+const failures: Failure[] = [];
+const fail = (file: string, what: string, why: string): void => {
+    failures.push({ file, what, why });
+};
+const read = (rel: string): string => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
 // ── 1. The barrel ────────────────────────────────────────────────────────────
 const index = read(INDEX);
@@ -93,7 +101,7 @@ for (const module of ['variables', 'mixins']) {
  * The moment that directory appears, global.scss has to @use it or nothing in
  * it reaches the bundle, and this begins enforcing exactly that.
  */
-const requiredGlobalModules = [
+const requiredGlobalModules: [module: string, why: string][] = [
     [
         'themes',
         'The palettes are CSS custom properties. Un-@used, every `var(--token)` in the app resolves to nothing.',
@@ -122,13 +130,13 @@ for (const [module, why] of requiredGlobalModules) {
 
 const EMITTING_AT_RULES =
     /^\s*@(media|supports|keyframes|font-face|include|extend|at-root|container|layer|page|property|counter-style)\b/;
-const seenBarrelModules = new Set();
+const seenBarrelModules = new Set<string>();
 
-const emitsCss = (rel) => {
+const emitsCss = (rel: string): boolean => {
     if (seenBarrelModules.has(rel)) return false;
     seenBarrelModules.add(rel);
 
-    let source;
+    let source: string;
     try {
         source = read(rel);
     } catch {
@@ -186,8 +194,7 @@ const emitsCss = (rel) => {
     }
 
     // Follow the graph: a forwarded module's own forwards are equally reachable.
-    for (const m of stripped.matchAll(/@(?:use|forward)\s+['"]([^'"]+)['"]/g)) {
-        const spec = m[1];
+    for (const [, spec = ''] of stripped.matchAll(/@(?:use|forward)\s+['"]([^'"]+)['"]/g)) {
         if (spec.startsWith('sass:')) continue;
         const name = spec.replace('@/renderer/styles/', '').replace(/^\.\//, '');
         const dir = path.dirname(name) === '.' ? '' : `${path.dirname(name)}/`;
@@ -241,7 +248,7 @@ if (!/additionalData:/.test(viteConfig)) {
             'It must inject the barrel, never global.scss: global.scss @uses the modules that emit, and injecting it ships every global rule once per SFC. The `as *` is what puts the tokens in the SFC’s own namespace.',
         );
     }
-    if (additionalData !== null && !/renderer.{1,4}styles/.test(additionalData[1])) {
+    if (additionalData !== null && !/renderer.{1,4}styles/.test(additionalData[1] ?? '')) {
         fail(
             VITE_CONFIG,
             'additionalData does not exempt the styles directory',
@@ -259,19 +266,19 @@ const variables = read(THEMES);
  * two names — which is the point: they cannot drift apart.
  */
 const THEME_SELECTOR = String.raw`(?::root|\[data-theme=['"][a-z0-9-]+['"]\])`;
-const paletteBlocks = new Map();
-for (const m of variables.matchAll(
+const paletteBlocks = new Map<string, Set<string>>();
+for (const [, selectors = '', body = ''] of variables.matchAll(
     new RegExp(String.raw`^(${THEME_SELECTOR}(?:,\s*\n${THEME_SELECTOR})*)\s*\{([\s\S]*?)\n\}`, 'gim'),
 )) {
-    const tokens = new Set([...m[2].matchAll(/^\s*--([a-z0-9-]+)\s*:/gim)].map((t) => t[1]));
+    const tokens = new Set([...body.matchAll(/^\s*--([a-z0-9-]+)\s*:/gim)].map((t) => t[1] ?? ''));
     if (tokens.size === 0) continue;
-    for (const selector of m[1].split(',').map((sel) => sel.trim())) {
-        const theme = selector.match(/\[data-theme=['"]([a-z0-9-]+)['"]\]/);
-        paletteBlocks.set(theme === null ? ':root' : theme[1], tokens);
+    for (const selector of selectors.split(',').map((sel) => sel.trim())) {
+        const theme = /\[data-theme=['"]([a-z0-9-]+)['"]\]/.exec(selector);
+        paletteBlocks.set(theme === null ? ':root' : (theme[1] ?? ''), tokens);
     }
 }
 
-const rootTokens = paletteBlocks.get(':root') ?? new Set();
+const rootTokens = paletteBlocks.get(':root') ?? new Set<string>();
 if (!paletteBlocks.has(':root')) {
     fail(
         THEMES,
@@ -338,8 +345,8 @@ if (reference === undefined) {
 }
 
 // 3c. Every `var(--token)` resolves to something.
-const styleFiles = [];
-const collect = (dir) => {
+const styleFiles: string[] = [];
+const collect = (dir: string): void => {
     for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
         const rel = `${dir}/${entry.name}`;
         if (entry.isDirectory()) collect(rel);
@@ -353,7 +360,7 @@ collect('src/renderer');
  * no part in the light/dark comparison — but a `var()` naming one resolves
  * perfectly well, and the sweep below has to know that.
  */
-const invariantTokens = new Set([...read(TOKENS).matchAll(/^\s*--([a-z0-9-]+)\s*:/gim)].map((m) => m[1]));
+const invariantTokens = new Set([...read(TOKENS).matchAll(/^\s*--([a-z0-9-]+)\s*:/gim)].map((m) => m[1] ?? ''));
 if (invariantTokens.size === 0) {
     fail(
         TOKENS,
@@ -378,12 +385,12 @@ const declaredTokens = new Set([
     ...invariantTokens,
     ...COMPONENT_LOCAL_VARS.keys(),
 ]);
-const unresolved = new Map();
+const unresolved = new Map<string, string>();
 
 for (const rel of styleFiles) {
     const source = read(rel);
-    for (const m of source.matchAll(/var\(\s*--([a-z0-9-]+)/gi)) {
-        if (!declaredTokens.has(m[1]) && !unresolved.has(m[1])) unresolved.set(m[1], rel);
+    for (const [, token = ''] of source.matchAll(/var\(\s*--([a-z0-9-]+)/gi)) {
+        if (!declaredTokens.has(token) && !unresolved.has(token)) unresolved.set(token, rel);
     }
 }
 

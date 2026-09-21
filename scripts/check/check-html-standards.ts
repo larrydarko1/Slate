@@ -32,14 +32,18 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { REPO_ROOT as ROOT } from '../lib/repo-root.mjs';
+import { REPO_ROOT as ROOT } from '../lib/repo-root.ts';
 
 const INDEX_HTML = 'src/renderer/index.html';
 const BASE_SCSS = 'src/renderer/styles/_base.scss';
 
-const failures = [];
-const fail = (file, what, why) => failures.push({ file, what, why });
-const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+type Failure = { file: string; what: string; why: string };
+
+const failures: Failure[] = [];
+const fail = (file: string, what: string, why: string): void => {
+    failures.push({ file, what, why });
+};
+const read = (rel: string): string => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
 const html = read(INDEX_HTML);
 
@@ -76,7 +80,7 @@ if (cspMatch === null) {
         'In a packaged build the renderer loads over file:// — there is no server to send a CSP header, so this tag is the entire policy.',
     );
 } else {
-    const csp = cspMatch[1].replace(/\s+/g, ' ').trim();
+    const csp = (cspMatch[1] ?? '').replace(/\s+/g, ' ').trim();
 
     /** Directives that must be present, and locked to the value given. */
     const REQUIRED_DIRECTIVES = [
@@ -139,7 +143,7 @@ if (cspMatch === null) {
      * exists in dev and cannot resolve in a packaged build.
      */
     for (const m of csp.matchAll(/\b(https?|wss?):\/\/([^\s;]+)/g)) {
-        const host = m[2];
+        const host = m[2] ?? '';
         if (!/^(localhost|127\.0\.0\.1)(:\d+)?\/?$/.test(host)) {
             fail(
                 INDEX_HTML,
@@ -165,7 +169,7 @@ const reducedMotionBlocks = [
     ...baseScss.matchAll(/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{([\s\S]*?)\n\s*\}/g),
 ];
 
-const hasGlobalOverride = reducedMotionBlocks.some(([, body]) =>
+const hasGlobalOverride = reducedMotionBlocks.some(([, body = '']) =>
     /animation[^:]*:\s*none|animation-duration|transition[^:]*:\s*none|transition-duration/.test(body),
 );
 

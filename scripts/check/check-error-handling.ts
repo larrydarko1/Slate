@@ -33,8 +33,8 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { REPO_ROOT as ROOT } from '../lib/repo-root.mjs';
-import { stripComments } from '../lib/strip-comments.mjs';
+import { REPO_ROOT as ROOT } from '../lib/repo-root.ts';
+import { stripComments } from '../lib/strip-comments.ts';
 
 const MAIN_INDEX = 'src/main/index.ts';
 const MAIN_DIR = 'src/main';
@@ -47,12 +47,16 @@ const RENDERER_DIR = 'src/renderer';
  * a watcher, a socket or a native session, and this gate will insist
  * `before-quit` releases it.
  */
-const CLEANUP_REQUIRED = [];
+const CLEANUP_REQUIRED: [service: string, why: string][] = [];
 
-const failures = [];
-const fail = (file, what, why) => failures.push({ file, what, why });
+type Failure = { file: string; what: string; why: string };
 
-function walk(dir, exts, out = []) {
+const failures: Failure[] = [];
+const fail = (file: string, what: string, why: string): void => {
+    failures.push({ file, what, why });
+};
+
+function walk(dir: string, exts: RegExp, out: string[] = []): string[] {
     for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
         const rel = `${dir}/${entry.name}`;
         if (entry.isDirectory()) walk(rel, exts, out);
@@ -73,18 +77,18 @@ function walk(dir, exts, out = []) {
  * Returns `{ body, expression }` — `expression: true` for a concise arrow body
  * (`() => getStatus()`), which has no statements and therefore no try block.
  */
-function callbackBody(source, start) {
+function callbackBody(source: string, start: number): { body: string; expression: boolean } {
     const arrow = source.indexOf('=>', start);
     if (arrow === -1) return { body: '', expression: false };
 
     let i = arrow + 2;
-    while (i < source.length && /\s/.test(source[i])) i++;
+    while (i < source.length && /\s/.test(source.charAt(i))) i++;
 
     if (source[i] !== '{') {
         // Concise body: up to the comma or paren that closes the handle() call.
         let depth = 0;
         for (let j = i; j < source.length; j++) {
-            const ch = source[j];
+            const ch = source.charAt(j);
             if ('([{'.includes(ch)) depth++;
             else if (')]}'.includes(ch)) {
                 if (depth === 0) return { body: source.slice(i, j), expression: true };
@@ -106,7 +110,7 @@ function callbackBody(source, start) {
 }
 
 /** Strip every `try { … } catch { … }` so what remains is the unguarded code. */
-function outsideTry(body) {
+function outsideTry(body: string): string {
     let out = body;
     for (;;) {
         const at = out.indexOf('try');
@@ -205,7 +209,7 @@ for (const [event, why] of [
         'unhandledRejection',
         'Startup and shutdown are `void`ed promise chains, so a rejection in either has no catch and no console a user will see. In the default Node configuration it terminates the process, and the whole diagnostic is that the app closed.',
     ],
-]) {
+] as const) {
     if (!new RegExp(`process\\.on\\(\\s*'${event}'`).test(mainIndex)) {
         fail(MAIN_INDEX, `registers no \`process.on('${event}')\` handler`, why);
     }
@@ -234,7 +238,7 @@ for (const rel of [...mainFiles, ...walk(RENDERER_DIR, /\.(ts|vue)$/)]) {
     const raw = fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
     for (const m of raw.matchAll(/\bcatch\s*(?:\([^)]*\))?\s*\{([\s\S]*?)\}/g)) {
-        const body = m[1];
+        const body = m[1] ?? '';
         // Only a swallow if nothing is logged, rethrown or returned.
         if (/\b(throw|return|log\.|console\.|electronAPI\.log)\b/.test(body)) continue;
         if (stripComments(body).trim() !== '') continue;

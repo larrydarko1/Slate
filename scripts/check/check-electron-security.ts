@@ -50,8 +50,8 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { REPO_ROOT as ROOT } from '../lib/repo-root.mjs';
-import { stripComments } from '../lib/strip-comments.mjs';
+import { REPO_ROOT as ROOT } from '../lib/repo-root.ts';
+import { stripComments } from '../lib/strip-comments.ts';
 
 const MAIN_DIR = 'src/main';
 const RENDERER_DIR = 'src/renderer';
@@ -60,7 +60,7 @@ const RENDERER_DIR = 'src/renderer';
  * The `v-html` bindings that exist, and why each is safe. A new one fails this
  * gate on purpose: the judgement is human, so it should cost a line of prose.
  */
-const VHTML_ALLOWED = new Map([]);
+const VHTML_ALLOWED = new Map<string, string>([]);
 
 /** Callables whose output is already escaped or sanitised. */
 const SAFE_WRAPPERS = /\b(escapeHtml|DOMPurify\.sanitize|sanitize|renderInline)\s*\(/;
@@ -68,10 +68,14 @@ const SAFE_WRAPPERS = /\b(escapeHtml|DOMPurify\.sanitize|sanitize|renderInline)\
 /** The metacharacter escape that makes a string safe to embed in a RegExp. */
 const REGEX_ESCAPE = /\.replace\(\s*\/\[\.\*\+\?\^\$\{\}\(\)\|\[\\\]\\\\\]\/g/;
 
-const failures = [];
-const fail = (file, what, why) => failures.push({ file, what, why });
+type Failure = { file: string; what: string; why: string };
 
-function walk(dir, exts, out = []) {
+const failures: Failure[] = [];
+const fail = (file: string, what: string, why: string): void => {
+    failures.push({ file, what, why });
+};
+
+function walk(dir: string, exts: RegExp, out: string[] = []): string[] {
     for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
         const rel = `${dir}/${entry.name}`;
         if (entry.isDirectory()) walk(rel, exts, out);
@@ -82,7 +86,10 @@ function walk(dir, exts, out = []) {
 
 const mainFiles = walk(MAIN_DIR, /\.ts$/);
 const rendererFiles = walk(RENDERER_DIR, /\.(ts|vue)$/);
-const mainSource = mainFiles.map((rel) => [rel, stripComments(fs.readFileSync(path.join(ROOT, rel), 'utf8'))]);
+const mainSource = mainFiles.map((rel): [string, string] => [
+    rel,
+    stripComments(fs.readFileSync(path.join(ROOT, rel), 'utf8')),
+]);
 const allMain = mainSource.map(([, code]) => code).join('\n');
 
 // ── 1/2/3. webPreferences on every BrowserWindow ─────────────────────────────
@@ -141,7 +148,7 @@ if (windowBlocks.length === 0) {
     );
 }
 
-for (const [, block] of windowBlocks) {
+for (const [, block = ''] of windowBlocks) {
     for (const { key, re, why } of REQUIRED_PREFS) {
         if (!re.test(block)) {
             const present = new RegExp(`${key}:`).test(block);
@@ -186,7 +193,7 @@ if (!/setWindowOpenHandler\(/.test(allMain)) {
     const handler = allMain.match(/setWindowOpenHandler\(([\s\S]*?)\n\s{4}\}\)/);
     // Matched on the `return` itself: the handler's TYPE annotation also reads
     // `{ action: 'deny' }`, so a looser match passes even when the value changed.
-    if (handler !== null && !/return\s*\{\s*action:\s*'deny'\s*\}/.test(handler[1])) {
+    if (handler !== null && !/return\s*\{\s*action:\s*'deny'\s*\}/.test(handler[1] ?? '')) {
         fail(
             `${MAIN_DIR}/index.ts`,
             "setWindowOpenHandler does not return `action: 'deny'`",
@@ -230,13 +237,13 @@ for (const [name, why] of [
         'setPermissionCheckHandler',
         'Answers `navigator.permissions.query`. Without it a renderer can be told it holds a permission the request handler would refuse, and the two answers disagree.',
     ],
-]) {
+] as const) {
     if (!new RegExp(`${name}\\(`).test(allMain)) {
         fail(`${MAIN_DIR}/index.ts`, `registers no \`${name}\``, why);
         continue;
     }
     const body = allMain.match(new RegExp(`${name}\\(([\\s\\S]*?)\\n\\s{4}\\}\\)`));
-    if (body !== null && !/callback\(false\)|return false/.test(body[1])) {
+    if (body !== null && !/callback\(false\)|return false/.test(body[1] ?? '')) {
         fail(
             `${MAIN_DIR}/index.ts`,
             `\`${name}\` has no deny path`,
@@ -248,7 +255,7 @@ for (const [name, why] of [
 // ── 8/9. The custom protocol ─────────────────────────────────────────────────
 const protocolHandler = allMain.match(/protocol\.handle\(\s*'([a-z]+)'\s*,([\s\S]*?)\n\s{4}\}\)/);
 if (protocolHandler !== null) {
-    const [, scheme, body] = protocolHandler;
+    const [, scheme = '', body = ''] = protocolHandler;
     if (!/isInsideBoundary|isInside|withinRoot|startsWith\(\s*root/.test(body)) {
         fail(
             `${MAIN_DIR}/index.ts`,
@@ -266,7 +273,7 @@ if (protocolHandler !== null) {
 }
 
 const privileged = allMain.match(/registerSchemesAsPrivileged\(([\s\S]*?)\n\]\)/);
-if (privileged !== null && /bypassCSP:\s*true/.test(privileged[1])) {
+if (privileged !== null && /bypassCSP:\s*true/.test(privileged[1] ?? '')) {
     fail(
         `${MAIN_DIR}/index.ts`,
         'a privileged scheme sets `bypassCSP: true`',
@@ -282,7 +289,7 @@ for (const [rel, code] of mainSource) {
         if (!/https?:\/\//.test(context) && !/startsWith\(\s*'https?:/.test(context)) {
             fail(
                 `${rel}:${line}`,
-                `calls shell.openExternal(${m[1].trim().slice(0, 30)}) with no visible http/https check`,
+                `calls shell.openExternal(${(m[1] ?? '').trim().slice(0, 30)}) with no visible http/https check`,
                 'openExternal hands the string to the OS. A `file://` or `smb://` URL from a note becomes local execution reached by clicking a link.',
             );
         }
@@ -306,13 +313,13 @@ for (const rel of rendererFiles) {
 
     // An innerHTML assignment may not interpolate anything unescaped.
     for (const m of code.matchAll(/\.innerHTML\s*=\s*`([^`]*)`/g)) {
-        const template = m[1];
-        for (const interp of template.matchAll(/\$\{([^}]*)\}/g)) {
-            if (!SAFE_WRAPPERS.test(interp[1])) {
+        const template = m[1] ?? '';
+        for (const [, expr = ''] of template.matchAll(/\$\{([^}]*)\}/g)) {
+            if (!SAFE_WRAPPERS.test(expr)) {
                 const line = code.slice(0, m.index).split('\n').length;
                 fail(
                     `${rel}:${line}`,
-                    `interpolates \`${interp[1].trim().slice(0, 40)}\` into innerHTML without escaping`,
+                    `interpolates \`${expr.trim().slice(0, 40)}\` into innerHTML without escaping`,
                     'Cell contents and table names reach these widgets. Wrap it in escapeHtml() — or add the helper to SAFE_WRAPPERS in this gate if it already escapes.',
                 );
             }
@@ -348,8 +355,8 @@ for (const rel of VHTML_ALLOWED.keys()) {
 for (const rel of [...mainFiles, ...rendererFiles]) {
     const code = stripComments(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
     for (const m of code.matchAll(/new RegExp\(\s*`([^`]*)`/g)) {
-        for (const interp of m[1].matchAll(/\$\{([^}]*)\}/g)) {
-            const name = interp[1].trim();
+        for (const [, expr = ''] of (m[1] ?? '').matchAll(/\$\{([^}]*)\}/g)) {
+            const name = expr.trim();
             if (/^\\\\/.test(name)) continue;
             const escapedHere =
                 REGEX_ESCAPE.test(code) &&
