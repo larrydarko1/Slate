@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import {
     generateId,
     indexToColumnLetter,
@@ -13,8 +14,6 @@ import {
     ZOOM_STEP,
     MAX_CANVASES,
 } from '@/renderer/types/spreadsheet';
-
-// ── generateId ───────────────────────────────────────────────────────────────
 
 describe('generateId', () => {
     it('includes the prefix', () => {
@@ -35,8 +34,6 @@ describe('generateId', () => {
         expect(Number(parts[1])).toBeGreaterThan(0);
     });
 });
-
-// ── Column letter conversion ─────────────────────────────────────────────────
 
 describe('indexToColumnLetter', () => {
     it.each([
@@ -75,8 +72,6 @@ describe('round-trip column conversion', () => {
         expect(columnLetterToIndex(indexToColumnLetter(i))).toBe(i);
     });
 });
-
-// ── Factory functions ────────────────────────────────────────────────────────
 
 describe('createEmptyCell', () => {
     it('creates a cell with null value and empty type', () => {
@@ -224,8 +219,6 @@ describe('createDefaultCanvas', () => {
         expect(createDefaultCanvas('C').id).toMatch(/^canvas_/);
     });
 });
-
-// ── Constants ────────────────────────────────────────────────────────────────
 
 describe('zoom constants', () => {
     it('MIN_ZOOM is 0.25', () => expect(MIN_ZOOM).toBe(0.25));

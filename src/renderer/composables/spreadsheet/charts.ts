@@ -4,8 +4,8 @@
  * chart data selection mode, ref building/resolving/highlighting.
  * Does NOT own: cell access (useCells.ts), formula engine (useFormulaEngine.ts).
  */
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import { chartRefColor } from '@/renderer/composables/spreadsheet/state';
 import type { ChartObject, SpreadsheetTable, CellValue } from '@/renderer/types/spreadsheet';
 import { createDefaultChart, indexToColumnLetter, columnLetterToIndex } from '@/renderer/types/spreadsheet';

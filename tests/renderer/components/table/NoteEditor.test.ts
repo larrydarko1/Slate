@@ -1,5 +1,6 @@
-import { describe, it, expect, afterEach } from 'vitest';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { describe, it, expect, afterEach } from 'vitest';
+
 import NoteEditor from '@/renderer/components/table/NoteEditor.vue';
 
 describe('NoteEditor', () => {

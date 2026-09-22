@@ -5,9 +5,10 @@
  */
 
 import type { Ref } from 'vue';
-import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { ContextMenuApi, MenuItem } from '@/renderer/types/contextMenu';
+import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 export type TableContextMenus = {
     onColumnContextMenu: (ci: number, e: MouseEvent) => void;

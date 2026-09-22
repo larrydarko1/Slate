@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { tokenize, type TokenType } from '@/renderer/composables/spreadsheet/engine/tokenizer';
 
 /** Extract just the type and value from tokens (ignoring EOF) for easy assertions. */
@@ -14,8 +15,6 @@ function types(src: string): TokenType[] {
         .filter((t) => t.type !== 'EOF')
         .map((t) => t.type);
 }
-
-// ── Numbers ──────────────────────────────────────────────────────────────────
 
 describe('numbers', () => {
     it('tokenizes an integer', () => {
@@ -42,8 +41,6 @@ describe('numbers', () => {
     });
 });
 
-// ── Strings ──────────────────────────────────────────────────────────────────
-
 describe('strings', () => {
     it('tokenizes a double-quoted string', () => {
         const tokens = tokenize('"hello"');
@@ -61,8 +58,6 @@ describe('strings', () => {
     });
 });
 
-// ── Quoted names ─────────────────────────────────────────────────────────────
-
 describe('quoted names', () => {
     it('tokenizes a single-quoted name', () => {
         const tokens = tokenize("'Table 1'");
@@ -74,8 +69,6 @@ describe('quoted names', () => {
         expect(tokens[0]).toMatchObject({ type: 'QUOTED_NAME', value: 'My Canvas #2' });
     });
 });
-
-// ── Booleans ─────────────────────────────────────────────────────────────────
 
 describe('booleans', () => {
     it.each([
@@ -89,8 +82,6 @@ describe('booleans', () => {
         expect(tokens[0]).toMatchObject({ type: 'BOOLEAN', value: expected });
     });
 });
-
-// ── Cell references ──────────────────────────────────────────────────────────
 
 describe('cell references', () => {
     it('tokenizes a simple cell reference', () => {
@@ -113,8 +104,6 @@ describe('cell references', () => {
     });
 });
 
-// ── Identifiers (function names) ─────────────────────────────────────────────
-
 describe('identifiers', () => {
     it('tokenizes a function name', () => {
         expect(types('SUM(A1)')).toEqual(['IDENTIFIER', 'LPAREN', 'CELL_REF', 'RPAREN']);
@@ -130,8 +119,6 @@ describe('identifiers', () => {
         expect(tokens[0]).toMatchObject({ type: 'IDENTIFIER', value: 'MY_FUNC' });
     });
 });
-
-// ── Operators ────────────────────────────────────────────────────────────────
 
 describe('operators', () => {
     it.each<[string, TokenType, string]>([
@@ -150,8 +137,6 @@ describe('operators', () => {
     });
 });
 
-// ── Multi-character operators ────────────────────────────────────────────────
-
 describe('multi-character operators', () => {
     it.each<[string, TokenType, string]>([
         ['<>', 'NEQ', '<>'],
@@ -164,8 +149,6 @@ describe('multi-character operators', () => {
     });
 });
 
-// ── Punctuation ──────────────────────────────────────────────────────────────
-
 describe('punctuation', () => {
     it.each<[string, TokenType]>([
         ['(', 'LPAREN'],
@@ -177,8 +160,6 @@ describe('punctuation', () => {
         expect(tokens[0]!.type).toBe(expectedType);
     });
 });
-
-// ── Whitespace ───────────────────────────────────────────────────────────────
 
 describe('whitespace', () => {
     it('skips spaces', () => {
@@ -194,8 +175,6 @@ describe('whitespace', () => {
     });
 });
 
-// ── EOF ──────────────────────────────────────────────────────────────────────
-
 describe('EOF', () => {
     it('always ends with EOF', () => {
         const tokens = tokenize('1');
@@ -208,8 +187,6 @@ describe('EOF', () => {
     });
 });
 
-// ── Error cases ──────────────────────────────────────────────────────────────
-
 describe('error handling', () => {
     it('throws on unexpected character', () => {
         expect(() => tokenize('@')).toThrow('Unexpected character: @');
@@ -219,8 +196,6 @@ describe('error handling', () => {
         expect(() => tokenize('~')).toThrow('Unexpected character: ~');
     });
 });
-
-// ── Complex expressions ──────────────────────────────────────────────────────
 
 describe('complex expressions', () => {
     it('tokenizes a function call with range', () => {

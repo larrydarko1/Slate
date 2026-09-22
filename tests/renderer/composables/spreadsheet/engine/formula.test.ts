@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateFormulaTyped, type FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
+
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { evaluateFormulaTyped, type FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
 import type { CellValue } from '@/renderer/types/spreadsheet';
 
 /** The context every case that reads no cell shares. */
 const emptyCtx = gridContext([]);
-
-// ── Test helpers ─────────────────────────────────────────────────────────────
 
 /** The value half of a typed evaluation — what most of these cases assert on. */
 const evaluateFormula = (formulaBody: string, ctx: FormulaContext): CellValue =>

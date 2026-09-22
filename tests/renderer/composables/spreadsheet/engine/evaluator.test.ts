@@ -1,14 +1,13 @@
 import { describe, it, expect } from 'vitest';
+
+import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { evaluate } from '@/renderer/composables/spreadsheet/engine/evaluator';
 import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
-import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
-import type { CellValue } from '@/renderer/types/spreadsheet';
 import type { ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
+import type { CellValue } from '@/renderer/types/spreadsheet';
 
 /** The context every case that reads no cell shares. */
 const emptyCtx = gridContext([]);
-
-// ── Test helpers ─────────────────────────────────────────────────────────────
 
 function gridContext(grid: CellValue[][], types?: CellDataType[][]): FormulaContext {
     const getVal = (col: number, row: number): CellValue => grid[row]?.[col] ?? null;

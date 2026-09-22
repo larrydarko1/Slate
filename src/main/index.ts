@@ -9,18 +9,17 @@
  *   log-service → log:error, log:warn, log:info, log:debug
  */
 
-import { app, BrowserWindow, ipcMain, Menu, screen } from 'electron';
-import path from 'path';
 import { existsSync } from 'fs';
+import path from 'path';
 import { pathToFileURL } from 'url';
 
+import { app, BrowserWindow, ipcMain, Menu, screen } from 'electron';
+
+import { config } from '@/main/lib/config';
+import { log } from '@/main/lib/logger';
 import * as fileService from '@/main/services/file';
 import * as logService from '@/main/services/log';
 import * as shellService from '@/main/services/shell';
-import { config } from '@/main/lib/config';
-import { log } from '@/main/lib/logger';
-
-// ─── State ───────────────────────────────────────────────────────────────────
 
 let mainWindow: BrowserWindow | null = null;
 let fileToOpen: string | null = null;

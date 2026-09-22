@@ -3,8 +3,8 @@
  * Owns: toggleFormulaMode, insertCellReference, getFormulaTokens, getFormulaHighlights.
  * Does NOT own: recalculation (useFormulaEngine.ts), cell access (useCells.ts).
  */
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import { refColor } from '@/renderer/composables/spreadsheet/state';
 import type { Cell } from '@/renderer/types/spreadsheet';
 import { indexToColumnLetter, columnLetterToIndex } from '@/renderer/types/spreadsheet';

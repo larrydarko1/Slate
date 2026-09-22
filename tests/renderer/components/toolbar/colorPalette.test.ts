@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { colorPalette } from '@/renderer/components/toolbar/colorPalette';
 
 describe('colorPalette', () => {

@@ -4,8 +4,9 @@
  * Does NOT own: note storage (useSpreadsheet), context menu integration.
  */
 import { nextTick, ref, type Ref } from 'vue';
-import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 export type TableNotes = {
     notePopup: Ref<

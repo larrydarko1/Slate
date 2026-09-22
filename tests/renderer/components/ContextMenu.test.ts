@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import ContextMenu from '@/renderer/components/ContextMenu.vue';
 import type { ContextMenuApi, MenuItem } from '@/renderer/types/contextMenu';
 

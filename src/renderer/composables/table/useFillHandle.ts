@@ -4,8 +4,9 @@
  * Does NOT own: cell value writes (delegated to ss.fillCells).
  */
 import { ref, type Ref } from 'vue';
-import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 export type FillHandle = {
     fillDragState: Ref<

@@ -18,13 +18,11 @@
  *  - Mixed currency → first cell's currency wins
  */
 
-import type { CellValue } from '@/renderer/types/spreadsheet';
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
-import { tokenize } from '@/renderer/composables/spreadsheet/engine/tokenizer';
-import { Parser } from '@/renderer/composables/spreadsheet/engine/parser';
 import { evaluate } from '@/renderer/composables/spreadsheet/engine/evaluator';
-
-// ── Public context the evaluator needs ───────────────────────────────────────
+import { Parser } from '@/renderer/composables/spreadsheet/engine/parser';
+import { tokenize } from '@/renderer/composables/spreadsheet/engine/tokenizer';
+import type { CellValue } from '@/renderer/types/spreadsheet';
 
 export type FormulaContext = {
     getCellValue: (col: number, row: number) => CellValue;

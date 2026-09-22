@@ -3,8 +3,8 @@
  * Owns: selectCell, selectRow/Col, extend selection, moveSelection.
  * Does NOT own: editing (useEditing.ts), helpers (helpers.ts).
  */
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SelectionRange } from '@/renderer/types/spreadsheet';
 
 export type SpreadsheetSelection = {

@@ -1,11 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ref, computed } from 'vue';
+
 import { createHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { Canvas, SpreadsheetTable, TextBox, ChartObject, SelectionRange } from '@/renderer/types/spreadsheet';
 import { createEmptyCell, generateId } from '@/renderer/types/spreadsheet';
-
-// ── Test helpers ─────────────────────────────────────────────────────────────
 
 function makeTable(overrides: Partial<SpreadsheetTable> = {}): SpreadsheetTable {
     return {

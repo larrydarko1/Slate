@@ -1,15 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { tokenize } from '@/renderer/composables/spreadsheet/engine/tokenizer';
-import { Parser, type ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+import { Parser, type ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
+import { tokenize } from '@/renderer/composables/spreadsheet/engine/tokenizer';
 
 /** Parse a formula string into an AST. */
 function parse(src: string): ASTNode {
     return new Parser(tokenize(src)).parse();
 }
-
-// ── Literals ─────────────────────────────────────────────────────────────────
 
 describe('literals', () => {
     it('parses a number', () => {
@@ -32,8 +29,6 @@ describe('literals', () => {
         expect(parse('FALSE')).toEqual({ type: 'boolean', value: false });
     });
 });
-
-// ── Cell references and ranges ───────────────────────────────────────────────
 
 describe('cell references', () => {
     it('parses a single cell reference', () => {
@@ -64,8 +59,6 @@ describe('cell references', () => {
         expect(parse('AB23')).toEqual({ type: 'cell_ref', col: 27, row: 22 });
     });
 });
-
-// ── Arithmetic (operator precedence) ─────────────────────────────────────────
 
 describe('arithmetic', () => {
     it('parses addition', () => {
@@ -134,8 +127,6 @@ describe('arithmetic', () => {
     });
 });
 
-// ── Unary ────────────────────────────────────────────────────────────────────
-
 describe('unary operators', () => {
     it('parses unary minus', () => {
         expect(parse('-5')).toEqual({
@@ -163,8 +154,6 @@ describe('unary operators', () => {
     });
 });
 
-// ── Comparison ───────────────────────────────────────────────────────────────
-
 describe('comparison operators', () => {
     it.each([
         ['1 = 2', '='],
@@ -183,8 +172,6 @@ describe('comparison operators', () => {
         });
     });
 });
-
-// ── Concatenation ────────────────────────────────────────────────────────────
 
 describe('concatenation', () => {
     it('parses & as a binary operator', () => {
@@ -208,8 +195,6 @@ describe('concatenation', () => {
         });
     });
 });
-
-// ── Functions ────────────────────────────────────────────────────────────────
 
 describe('functions', () => {
     it('parses a no-arg function', () => {
@@ -266,8 +251,6 @@ describe('functions', () => {
         });
     });
 });
-
-// ── External references ──────────────────────────────────────────────────────
 
 describe('external references', () => {
     it('parses a cross-table cell ref (quoted name)', () => {
@@ -331,8 +314,6 @@ describe('external references', () => {
         });
     });
 });
-
-// ── Error handling ───────────────────────────────────────────────────────────
 
 describe('error handling', () => {
     it('throws on missing closing paren', () => {

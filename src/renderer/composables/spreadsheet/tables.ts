@@ -3,12 +3,12 @@
  * Owns: addTable, removeTable, renameTable, moveTable, row/col add/delete/insert, bulk delete.
  * Does NOT own: reordering (useTableReorder.ts), sorting (useTableSort.ts), cell access (useCells.ts).
  */
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
-import type { Cell, SpreadsheetTable, MergedRegion } from '@/renderer/types/spreadsheet';
-import { generateId, createEmptyCell, createDefaultTable } from '@/renderer/types/spreadsheet';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import { createTableReorder } from '@/renderer/composables/spreadsheet/tableReorder';
 import { createTableSort } from '@/renderer/composables/spreadsheet/tableSort';
+import type { Cell, SpreadsheetTable, MergedRegion } from '@/renderer/types/spreadsheet';
+import { generateId, createEmptyCell, createDefaultTable } from '@/renderer/types/spreadsheet';
 
 export type SpreadsheetTables = {
     addTable: () => void;

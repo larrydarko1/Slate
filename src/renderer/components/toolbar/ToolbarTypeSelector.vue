@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { getTypeLabel } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 
 const typeOptions: { value: CellDataType; label: string; short: string }[] = [
     { value: 'text', label: 'Text', short: 'ABC' },

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { provide, onMounted, onBeforeUnmount } from 'vue';
-import { useSpreadsheet, SPREADSHEET_KEY } from '@/renderer/composables/useSpreadsheet';
-import Toolbar from '@/renderer/components/Toolbar.vue';
-import FormulaBar from '@/renderer/components/FormulaBar.vue';
-import CanvasWorkspace from '@/renderer/components/CanvasWorkspace.vue';
+
 import CanvasTabs from '@/renderer/components/CanvasTabs.vue';
+import CanvasWorkspace from '@/renderer/components/CanvasWorkspace.vue';
+import FormulaBar from '@/renderer/components/FormulaBar.vue';
+import Toolbar from '@/renderer/components/Toolbar.vue';
+import { useSpreadsheet, SPREADSHEET_KEY } from '@/renderer/composables/useSpreadsheet';
 
 const ss = useSpreadsheet();
 

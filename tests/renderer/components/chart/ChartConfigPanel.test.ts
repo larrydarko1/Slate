@@ -1,6 +1,7 @@
+import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { defineComponent, h } from 'vue';
-import { mount, type VueWrapper } from '@vue/test-utils';
+
 import ChartConfigPanel from '@/renderer/components/chart/ChartConfigPanel.vue';
 import { useSpreadsheet, SPREADSHEET_KEY, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 

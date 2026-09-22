@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+
 import type { ContextMenuApi, MenuItem } from '@/renderer/types/contextMenu';
 
 defineExpose<ContextMenuApi>({ open, close });

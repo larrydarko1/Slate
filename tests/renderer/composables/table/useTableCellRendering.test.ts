@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ref, type Ref } from 'vue';
-import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+
 import { useTableCellRendering } from '@/renderer/composables/table/useTableCellRendering';
+import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 describe('useTableCellRendering', () => {

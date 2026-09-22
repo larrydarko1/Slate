@@ -3,8 +3,8 @@
  * Owns: addTextBox, removeTextBox, moveTextBox, resizeTextBox, updateTextBox, selectTextBox.
  * Does NOT own: editing (useEditing.ts), charts (useCharts.ts).
  */
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { TextBox } from '@/renderer/types/spreadsheet';
 import { createDefaultTextBox } from '@/renderer/types/spreadsheet';
 

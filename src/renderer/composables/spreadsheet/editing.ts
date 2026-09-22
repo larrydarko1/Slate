@@ -3,8 +3,8 @@
  * Owns: startEditing, commitEdit, cancelEdit, clearActiveCell.
  * Does NOT own: cell access/values (useCells.ts), selection (useSelection.ts).
  */
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 
 export type SpreadsheetEditing = {
     startEditing: (initialValue?: string) => void;

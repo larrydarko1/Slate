@@ -3,12 +3,12 @@
  * Owns: recalculate(), formula reference shifting/remapping, table/canvas name rewrites.
  * Does NOT own: formula editing mode (useFormulas.ts), cell access (useCells.ts).
  */
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
-import type { SpreadsheetTable, Cell, CellValue, ChartObject } from '@/renderer/types/spreadsheet';
-import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
 import { evaluateFormulaTyped } from '@/renderer/composables/spreadsheet/engine/formula';
+import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
+import type { SpreadsheetTable, Cell, CellValue, ChartObject } from '@/renderer/types/spreadsheet';
 import { columnLetterToIndex, indexToColumnLetter } from '@/renderer/types/spreadsheet';
 
 export type SpreadsheetFormulaEngine = {

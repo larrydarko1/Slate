@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue';
-import type { TextBox } from '@/renderer/types/spreadsheet';
-import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
-import { useDragResize, type ResizeDir } from '@/renderer/composables/useDragResize';
+
 import ResizeHandles from '@/renderer/components/canvas/ResizeHandles.vue';
+import { useDragResize, type ResizeDir } from '@/renderer/composables/useDragResize';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import type { TextBox } from '@/renderer/types/spreadsheet';
 
 const props = defineProps<{ textBox: TextBox }>();
 

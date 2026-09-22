@@ -3,8 +3,8 @@
  * Owns: internal clipboard buffer, copyCells, cutCells, pasteCells, fillCells.
  * Does NOT own: cell access (useCells.ts), formula shifting (useFormulaEngine.ts).
  */
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { Cell, CellFormat, SelectionRange } from '@/renderer/types/spreadsheet';
 import { generateId, createEmptyCell } from '@/renderer/types/spreadsheet';
 

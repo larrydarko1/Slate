@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+
 import CanvasTabs from '@/renderer/components/CanvasTabs.vue';
 import { useSpreadsheet, SPREADSHEET_KEY, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ref, nextTick, type Ref } from 'vue';
-import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+
 import { useTableNotes } from '@/renderer/composables/table/useTableNotes';
+import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 /** A stand-in for the note indicator, positioned so the popup has a rect to read. */

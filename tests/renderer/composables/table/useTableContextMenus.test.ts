@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ref, type Ref } from 'vue';
-import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+
 import { useTableContextMenus } from '@/renderer/composables/table/useTableContextMenus';
+import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { ContextMenuApi, MenuItem } from '@/renderer/types/contextMenu';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import {
     detectType,
     isNumericType,
@@ -9,8 +10,6 @@ import {
     getTypeLabel,
     type CellDataType,
 } from '@/renderer/composables/spreadsheet/engine/cellTypes';
-
-// ── detectType ───────────────────────────────────────────────────────────────
 
 describe('detectType', () => {
     // Empty / null

@@ -3,8 +3,8 @@
  * Owns: reorderRow, reorderRows, reorderColumn, reorderColumns.
  * Does NOT own: CRUD (useTables.ts), sorting (useTableSort.ts).
  */
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 export type TableReorder = {

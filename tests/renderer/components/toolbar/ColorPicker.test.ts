@@ -1,6 +1,7 @@
+import { mount } from '@vue/test-utils';
 import { describe, it, expect } from 'vitest';
 import { defineComponent, h } from 'vue';
-import { mount } from '@vue/test-utils';
+
 import ColorPicker from '@/renderer/components/toolbar/ColorPicker.vue';
 
 const PALETTE = ['#ff0000', '#00ff00', '#0000ff'];

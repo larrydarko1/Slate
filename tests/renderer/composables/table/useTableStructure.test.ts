@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ref, type Ref } from 'vue';
-import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+
 import { useTableStructure } from '@/renderer/composables/table/useTableStructure';
+import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 /**

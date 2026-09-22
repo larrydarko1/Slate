@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+
+import { colorPalette } from '@/renderer/components/toolbar/colorPalette';
+import ColorPicker from '@/renderer/components/toolbar/ColorPicker.vue';
+import ToolbarFontPicker from '@/renderer/components/toolbar/ToolbarFontPicker.vue';
+import ToolbarTypeSelector from '@/renderer/components/toolbar/ToolbarTypeSelector.vue';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 import type { TextBox } from '@/renderer/types/spreadsheet';
-import ColorPicker from '@/renderer/components/toolbar/ColorPicker.vue';
-import ToolbarTypeSelector from '@/renderer/components/toolbar/ToolbarTypeSelector.vue';
-import ToolbarFontPicker from '@/renderer/components/toolbar/ToolbarFontPicker.vue';
-import { colorPalette } from '@/renderer/components/toolbar/colorPalette';
 
 defineEmits<{
     addTable: [];

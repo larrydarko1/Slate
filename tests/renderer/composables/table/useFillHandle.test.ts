@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ref, type Ref } from 'vue';
-import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+
 import { useFillHandle } from '@/renderer/composables/table/useFillHandle';
+import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 const CELL = 20;

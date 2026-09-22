@@ -4,20 +4,16 @@
  *  Does NOT own: tokenization (tokenizer.ts), parsing (parser.ts), public API (formula.ts).
  */
 
-import type { CellValue } from '@/renderer/types/spreadsheet';
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { resolveType, resolveTypeList, isNumericType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
 import type { ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
-
-// ── Type helpers ─────────────────────────────────────────────────────────────
+import type { CellValue } from '@/renderer/types/spreadsheet';
 
 export type TypedCellValue = {
     value: CellValue;
     type: CellDataType;
 };
-
-// ── Main evaluator (type-aware) ──────────────────────────────────────────────
 
 export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
     switch (node.type) {

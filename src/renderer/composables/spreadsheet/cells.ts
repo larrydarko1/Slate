@@ -3,12 +3,12 @@
  * Owns: findCell, setCellValue, display/raw values, type/format ops, cell notes.
  * Does NOT own: editing state (useEditing.ts), selection (useSelection.ts).
  */
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
-import type { Cell, CellFormat, CellFormatUpdate } from '@/renderer/types/spreadsheet';
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
-import { generateId, createEmptyCell } from '@/renderer/types/spreadsheet';
 import { detectType, formatCellDisplay, getTypeAlignment } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
+import type { Cell, CellFormat, CellFormatUpdate } from '@/renderer/types/spreadsheet';
+import { generateId, createEmptyCell } from '@/renderer/types/spreadsheet';
 
 export type SpreadsheetCells = {
     findCell: (tableId: string, col: number, row: number) => Cell | null;

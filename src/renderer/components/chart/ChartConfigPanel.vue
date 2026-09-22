@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useId } from 'vue';
-import type { ChartObject } from '@/renderer/types/spreadsheet';
-import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+
 import { chartRefColor } from '@/renderer/composables/spreadsheet/state';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import type { ChartObject } from '@/renderer/types/spreadsheet';
 
 const props = defineProps<{ chart: ChartObject }>();
 

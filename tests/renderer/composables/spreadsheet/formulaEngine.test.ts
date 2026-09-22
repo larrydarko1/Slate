@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
-import { createState } from '@/renderer/composables/spreadsheet/state';
+
 import { createFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
+import { createState } from '@/renderer/composables/spreadsheet/state';
+import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 
 /**
  * remapFormulaReferences and the index mappers are wiring between the engine and

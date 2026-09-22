@@ -5,21 +5,22 @@
  */
 
 import { inject, type InjectionKey } from 'vue';
-import { createState, type SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-import { createHelpers, type SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
-import { createFormulaEngine, type SpreadsheetFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
-import { createUndoRedo, type SpreadsheetUndoRedo } from '@/renderer/composables/spreadsheet/undoRedo';
-import { createCells, type SpreadsheetCells } from '@/renderer/composables/spreadsheet/cells';
-import { createEditing, type SpreadsheetEditing } from '@/renderer/composables/spreadsheet/editing';
-import { createSelection, type SpreadsheetSelection } from '@/renderer/composables/spreadsheet/selection';
+
 import { createCanvases, type SpreadsheetCanvases } from '@/renderer/composables/spreadsheet/canvases';
-import { createTables, type SpreadsheetTables } from '@/renderer/composables/spreadsheet/tables';
-import { createMerge, type SpreadsheetMerge } from '@/renderer/composables/spreadsheet/merge';
-import { createClipboard, type SpreadsheetClipboard } from '@/renderer/composables/spreadsheet/clipboard';
-import { createFormulas, type SpreadsheetFormulas } from '@/renderer/composables/spreadsheet/formulas';
+import { createCells, type SpreadsheetCells } from '@/renderer/composables/spreadsheet/cells';
 import { createCharts, type SpreadsheetCharts } from '@/renderer/composables/spreadsheet/charts';
-import { createTextBoxes, type SpreadsheetTextBoxes } from '@/renderer/composables/spreadsheet/textBoxes';
+import { createClipboard, type SpreadsheetClipboard } from '@/renderer/composables/spreadsheet/clipboard';
+import { createEditing, type SpreadsheetEditing } from '@/renderer/composables/spreadsheet/editing';
 import { createFileOps, type SpreadsheetFileOps } from '@/renderer/composables/spreadsheet/fileOps';
+import { createFormulaEngine, type SpreadsheetFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
+import { createFormulas, type SpreadsheetFormulas } from '@/renderer/composables/spreadsheet/formulas';
+import { createHelpers, type SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import { createMerge, type SpreadsheetMerge } from '@/renderer/composables/spreadsheet/merge';
+import { createSelection, type SpreadsheetSelection } from '@/renderer/composables/spreadsheet/selection';
+import { createState, type SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
+import { createTables, type SpreadsheetTables } from '@/renderer/composables/spreadsheet/tables';
+import { createTextBoxes, type SpreadsheetTextBoxes } from '@/renderer/composables/spreadsheet/textBoxes';
+import { createUndoRedo, type SpreadsheetUndoRedo } from '@/renderer/composables/spreadsheet/undoRedo';
 
 /**
  * The whole spreadsheet API, as one injectable value. Written as an

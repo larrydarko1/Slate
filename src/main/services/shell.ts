@@ -6,6 +6,7 @@
  * (main/index.ts).
  */
 import { type IpcMain, shell } from 'electron';
+
 import { type ShellOpenResult, ExternalUrlSchema } from '@/schemas/shell';
 
 /**

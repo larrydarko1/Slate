@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, toRef, watch } from 'vue';
-import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
-import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+
 import ContextMenu from '@/renderer/components/ContextMenu.vue';
-import type { ContextMenuApi } from '@/renderer/types/contextMenu';
-import NotePopup from '@/renderer/components/table/NotePopup.vue';
 import NoteEditor from '@/renderer/components/table/NoteEditor.vue';
-import { useTableCellRendering } from '@/renderer/composables/table/useTableCellRendering';
-import { useTableStructure } from '@/renderer/composables/table/useTableStructure';
+import NotePopup from '@/renderer/components/table/NotePopup.vue';
 import { useFillHandle } from '@/renderer/composables/table/useFillHandle';
 import { useRowColReorder } from '@/renderer/composables/table/useRowColReorder';
+import { useTableCellRendering } from '@/renderer/composables/table/useTableCellRendering';
 import { useTableContextMenus } from '@/renderer/composables/table/useTableContextMenus';
 import { useTableNotes } from '@/renderer/composables/table/useTableNotes';
+import { useTableStructure } from '@/renderer/composables/table/useTableStructure';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import type { ContextMenuApi } from '@/renderer/types/contextMenu';
+import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 const props = defineProps<{ table: SpreadsheetTable }>();
 

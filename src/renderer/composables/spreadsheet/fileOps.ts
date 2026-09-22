@@ -3,11 +3,11 @@
  * Owns: save, saveAs, open, loadFileFromPath, newFile, serialize/deserialize.
  * Does NOT own: reactive state (state.ts), recalculation (useFormulaEngine.ts).
  */
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
+import { detectType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetTable, Cell } from '@/renderer/types/spreadsheet';
 import { createDefaultCanvas, indexToColumnLetter } from '@/renderer/types/spreadsheet';
-import { detectType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 
 export type SpreadsheetFileOps = {
     saveFile: (filePath?: string) => Promise<boolean>;

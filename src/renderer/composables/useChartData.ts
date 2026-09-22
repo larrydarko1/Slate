@@ -4,11 +4,12 @@
  * Does NOT own: chart CRUD (useCharts.ts), drag/resize (useDragResize.ts).
  */
 
-import { computed, ref, onMounted, onBeforeUnmount, type Component, type ComputedRef, type Ref } from 'vue';
-import type { ChartObject } from '@/renderer/types/spreadsheet';
-import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { ChartData, ChartOptions, TooltipItem, ChartTypeRegistry } from 'chart.js';
+import { computed, ref, onMounted, onBeforeUnmount, type Component, type ComputedRef, type Ref } from 'vue';
 import { Bar, Line, Pie, Doughnut, Scatter, Radar } from 'vue-chartjs';
+
+import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+import type { ChartObject } from '@/renderer/types/spreadsheet';
 
 // ── Composable ──────────────────────────────────────────────────────────────
 

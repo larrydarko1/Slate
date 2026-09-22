@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
-import { indexToColumnLetter } from '@/renderer/types/spreadsheet';
+
 import { getTypeLabel, type CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { FormulaToken } from '@/renderer/composables/spreadsheet/formulas';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import { indexToColumnLetter } from '@/renderer/types/spreadsheet';
 
 const ss = injectSpreadsheet();
 const inputRef = ref<HTMLInputElement | null>(null);

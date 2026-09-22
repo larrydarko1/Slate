@@ -6,6 +6,7 @@
  * rotation settings (main/lib/logger.ts).
  */
 import { type IpcMain } from 'electron';
+
 import { log } from '@/main/lib/logger';
 import { LogEntrySchema, type LogLevel } from '@/schemas/log';
 

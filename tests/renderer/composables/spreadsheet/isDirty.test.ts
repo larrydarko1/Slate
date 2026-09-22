@@ -1,11 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createState } from '@/renderer/composables/spreadsheet/state';
-import { createUndoRedo } from '@/renderer/composables/spreadsheet/undoRedo';
+
 import { createFileOps } from '@/renderer/composables/spreadsheet/fileOps';
 import { createFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
+import { createState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-
-// ── Test setup ────────────────────────────────────────────────────────────────
+import { createUndoRedo } from '@/renderer/composables/spreadsheet/undoRedo';
 
 function setupState() {
     const state = createState();
@@ -22,8 +21,6 @@ function setupState() {
 
     return { state, undoRedo, fileOps };
 }
-
-// ── isDirty tests ─────────────────────────────────────────────────────────────
 
 describe('isDirty state management', () => {
     let state: SpreadsheetCoreState;

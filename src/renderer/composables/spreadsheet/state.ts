@@ -4,6 +4,7 @@
  * Does NOT own: business logic (sub-composables), formula engine (useFormulaEngine).
  */
 import { ref, computed, type ComputedRef, type Ref, type WritableComputedRef } from 'vue';
+
 import type {
     Canvas,
     CellReference,

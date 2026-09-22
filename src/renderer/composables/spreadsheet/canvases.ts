@@ -3,8 +3,8 @@
  * Owns: addCanvas, removeCanvas, renameCanvas, switchCanvas, zoom, reorder.
  * Does NOT own: reactive state (state.ts), recalculation (useFormulaEngine.ts).
  */
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import { createDefaultCanvas, MAX_CANVASES, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP } from '@/renderer/types/spreadsheet';
 
 /** Viewport point that must stay put while the zoom level changes. */

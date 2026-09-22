@@ -4,9 +4,10 @@
  * Does NOT own: the wire vocabulary (@/schemas/file), window lifecycle
  * (main/index.ts), spreadsheet serialization (renderer).
  */
-import { type BrowserWindow, type IpcMain, dialog } from 'electron';
-import fs from 'fs/promises';
 import { renameSync, unlinkSync, writeFileSync } from 'fs';
+import fs from 'fs/promises';
+
+import { type BrowserWindow, type IpcMain, dialog } from 'electron';
 
 import {
     type FileReadResult,

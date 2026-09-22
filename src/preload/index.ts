@@ -9,6 +9,7 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
+
 import type { ElectronAPI } from '@/schemas/electron';
 import type { LogEntry } from '@/schemas/log';
 

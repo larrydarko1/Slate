@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ref } from 'vue';
+
 import { useDragResize, type ResizeDir } from '@/renderer/composables/useDragResize';
 
 const POS = { x: 100, y: 100, width: 200, height: 100 };

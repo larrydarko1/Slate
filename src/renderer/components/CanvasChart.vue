@@ -1,10 +1,4 @@
 <script setup lang="ts">
-import { computed, toRef } from 'vue';
-import type { ChartObject } from '@/renderer/types/spreadsheet';
-import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
-import { useDragResize, type ResizeDir } from '@/renderer/composables/useDragResize';
-import ResizeHandles from '@/renderer/components/canvas/ResizeHandles.vue';
-import { useChartData } from '@/renderer/composables/useChartData';
 import {
     Chart as ChartJS,
     Title,
@@ -19,7 +13,14 @@ import {
     RadialLinearScale,
     Filler,
 } from 'chart.js';
+import { computed, toRef } from 'vue';
+
+import ResizeHandles from '@/renderer/components/canvas/ResizeHandles.vue';
 import ChartConfigPanel from '@/renderer/components/chart/ChartConfigPanel.vue';
+import { useChartData } from '@/renderer/composables/useChartData';
+import { useDragResize, type ResizeDir } from '@/renderer/composables/useDragResize';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
+import type { ChartObject } from '@/renderer/types/spreadsheet';
 
 const props = defineProps<{ chart: ChartObject }>();
 

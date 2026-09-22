@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
-import SpreadsheetTable from '@/renderer/components/SpreadsheetTable.vue';
-import CanvasTextBox from '@/renderer/components/CanvasTextBox.vue';
+
 import CanvasChart from '@/renderer/components/CanvasChart.vue';
+import CanvasTextBox from '@/renderer/components/CanvasTextBox.vue';
+import SpreadsheetTable from '@/renderer/components/SpreadsheetTable.vue';
+import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 
 const ss = injectSpreadsheet();
 const canvasRef = ref<HTMLElement | null>(null);

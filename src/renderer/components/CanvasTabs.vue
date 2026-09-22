@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, ref, computed } from 'vue';
+
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 import { MAX_CANVASES, createDefaultCanvas, type SpreadsheetTable } from '@/renderer/types/spreadsheet';
 

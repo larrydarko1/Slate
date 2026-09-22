@@ -4,8 +4,9 @@
  * Does NOT own: cell selection, reorder, fill handle, context menus.
  */
 import type { Ref } from 'vue';
-import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 export type TableStructure = {
     startDrag: (e: MouseEvent) => void;

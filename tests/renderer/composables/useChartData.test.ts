@@ -1,8 +1,9 @@
+import { mount } from '@vue/test-utils';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { defineComponent, ref, type Ref } from 'vue';
-import { mount } from '@vue/test-utils';
-import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+
 import { useChartData, type ChartRendering } from '@/renderer/composables/useChartData';
+import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { ChartObject } from '@/renderer/types/spreadsheet';
 
 // ChartType is module-private in the source; the chart's own field is the contract.
