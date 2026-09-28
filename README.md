@@ -261,7 +261,7 @@ reproducible locally:
 
 ## Contributing
 
-No Contributors. See [CONTRIBUTING.md](CONTRIBUTING.md).
+No Contributors. See [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ## Code of Conduct
 
