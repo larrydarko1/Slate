@@ -118,11 +118,11 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
             if (data['version'] === '2.0' && Array.isArray(data['canvases']) && data['canvases'].length > 0) {
                 const rawCanvases = data['canvases'] as Record<string, unknown>[];
                 state.canvases.value = rawCanvases.map((cv) => {
-                    const tables = ((cv['tables'] as unknown[]) ?? []).map(
-                        (t): SpreadsheetTable => migrateTable(t as Record<string, unknown>),
+                    const tables = ((cv['tables'] as unknown[]) ?? []).map((t): SpreadsheetTable =>
+                        migrateTable(t as Record<string, unknown>),
                     );
-                    const charts = ((cv['charts'] as unknown[]) ?? []).map(
-                        (ch): Record<string, unknown> => migrateChartDataSource(ch as Record<string, unknown>, tables),
+                    const charts = ((cv['charts'] as unknown[]) ?? []).map((ch): Record<string, unknown> =>
+                        migrateChartDataSource(ch as Record<string, unknown>, tables),
                     );
                     return {
                         id: cv['id'] as string,
@@ -143,8 +143,8 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
                 state.counters.tableCount = state.canvases.value.reduce((sum, cv): number => sum + cv.tables.length, 0);
             } else if (Array.isArray(data['tables'])) {
                 // V1 format — single canvas, migrate
-                const migrated = (data['tables'] as unknown[]).map(
-                    (t): SpreadsheetTable => migrateTable(t as Record<string, unknown>),
+                const migrated = (data['tables'] as unknown[]).map((t): SpreadsheetTable =>
+                    migrateTable(t as Record<string, unknown>),
                 );
                 const canvas = createDefaultCanvas('Canvas 1');
                 canvas.tables = migrated;

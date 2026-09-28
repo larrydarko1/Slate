@@ -7,15 +7,7 @@
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type CellDataType =
-    | 'integer'
-    | 'float'
-    | 'percent'
-    | 'currency_eur'
-    | 'currency_usd'
-    | 'text'
-    | 'boolean'
-    | 'url'
-    | 'empty';
+    'integer' | 'float' | 'percent' | 'currency_eur' | 'currency_usd' | 'text' | 'boolean' | 'url' | 'empty';
 
 export type TypedValue = {
     type: CellDataType;

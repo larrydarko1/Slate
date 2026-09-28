@@ -69,6 +69,7 @@
         "@commitlint/cli": "^20.5.0",
         "@commitlint/config-conventional": "^20.5.0",
         "@eslint/js": "^10.0.1",
+        "@larrydarko/lint-config": "^0.1.0-beta.0",
         "@types/node": "^24.0.13",
         "@vitejs/plugin-vue": "^6.0.0",
         "@vitest/coverage-v8": "^4.1.11",
@@ -189,14 +190,5 @@
             "synopsis": "A free, canvas-based spreadsheet app. Tables, charts and text boxes on an infinite canvas, saved as local .slate files.",
             "syncDesktopName": true
         }
-    },
-    "lint-staged": {
-        "*.{ts,vue}": [
-            "eslint --fix",
-            "prettier --write"
-        ],
-        "*.{scss,json,md}": [
-            "prettier --write"
-        ]
     }
 }
