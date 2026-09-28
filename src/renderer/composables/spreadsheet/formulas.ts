@@ -216,18 +216,19 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
             )
                 continue;
             const color = token.color;
-            if (token.isRange === true && token.endCol !== undefined && token.endRow !== undefined) {
-                const minC = Math.min(token.col, token.endCol);
-                const maxC = Math.max(token.col, token.endCol);
-                const minR = Math.min(token.row, token.endRow);
-                const maxR = Math.max(token.row, token.endRow);
-                for (let rowIdx = minR; rowIdx <= maxR; rowIdx++) {
-                    for (let colIdx = minC; colIdx <= maxC; colIdx++) {
-                        highlights.push({ tableId: token.tableId, col: colIdx, row: rowIdx, color });
-                    }
+            // A single reference is the 1×1 range at its own cell, so one loop covers both.
+            const { endCol: rangeEndCol, endRow: rangeEndRow } = token;
+            const spans = token.isRange === true && rangeEndCol !== undefined && rangeEndRow !== undefined;
+            const endCol = spans ? rangeEndCol : token.col;
+            const endRow = spans ? rangeEndRow : token.row;
+            const minC = Math.min(token.col, endCol);
+            const maxC = Math.max(token.col, endCol);
+            const minR = Math.min(token.row, endRow);
+            const maxR = Math.max(token.row, endRow);
+            for (let rowIdx = minR; rowIdx <= maxR; rowIdx++) {
+                for (let colIdx = minC; colIdx <= maxC; colIdx++) {
+                    highlights.push({ tableId: token.tableId, col: colIdx, row: rowIdx, color });
                 }
-            } else {
-                highlights.push({ tableId: token.tableId, col: token.col, row: token.row, color });
             }
         }
         return highlights;
