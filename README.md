@@ -125,8 +125,7 @@ which has no build target at all — `electron-builder --win` may well work, but
 - **IPC validation:** [Zod](https://zod.dev/) — every channel argument is parsed before use
 - **Logging:** electron-log, rotating at 1 MB
 - **Testing:** Vitest + jsdom, 80% coverage enforced
-- **Linting:** ESLint (flat config, plus custom in-repo rules) + Prettier + Stylelint
-- **Git Hooks:** Husky + lint-staged + commitlint
+- **Code Quality:** [@larrydarko/lint-config](https://www.npmjs.com/package/@larrydarko/lint-config) — one shared package that bundles ESLint (flat config), Prettier, Stylelint, knip, jscpd, Husky + lint-staged + commitlint, and the CI gates
 - **Build:** electron-vite + Electron Builder
 
 ## Project Structure
@@ -135,12 +134,10 @@ which has no build target at all — `electron-builder --win` may well work, but
 slate/
 ├── electron.vite.config.ts        # Unified build config (main + preload + renderer)
 ├── vitest.config.ts               # Vitest config (node + jsdom projects)
-├── eslint.config.js               # ESLint flat config (TS + Vue + Prettier)
+├── eslint.config.js               # ESLint, via the shared config plus per-process wiring
 ├── commitlint.config.js           # Conventional commit enforcement
-├── eslint/                        # Custom in-repo ESLint rules, one file per concern
 ├── scripts/
-│   ├── check/                     # The 14 quality gates run by `npm run ci:check`
-│   └── lib/                       # Shared helpers for the gates
+│   └── check/                     # The 15 quality gates run by `npm run ci:check`
 ├── src/
 │   ├── main/                      # Electron main process
 │   │   ├── index.ts               #   BrowserWindow, navigation & permission policy,
@@ -238,8 +235,11 @@ slate/
 
 ## Quality Gates
 
-Beyond lint and tests, the repo enforces its own architecture. `npm run ci:check` runs
-the same list CI does, so a red check is always reproducible locally:
+Beyond lint and tests, the repo enforces its own architecture. Each script under
+[scripts/check/](scripts/check/) is a thin wrapper over a gate from
+[@larrydarko/lint-config](https://www.npmjs.com/package/@larrydarko/lint-config) that holds only this
+repo's answers. `npm run ci:check` runs the same list CI does, so a red check is always
+reproducible locally:
 
 | Script            | Enforces                                                            |
 | ----------------- | ------------------------------------------------------------------- |
@@ -257,6 +257,7 @@ the same list CI does, so a red check is always reproducible locally:
 | `dup:check`       | Copy-paste duplication                                              |
 | `dead:check`      | Unused files, exports and dependencies                              |
 | `test:check`      | Test layout, naming and coverage thresholds                         |
+| `tsconfig:check`  | Compiler flags stay at the standard; no Node types in the renderer  |
 
 ## Contributing
 
