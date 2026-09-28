@@ -106,7 +106,7 @@ onBeforeUnmount((): void => {
     </div>
 </template>
 
-<style lang="scss">
+<style scoped lang="scss">
 .app-shell {
     display: flex;
     flex-direction: column;
