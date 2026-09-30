@@ -161,12 +161,10 @@ slate/
 │       ├── App.vue                #   Root component (provides spreadsheet state)
 │       ├── main.ts                #   Vue entry point
 │       ├── styles/                #   SCSS design system
-│       │   ├── index.scss         #     Barrel — injected into every SFC by Vite
-│       │   ├── global.scss        #     Entry point — imported once by main.ts
+│       │   ├── index.scss         #     Entry point — imported once by main.ts
 │       │   ├── _tokens.scss       #     Custom properties shared by every theme
 │       │   ├── _themes.scss       #     Per-theme palettes (light/dark)
-│       │   ├── _variables.scss    #     Typography, size, motion, depth, opacity scales
-│       │   ├── _mixins.scss       #     Multi-declaration patterns
+│       │   ├── _variables.scss    #     Scales, theme aliases & mixins — injected into every SFC
 │       │   ├── _base.scss         #     Document typography, Electron drag regions
 │       │   └── components/        #     Shared button, canvas & placeholder styles
 │       ├── components/            #   Vue components

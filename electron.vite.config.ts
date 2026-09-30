@@ -55,12 +55,14 @@ export default defineConfig({
                     // an import line. Nothing in src/renderer/styles/ records that it is
                     // depended on this way, so removing it breaks all 15 components at
                     // once with an undefined-variable error and no obvious cause.
-                    // Files inside styles/ are exempt: the barrel would otherwise be
-                    // handed a @use of itself and Sass fails on the circular load.
+                    // Only _variables.scss is injected, because it emits nothing; the
+                    // index.scss entry would ship every global rule once per component.
+                    // Files inside styles/ are exempt: they @use _variables.scss
+                    // themselves, and index.scss is imported by main.ts.
                     additionalData: (source: string, filename: string) =>
                         filename.replace(/\\/g, '/').includes('/renderer/styles/')
                             ? source
-                            : `@use '@/renderer/styles' as *;\n${source}`,
+                            : `@use '@/renderer/styles/variables' as *;\n${source}`,
                 },
             },
         },

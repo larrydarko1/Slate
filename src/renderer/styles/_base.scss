@@ -3,7 +3,7 @@
 // the scrollbar, and the focus/selection treatment.
 // Does NOT own: the palette it paints with (_themes.scss) or anything scoped
 // to a single component.
-// Reached only through global.scss, which main.ts imports exactly once. Every
+// Reached only through index.scss, which main.ts imports exactly once. Every
 // rule below is unscoped, so a second import would emit all of it twice.
 
 @use '@/renderer/styles/variables' as *;
