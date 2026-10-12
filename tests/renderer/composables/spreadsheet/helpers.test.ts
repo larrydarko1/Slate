@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ref, computed } from 'vue';
 
 import { createHelpers } from '@/renderer/composables/spreadsheet/helpers';
-import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-import type { Canvas, SpreadsheetTable, TextBox, ChartObject, SelectionRange } from '@/renderer/types/spreadsheet';
+import { createState, type SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
+import type { Canvas, SpreadsheetTable, TextBox, ChartObject } from '@/renderer/types/spreadsheet';
 import { createEmptyCell, generateId } from '@/renderer/types/spreadsheet';
 
 function makeTable(overrides: Partial<SpreadsheetTable> = {}): SpreadsheetTable {
@@ -80,21 +79,14 @@ function makeCanvas(overrides: Partial<Canvas> = {}): Canvas {
     };
 }
 
+/** Real state holding these canvases, the first one active; `chartList` goes onto it. */
 function makeMockState(canvasList: Canvas[], chartList: ChartObject[] = []): SpreadsheetCoreState {
-    const canvases = ref(canvasList);
-    const activeCanvasId = ref(canvasList[0]?.id ?? '');
-    const activeCanvas = computed(() => canvases.value.find((c) => c.id === activeCanvasId.value) ?? canvases.value[0]);
-    const selectionRange = ref<SelectionRange | null>(null);
-    const charts = ref(chartList);
-
-    return {
-        canvases,
-        activeCanvasId,
-        activeCanvas,
-        selectionRange,
-        charts,
-        counters: { maxZ: 0, tableCount: 0, canvasCount: 1 },
-    } as unknown as SpreadsheetCoreState;
+    const state = createState();
+    const [first] = canvasList;
+    first?.charts.push(...chartList);
+    state.canvases.value = canvasList;
+    state.activeCanvasId.value = first?.id ?? '';
+    return state;
 }
 
 // ── Finder functions ─────────────────────────────────────────────────────────

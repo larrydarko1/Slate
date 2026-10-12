@@ -7,7 +7,9 @@
  */
 import { z } from 'zod';
 
-export type ShellOpenResult = { success: boolean; error?: string };
+import type { IpcErrorCode } from '@/schemas/errors';
+
+export type ShellOpenResult = { success: boolean; error?: IpcErrorCode };
 
 /**
  * A URL the OS browser may be handed.

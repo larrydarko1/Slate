@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
 import { createState } from '@/renderer/composables/spreadsheet/state';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+import { createDefaultTable, createEmptyCell } from '@/renderer/types/spreadsheet';
 
 /**
  * remapFormulaReferences and the index mappers are wiring between the engine and
@@ -203,12 +204,14 @@ describe('formulaEngine', () => {
     describe('remapping a whole table', () => {
         it('rewrites every formula in place', () => {
             const engine = bareEngine();
-            const table = {
-                rows: [
-                    [{ formula: 'A1' }, { value: 1 }],
-                    [{ formula: 'B2' }, {}],
+            const table = createDefaultTable(0, 0, 'T');
+            table.rows = [
+                [
+                    { value: null, cellType: 'empty', formula: 'A1' },
+                    { value: 1, cellType: 'integer' },
                 ],
-            } as unknown as Parameters<typeof engine.remapAllFormulasInTable>[0];
+                [{ value: null, cellType: 'empty', formula: 'B2' }, createEmptyCell()],
+            ];
             engine.remapAllFormulasInTable(table, (col) => col + 1, null);
             expect(table.rows[0]![0]!.formula).toBe('B1');
             expect(table.rows[1]![0]!.formula).toBe('C2');

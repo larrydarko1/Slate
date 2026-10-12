@@ -8,7 +8,7 @@ import type { Ref } from 'vue';
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
-export type TableStructure = {
+type TableStructure = {
     startDrag: (e: MouseEvent) => void;
     startColResize: (ci: number, e: MouseEvent) => void;
     startAddRowDrag: (e: MouseEvent) => void;

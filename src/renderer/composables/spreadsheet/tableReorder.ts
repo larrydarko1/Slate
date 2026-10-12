@@ -7,7 +7,7 @@ import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/help
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
-export type TableReorder = {
+type TableReorder = {
     reorderRow: (tableId: string, fromIdx: number, toIdx: number) => void;
     reorderRows: (tableId: string, fromStart: number, fromEnd: number, toIdx: number) => void;
     reorderColumn: (tableId: string, fromIdx: number, toIdx: number) => void;

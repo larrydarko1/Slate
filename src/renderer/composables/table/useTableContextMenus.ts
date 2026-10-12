@@ -10,7 +10,7 @@ import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { ContextMenuApi, MenuItem } from '@/renderer/types/contextMenu';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
-export type TableContextMenus = {
+type TableContextMenus = {
     onColumnContextMenu: (ci: number, e: MouseEvent) => void;
     onRowContextMenu: (ri: number, e: MouseEvent) => void;
     onCellContextMenu: (ci: number, ri: number, e: MouseEvent) => void;

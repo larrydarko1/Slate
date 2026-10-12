@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+import type { IpcMain } from '@/main/lib/ipc';
+
 type Handler = (event: unknown, ...args: unknown[]) => unknown;
+
+vi.mock('@/main/lib/logger', () => ({ log: { warn: vi.fn() } }));
 
 const openExternal = vi.fn();
 
@@ -9,21 +13,26 @@ vi.mock('electron', () => ({ shell: { openExternal: (url: string): unknown => op
 const { register, openExternalIfSafe } = await import('@/main/services/shell');
 
 /** A stand-in IpcMain that keeps the handlers so a test can invoke one. */
-function fakeIpc(): { handlers: Map<string, Handler>; ipc: Parameters<typeof register>[0] } {
+function fakeIpc(): { handlers: Map<string, Handler>; ipc: IpcMain } {
     const handlers = new Map<string, Handler>();
-    const ipc = { handle: (channel: string, fn: Handler) => handlers.set(channel, fn) };
-    return { handlers, ipc: ipc as unknown as Parameters<typeof register>[0] };
+    const ipc: IpcMain = {
+        handle(channel, fn) {
+            handlers.set(channel, fn);
+        },
+        on: vi.fn(),
+    };
+    return { handlers, ipc };
 }
 
 describe('shell service', () => {
-    let call: (url: unknown) => Promise<{ success: boolean; error?: string }>;
+    let call: (url: unknown) => Promise<unknown>;
 
     beforeEach(() => {
         openExternal.mockReset().mockResolvedValue(undefined);
         const { handlers, ipc } = fakeIpc();
         register(ipc);
         const handler = handlers.get('shell:openExternal');
-        call = (url) => handler?.(null, url) as Promise<{ success: boolean; error?: string }>;
+        call = (url) => Promise.resolve(handler?.(null, url));
     });
 
     it('registers exactly one channel', () => {
@@ -42,27 +51,23 @@ describe('shell service', () => {
     });
 
     it.each(['file:///etc/passwd', 'smb://server/share', 'javascript:alert(1)'])('refuses %s', async (url) => {
-        const result = await call(url);
-        expect(result.success).toBe(false);
+        await expect(call(url)).resolves.toEqual({ success: false, error: 'INVALID_ARGUMENTS' });
         expect(openExternal).not.toHaveBeenCalled();
     });
 
     it('rejects a non-string argument before the scheme check', async () => {
-        const result = await call(42);
-        expect(result.success).toBe(false);
-        expect(result.error).toBeTruthy();
+        await expect(call(42)).resolves.toEqual({ success: false, error: 'INVALID_ARGUMENTS' });
         expect(openExternal).not.toHaveBeenCalled();
     });
 
-    it('reports a failure from the OS', async () => {
+    it('reports a failure from the OS as a code', async () => {
         openExternal.mockRejectedValue(new Error('no handler'));
-        await expect(call('https://example.com')).resolves.toEqual({ success: false, error: 'no handler' });
+        await expect(call('https://example.com')).resolves.toEqual({ success: false, error: 'UNKNOWN' });
     });
 
     it('survives a rejection that is not an Error', async () => {
         openExternal.mockRejectedValue('nope');
-        const result = await call('https://example.com');
-        expect(result).toEqual({ success: false, error: 'Could not open URL' });
+        await expect(call('https://example.com')).resolves.toEqual({ success: false, error: 'UNKNOWN' });
     });
 
     describe('openExternalIfSafe', () => {

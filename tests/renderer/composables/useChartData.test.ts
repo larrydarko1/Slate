@@ -4,12 +4,17 @@ import { defineComponent, ref, type Ref } from 'vue';
 
 import { useChartData, type ChartRendering } from '@/renderer/composables/useChartData';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
-import type { ChartObject } from '@/renderer/types/spreadsheet';
+import { type ChartObject, CHART_TYPES } from '@/renderer/types/spreadsheet';
 
 // ChartType is module-private in the source; the chart's own field is the contract.
 type ChartType = ChartObject['chartType'];
 
-type Dataset = { label?: string; data: unknown[]; backgroundColor?: unknown; fill?: boolean; tension?: number };
+/** The first dataset a chart would draw, or a failure: every case below expects one. */
+function firstDataset(api: ChartRendering): NonNullable<ChartRendering['chartData']['value']>['datasets'][number] {
+    const dataset = api.chartData.value?.datasets[0];
+    if (dataset === undefined) throw new Error('The chart has no dataset');
+    return dataset;
+}
 
 /**
  * The composable installs a MutationObserver in onMounted, so it has to run
@@ -61,17 +66,15 @@ describe('useChartData', () => {
     }
 
     describe('chartComponent', () => {
-        it.each(['bar', 'line', 'pie', 'doughnut', 'scatter', 'radar', 'area'] as ChartType[])(
-            'resolves a component for %s',
-            (type) => {
-                ss.updateChart(chart.value.id, { chartType: type });
-                const { api } = mountWith(chart, ss);
-                expect(api.chartComponent.value).toBeTruthy();
-            },
-        );
+        it.each([...CHART_TYPES])('resolves a component for %s', (type) => {
+            ss.updateChart(chart.value.id, { chartType: type });
+            const { api } = mountWith(chart, ss);
+            expect(api.chartComponent.value).toBeTruthy();
+        });
 
         it('falls back for an unknown type', () => {
-            ss.updateChart(chart.value.id, { chartType: 'nonsense' as ChartType });
+            // Written past the types on purpose: this is state no code path should produce.
+            Reflect.set(chart.value, 'chartType', 'nonsense');
             const { api } = mountWith(chart, ss);
             expect(api.chartComponent.value).toBeTruthy();
         });
@@ -94,18 +97,15 @@ describe('useChartData', () => {
         it('takes the series name from the header row', () => {
             withRefs('bar', true);
             const { api } = mountWith(chart, ss);
-            const datasets = api.chartData.value?.datasets as Dataset[];
-            expect(datasets[0]!.label).toBe('Sales');
-            expect(datasets[0]!.data).toEqual([10, 20, 30]);
+            expect(firstDataset(api)).toMatchObject({ label: 'Sales', data: [10, 20, 30] });
             expect(api.chartData.value?.labels).toEqual(['M1', 'M2', 'M3']);
         });
 
         it('keeps the first row as data when the header is off', () => {
             withRefs('bar', false);
             const { api } = mountWith(chart, ss);
-            const datasets = api.chartData.value?.datasets as Dataset[];
-            expect(datasets[0]!.label).toBe('Series 1');
-            expect(datasets[0]!.data).toHaveLength(4);
+            expect(firstDataset(api).label).toBe('Series 1');
+            expect(firstDataset(api).data).toHaveLength(4);
         });
 
         it('numbers the labels when none are given', () => {
@@ -118,31 +118,30 @@ describe('useChartData', () => {
 
         it('fills a line chart only in area mode', () => {
             withRefs('line');
-            expect((mountWith(chart, ss).api.chartData.value?.datasets as Dataset[])[0]!.fill).toBe(false);
+            expect(firstDataset(mountWith(chart, ss).api)).toMatchObject({ fill: false });
             withRefs('area');
-            expect((mountWith(chart, ss).api.chartData.value?.datasets as Dataset[])[0]!.fill).toBe(true);
+            expect(firstDataset(mountWith(chart, ss).api)).toMatchObject({ fill: true });
         });
 
         it('curves a line but not a bar', () => {
             withRefs('line');
-            expect((mountWith(chart, ss).api.chartData.value?.datasets as Dataset[])[0]!.tension).toBe(0.3);
+            expect(firstDataset(mountWith(chart, ss).api)).toMatchObject({ tension: 0.3 });
             withRefs('bar');
-            expect((mountWith(chart, ss).api.chartData.value?.datasets as Dataset[])[0]!.tension).toBe(0);
+            expect(firstDataset(mountWith(chart, ss).api)).toMatchObject({ tension: 0 });
         });
 
         it('gives a pie one dataset with a colour per slice', () => {
             withRefs('pie');
             const { api } = mountWith(chart, ss);
-            const datasets = api.chartData.value?.datasets as Dataset[];
-            expect(datasets).toHaveLength(1);
-            expect(datasets[0]!.data).toEqual([10, 20, 30]);
-            expect(datasets[0]!.backgroundColor).toHaveLength(3);
+            expect(api.chartData.value?.datasets).toHaveLength(1);
+            expect(firstDataset(api).data).toEqual([10, 20, 30]);
+            expect(firstDataset(api).backgroundColor).toHaveLength(3);
         });
 
         it('builds x/y points for a scatter', () => {
             withRefs('scatter');
             const { api } = mountWith(chart, ss);
-            const points = (api.chartData.value?.datasets as Dataset[])[0]!.data as { x: number; y: number }[];
+            const points = firstDataset(api).data;
             // The labels are 'M1'..'M3', which are not numbers, so each point
             // falls back to its ordinal x position.
             expect(points).toEqual([
@@ -156,28 +155,27 @@ describe('useChartData', () => {
             for (let r = 1; r <= 3; r++) ss.setCellValue(id, 0, r, String(r * 5));
             withRefs('scatter');
             const { api } = mountWith(chart, ss);
-            const points = (api.chartData.value?.datasets as Dataset[])[0]!.data as { x: number }[];
-            expect(points.map((p) => p.x)).toEqual([5, 10, 15]);
+            expect(firstDataset(api).data).toMatchObject([{ x: 5 }, { x: 10 }, { x: 15 }]);
         });
 
         it('gives a radar a filled dataset', () => {
             withRefs('radar');
             const { api } = mountWith(chart, ss);
-            expect((api.chartData.value?.datasets as Dataset[])[0]!.fill).toBe(true);
+            expect(firstDataset(api)).toMatchObject({ fill: true });
         });
 
         it('reads a computed formula as a number', () => {
             ss.setCellValue(id, 1, 3, '=B2+B3');
             withRefs('bar');
             const { api } = mountWith(chart, ss);
-            expect((api.chartData.value?.datasets as Dataset[])[0]!.data).toEqual([10, 20, 30]);
+            expect(firstDataset(api).data).toEqual([10, 20, 30]);
         });
 
         it('treats text as zero', () => {
             ss.setCellValue(id, 1, 2, 'not a number');
             withRefs('bar');
             const { api } = mountWith(chart, ss);
-            expect((api.chartData.value?.datasets as Dataset[])[0]!.data).toEqual([10, 0, 30]);
+            expect(firstDataset(api).data).toEqual([10, 0, 30]);
         });
 
         it('skips a series with an empty reference', () => {
@@ -206,8 +204,7 @@ describe('useChartData', () => {
         it('honours the grid setting', () => {
             withRefs('bar');
             ss.updateChart(chart.value.id, { showGrid: false });
-            const scales = mountWith(chart, ss).api.chartOptions.value.scales as Record<string, { display: boolean }>;
-            expect(scales['x']!.display).toBe(false);
+            expect(mountWith(chart, ss).api.chartOptions.value.scales).toMatchObject({ x: { display: false } });
         });
 
         it('gives a pie no scales at all', () => {
@@ -217,14 +214,12 @@ describe('useChartData', () => {
 
         it('gives a radar a single radial scale', () => {
             withRefs('radar');
-            const scales = mountWith(chart, ss).api.chartOptions.value.scales as Record<string, unknown>;
-            expect(Object.keys(scales)).toEqual(['r']);
+            expect(Object.keys(mountWith(chart, ss).api.chartOptions.value.scales ?? {})).toEqual(['r']);
         });
 
         it('makes the scatter x axis linear', () => {
             withRefs('scatter');
-            const scales = mountWith(chart, ss).api.chartOptions.value.scales as Record<string, { type?: string }>;
-            expect(scales['x']!.type).toBe('linear');
+            expect(mountWith(chart, ss).api.chartOptions.value.scales).toMatchObject({ x: { type: 'linear' } });
         });
     });
 

@@ -4,7 +4,7 @@
  * Does NOT own: file I/O (src/main/services/file.ts), external URLs
  * (src/main/services/shell.ts), spreadsheet logic (src/renderer).
  * IPC handler ownership:
- *   file-service → dialog:save, dialog:open, file:write, file:read
+ *   file-service → dialog:save, dialog:open, dialog:confirm, file:write, file:read
  *   shell-service → shell:openExternal
  *   log-service → log:error, log:warn, log:info, log:debug
  */

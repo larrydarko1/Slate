@@ -1,30 +1,21 @@
 import { describe, it, expect, vi } from 'vitest';
 
-type Api = {
-    isElectron: () => boolean;
-    log: Record<'error' | 'warn' | 'info' | 'debug', (message: string, details?: Record<string, unknown>) => void>;
-    showSaveDialog: (p?: string) => unknown;
-    showOpenDialog: () => unknown;
-    writeFile: (p: string, c: string) => unknown;
-    readFile: (p: string) => unknown;
-    onOpenFile: (cb: (p: string) => void) => () => void;
-    openExternal: (url: string) => unknown;
-};
+import type { ElectronAPI } from '@/schemas/electron';
 
-const exposeInMainWorld = vi.fn();
+type OpenFileListener = (event: unknown, filePath: string) => void;
+
+// Typed as the contract: the preload annotates the object it exposes as ElectronAPI,
+// so this is the shape it hands over, and every call below is checked against it.
+const exposeInMainWorld = vi.fn<(namespace: string, api: ElectronAPI) => void>();
 const invoke = vi.fn().mockResolvedValue(undefined);
 const send = vi.fn();
-const on = vi.fn();
-const removeListener = vi.fn();
+const on = vi.fn<(channel: string, listener: OpenFileListener) => void>();
+const removeListener = vi.fn<(channel: string, listener: OpenFileListener) => void>();
 
+// The factory runs when the preload is imported below, after these are initialised.
 vi.mock('electron', () => ({
-    contextBridge: { exposeInMainWorld: (...a: unknown[]): unknown => exposeInMainWorld(...a) },
-    ipcRenderer: {
-        invoke: (...a: unknown[]): unknown => invoke(...a),
-        send: (...a: unknown[]): unknown => send(...a),
-        on: (...a: unknown[]): unknown => on(...a),
-        removeListener: (...a: unknown[]): unknown => removeListener(...a),
-    },
+    contextBridge: { exposeInMainWorld },
+    ipcRenderer: { invoke, send, on, removeListener },
 }));
 
 /**
@@ -34,9 +25,11 @@ vi.mock('electron', () => ({
  * dependency runs through `exposeInMainWorld`'s recorded calls rather than
  * through a binding, which nothing — reader or tool — can see.
  */
-const loadBridge = async (): Promise<[string, Api]> => {
+const loadBridge = async (): Promise<[string, ElectronAPI]> => {
     await import('@/preload/index');
-    return exposeInMainWorld.mock.calls[0] as [string, Api];
+    const exposed = exposeInMainWorld.mock.calls[0];
+    if (exposed === undefined) throw new Error('The preload exposed nothing');
+    return exposed;
 };
 
 const [namespace, api] = await loadBridge();
@@ -59,6 +52,7 @@ describe('preload bridge', () => {
                 'onOpenFile',
                 'openExternal',
                 'readFile',
+                'showConfirmDialog',
                 'showOpenDialog',
                 'showSaveDialog',
                 'writeFile',
@@ -81,16 +75,24 @@ describe('preload bridge', () => {
     });
 
     describe('file operations', () => {
-        it.each([
-            ['showSaveDialog', 'dialog:save', ['/tmp/a.slate']],
-            ['showOpenDialog', 'dialog:open', []],
-            ['writeFile', 'file:write', ['/tmp/a.slate', '{}']],
-            ['readFile', 'file:read', ['/tmp/a.slate']],
-            ['openExternal', 'shell:openExternal', ['https://example.com']],
-        ])('%s invokes %s', (method, channel, args) => {
+        const confirm = { message: 'Sure?', confirmLabel: 'Yes' };
+
+        it.each<[keyof ElectronAPI, string, unknown[], (bridge: ElectronAPI) => unknown]>([
+            ['showSaveDialog', 'dialog:save', ['/tmp/a.slate'], (bridge) => bridge.showSaveDialog('/tmp/a.slate')],
+            ['showOpenDialog', 'dialog:open', [], (bridge) => bridge.showOpenDialog()],
+            ['showConfirmDialog', 'dialog:confirm', [confirm], (bridge) => bridge.showConfirmDialog(confirm)],
+            ['writeFile', 'file:write', ['/tmp/a.slate', '{}'], (bridge) => bridge.writeFile('/tmp/a.slate', '{}')],
+            ['readFile', 'file:read', ['/tmp/a.slate'], (bridge) => bridge.readFile('/tmp/a.slate')],
+            [
+                'openExternal',
+                'shell:openExternal',
+                ['https://example.com'],
+                (bridge) => bridge.openExternal('https://example.com'),
+            ],
+        ])('%s invokes %s', (_method, channel, args, callBridge) => {
             invoke.mockClear();
-            (api[method as keyof Api] as (...a: unknown[]) => unknown)(...(args as unknown[]));
-            expect(invoke).toHaveBeenCalledWith(channel, ...(args as unknown[]));
+            callBridge(api);
+            expect(invoke).toHaveBeenCalledWith(channel, ...args);
         });
     });
 
@@ -105,7 +107,8 @@ describe('preload bridge', () => {
             on.mockClear();
             const seen: string[] = [];
             api.onOpenFile((filePath) => seen.push(filePath));
-            const handler = on.mock.calls.at(-1)?.[1] as (e: unknown, p: string) => void;
+            const handler = on.mock.calls.at(-1)?.[1];
+            if (handler === undefined) throw new Error('onOpenFile registered no listener');
             handler({}, '/tmp/opened.slate');
             expect(seen).toEqual(['/tmp/opened.slate']);
         });
@@ -114,7 +117,7 @@ describe('preload bridge', () => {
             on.mockClear();
             removeListener.mockClear();
             const off = api.onOpenFile(() => {});
-            const registered: unknown = on.mock.calls.at(-1)?.[1];
+            const registered = on.mock.calls.at(-1)?.[1];
             off();
             expect(removeListener).toHaveBeenCalledWith('file:opened', registered);
         });

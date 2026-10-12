@@ -6,7 +6,7 @@
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetTable, Cell, CellValue, MergedRegion } from '@/renderer/types/spreadsheet';
 
-export type TableSort = { sortColumn: (tableId: string, colIdx: number, direction: 'asc' | 'desc') => void };
+type TableSort = { sortColumn: (tableId: string, colIdx: number, direction: 'asc' | 'desc') => void };
 
 type SortDeps = {
     findTable: SpreadsheetHelpers['findTable'];

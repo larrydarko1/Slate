@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 
+import IconCellType from '@/renderer/components/icons/IconCellType.vue';
+import IconChevronDown from '@/renderer/components/icons/IconChevronDown.vue';
+import IconDecimalsDecrease from '@/renderer/components/icons/IconDecimalsDecrease.vue';
+import IconDecimalsIncrease from '@/renderer/components/icons/IconDecimalsIncrease.vue';
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { getTypeLabel } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
@@ -55,7 +59,11 @@ function setType(t: CellDataType): void {
 }
 
 function onClickOutside(e: MouseEvent): void {
-    if (typeMenuOpen.value && typeSelectorRef.value !== null && !typeSelectorRef.value.contains(e.target as Node)) {
+    if (
+        typeMenuOpen.value &&
+        typeSelectorRef.value !== null &&
+        !(e.target instanceof Node && typeSelectorRef.value.contains(e.target))
+    ) {
         typeMenuOpen.value = false;
     }
 }
@@ -74,33 +82,14 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
                 :disabled="!hasActiveCell"
                 title="Cell format type"
                 @click="toggleTypeMenu">
-                <svg
+                <IconCellType
                     width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none">
-                    <path
-                        d="M3 3h10v2H3V3ZM3 7h6v2H3V7ZM3 11h8v2H3v-2Z"
-                        fill="currentColor"
-                        opacity="0.5" />
-                    <path
-                        d="M12 8l2 3h-4l2-3Z"
-                        fill="currentColor" />
-                </svg>
+                    height="16" />
                 <span>{{ currentTypeLabel }}</span>
-                <svg
+                <IconChevronDown
                     class="chevron"
                     width="8"
-                    height="8"
-                    viewBox="0 0 8 8">
-                    <path
-                        d="M2 3l2 2 2-2"
-                        stroke="currentColor"
-                        stroke-width="1.2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        fill="none" />
-                </svg>
+                    height="8" />
             </button>
             <div
                 v-if="typeMenuOpen"
@@ -127,68 +116,18 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
             :disabled="!hasActiveCell || !supportsDecimals"
             title="Decrease decimal places"
             @click="changeDecimals(-1)">
-            <svg
+            <IconDecimalsDecrease
                 width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none">
-                <text
-                    x="1"
-                    y="12"
-                    font-size="9"
-                    font-weight="600"
-                    fill="currentColor">
-                    .0
-                </text>
-                <path
-                    d="M11 5l3 3-3 3"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                    stroke-linecap="round"
-                    stroke-linejoin="round" />
-                <text
-                    x="9.5"
-                    y="12"
-                    font-size="7"
-                    font-weight="600"
-                    fill="currentColor">
-                    0
-                </text>
-            </svg>
+                height="16" />
         </button>
         <button
             class="tb decimal-btn"
             :disabled="!hasActiveCell || !supportsDecimals"
             title="Increase decimal places"
             @click="changeDecimals(1)">
-            <svg
+            <IconDecimalsIncrease
                 width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none">
-                <text
-                    x="1"
-                    y="12"
-                    font-size="9"
-                    font-weight="600"
-                    fill="currentColor">
-                    .00
-                </text>
-                <path
-                    d="M14 5l-3 3 3 3"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                    stroke-linecap="round"
-                    stroke-linejoin="round" />
-                <text
-                    x="10"
-                    y="12"
-                    font-size="7"
-                    font-weight="600"
-                    fill="currentColor">
-                    0
-                </text>
-            </svg>
+                height="16" />
         </button>
     </div>
 </template>

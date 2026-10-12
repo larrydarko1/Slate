@@ -98,7 +98,7 @@ export type TextBox = {
     borderRadius: number;
 };
 
-type ChartType = 'bar' | 'line' | 'pie' | 'doughnut' | 'scatter' | 'area' | 'radar';
+type ChartType = (typeof CHART_TYPES)[number];
 
 /** A single cell-range reference for chart data (formula-style ref string) */
 type ChartDataRef = {
@@ -127,7 +127,7 @@ export type ChartObject = {
     dataSource: ChartDataSource | null;
     showLegend: boolean;
     showGrid: boolean;
-    legendPosition: 'top' | 'bottom' | 'left' | 'right';
+    legendPosition: (typeof LEGEND_POSITIONS)[number];
     colorScheme: string[];
 };
 
@@ -141,6 +141,10 @@ export type Canvas = {
     canvasZoom: number;
 };
 
+export const CHART_TYPES = ['bar', 'line', 'pie', 'doughnut', 'scatter', 'area', 'radar'] as const;
+
+export const LEGEND_POSITIONS = ['top', 'bottom', 'left', 'right'] as const;
+
 /** Zoom limits */
 export const MIN_ZOOM = 0.25;
 export const MAX_ZOOM = 4.0;
@@ -149,7 +153,7 @@ export const ZOOM_STEP = 0.1;
 /** Maximum number of canvases allowed per file */
 export const MAX_CANVASES = 10;
 
-const DEFAULT_CHART_COLORS = [
+export const DEFAULT_CHART_COLORS = [
     '#4e79a7',
     '#f28e2b',
     '#e15759',

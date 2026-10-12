@@ -11,6 +11,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 import type { ElectronAPI } from '@/schemas/electron';
+import type { ConfirmDialogOptions } from '@/schemas/file';
 import type { LogEntry } from '@/schemas/log';
 
 const api: ElectronAPI = {
@@ -27,6 +28,7 @@ const api: ElectronAPI = {
     // ── File operations ──────────────────────────────────────────────────────
     showSaveDialog: (defaultPath?: string) => ipcRenderer.invoke('dialog:save', defaultPath),
     showOpenDialog: () => ipcRenderer.invoke('dialog:open'),
+    showConfirmDialog: (options: ConfirmDialogOptions) => ipcRenderer.invoke('dialog:confirm', options),
     writeFile: (filePath: string, content: string) => ipcRenderer.invoke('file:write', filePath, content),
     readFile: (filePath: string) => ipcRenderer.invoke('file:read', filePath),
 

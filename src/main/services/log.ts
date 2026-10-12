@@ -5,8 +5,7 @@
  * Does NOT own: the wire vocabulary (@/schemas/log), the transport and its
  * rotation settings (main/lib/logger.ts).
  */
-import { type IpcMain } from 'electron';
-
+import type { IpcMain } from '@/main/lib/ipc';
 import { log } from '@/main/lib/logger';
 import { LogEntrySchema, type LogLevel } from '@/schemas/log';
 

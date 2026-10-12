@@ -13,8 +13,8 @@ import {
 
 describe('detectType', () => {
     // Empty / null
-    it.each(['', null, undefined])('returns empty for "%s"', (input) => {
-        const result = detectType(input as string);
+    it('returns empty for an empty string', () => {
+        const result = detectType('');
         expect(result.type).toBe('empty');
         expect(result.numericValue).toBeNull();
     });

@@ -10,7 +10,7 @@ import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/f
 import type { ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
 import type { CellValue } from '@/renderer/types/spreadsheet';
 
-export type TypedCellValue = {
+type TypedCellValue = {
     value: CellValue;
     type: CellDataType;
 };

@@ -62,7 +62,8 @@ function onResizeStart(dir: ResizeDir, e: MouseEvent): void {
 }
 
 function onTitleInput(e: Event): void {
-    ss.updateChart(props.chart.id, { title: (e.target as HTMLInputElement).value });
+    if (!(e.target instanceof HTMLInputElement)) return;
+    ss.updateChart(props.chart.id, { title: e.target.value });
 }
 ChartJS.register(
     Title,

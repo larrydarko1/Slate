@@ -61,7 +61,9 @@ describe('FormulaBar', () => {
             ss.setCellValue(id, 0, 0, '=1+1');
             ss.selectCell(id, 0, 0);
             await wrapper.vm.$nextTick();
-            expect((wrapper.find('.formula-input').element as HTMLInputElement).value).toBe('=1+1');
+            const { element } = wrapper.get('.formula-input');
+            if (!(element instanceof HTMLInputElement)) throw new Error('.formula-input is not an <input>');
+            expect(element.value).toBe('=1+1');
         });
 
         it('starts an edit when focused', async () => {

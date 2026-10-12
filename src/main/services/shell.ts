@@ -5,8 +5,10 @@
  * Does NOT own: the wire vocabulary (@/schemas/shell), window lifecycle
  * (main/index.ts).
  */
-import { type IpcMain, shell } from 'electron';
+import { shell } from 'electron';
 
+import { ipcFailure } from '@/main/lib/errors';
+import type { IpcMain } from '@/main/lib/ipc';
 import { type ShellOpenResult, ExternalUrlSchema } from '@/schemas/shell';
 
 /**
@@ -21,9 +23,7 @@ export function openExternalIfSafe(url: string): void {
 export function register(ipc: IpcMain): void {
     ipc.handle('shell:openExternal', async (_event, rawUrl: unknown): Promise<ShellOpenResult> => {
         const parsed = ExternalUrlSchema.safeParse(rawUrl);
-        if (!parsed.success) {
-            return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid URL' };
-        }
+        if (!parsed.success) return { success: false, error: 'INVALID_ARGUMENTS' };
 
         return await openExternal(parsed.data);
     });
@@ -37,13 +37,13 @@ export function register(ipc: IpcMain): void {
  */
 async function openExternal(url: string): Promise<ShellOpenResult> {
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        return { success: false, error: 'Only http/https URLs can be opened externally' };
+        return { success: false, error: 'INVALID_ARGUMENTS' };
     }
 
     try {
         await shell.openExternal(url);
         return { success: true };
     } catch (err) {
-        return { success: false, error: err instanceof Error ? err.message : 'Could not open URL' };
+        return ipcFailure('shell openExternal', err);
     }
 }

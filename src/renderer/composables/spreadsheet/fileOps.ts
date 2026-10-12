@@ -1,13 +1,16 @@
 /**
  * createFileOps — file operations, serialization, deserialization, and migration.
- * Owns: save, saveAs, open, loadFileFromPath, newFile, serialize/deserialize.
- * Does NOT own: reactive state (state.ts), recalculation (useFormulaEngine.ts).
+ * Owns: save, saveAs, open, loadFileFromPath, newFile, serialize/deserialize, and
+ * what the user is told when one of them fails.
+ * Does NOT own: reactive state (state.ts), recalculation (useFormulaEngine.ts), the
+ * file format and its migrations (documentSchema.ts).
  */
-import { detectType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { parseSlateDocument } from '@/renderer/composables/spreadsheet/documentSchema';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-import type { SpreadsheetTable, Cell } from '@/renderer/types/spreadsheet';
-import { createDefaultCanvas, indexToColumnLetter } from '@/renderer/types/spreadsheet';
+import { notify } from '@/renderer/composables/useNotifications';
+import { createDefaultCanvas } from '@/renderer/types/spreadsheet';
+import type { IpcErrorCode } from '@/schemas/errors';
 
 export type SpreadsheetFileOps = {
     saveFile: (filePath?: string) => Promise<boolean>;
@@ -22,6 +25,17 @@ type FileOpsDeps = {
     recalculateMaxZ: SpreadsheetHelpers['recalculateMaxZ'];
 };
 
+/** What the user is told for each code the file handlers answer with. */
+const FILE_ERROR_REASONS: Record<IpcErrorCode, string> = {
+    INVALID_ARGUMENTS: 'Slate can only read and write .slate files.',
+    ACCESS_DENIED: 'Slate does not have permission to use that file.',
+    NOT_FOUND: 'The file could not be found.',
+    DISK_FULL: 'There is not enough disk space.',
+    UNKNOWN: 'Something went wrong. The log has the details.',
+};
+
+const ELECTRON_ONLY = 'Opening and saving files needs the desktop app.';
+
 export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): SpreadsheetFileOps {
     function serializeState(): string {
         return JSON.stringify(
@@ -35,128 +49,16 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
         );
     }
 
-    // ── Migration helpers ────────────────────────────────────────────────────
-
-    function migrateTableRows(rows: unknown[][]): Cell[][] {
-        return (rows ?? []).map((row: unknown[]): Cell[] =>
-            row.map((cell: unknown): Cell => {
-                const raw = cell as Record<string, unknown>;
-                if (raw['cellType'] === undefined) {
-                    const value = raw['value'];
-                    if (value === null || value === undefined) {
-                        raw['cellType'] = 'empty';
-                    } else if (typeof value === 'boolean') {
-                        raw['cellType'] = 'boolean';
-                    } else if (typeof value === 'number') {
-                        raw['cellType'] = Number.isInteger(value) ? 'integer' : 'float';
-                    } else if (typeof value === 'string') {
-                        raw['cellType'] = detectType(value).type;
-                    } else {
-                        raw['cellType'] = 'text';
-                    }
-                }
-                return raw as unknown as Cell;
-            }),
-        );
-    }
-
-    function migrateTable(t: Record<string, unknown>): SpreadsheetTable {
-        return {
-            ...t,
-            mergedRegions: (t['mergedRegions'] as unknown[]) ?? [],
-            rows: migrateTableRows(t['rows'] as unknown[][]),
-        } as SpreadsheetTable;
-    }
-
-    function migrateChartDataSource(
-        chart: Record<string, unknown>,
-        allTables: SpreadsheetTable[],
-    ): Record<string, unknown> {
-        if (chart['dataSource'] === undefined || chart['dataSource'] === null) return chart;
-        const ds = chart['dataSource'] as Record<string, unknown>;
-
-        // Already new format
-        if ('labelRef' in ds || 'seriesRefs' in ds) return chart;
-
-        // Old format: { tableId, labelCol, valueCols, useHeader }
-        if ('tableId' in ds && 'valueCols' in ds) {
-            const table = allTables.find((t): boolean => t.id === ds['tableId']);
-            if (table === undefined) {
-                chart['dataSource'] = null;
-                return chart;
-            }
-            const rowCount = table.rows.length;
-            const tableName = table.name;
-            const quoteIfNeeded = (n: string): string => (n.match(/^[A-Za-z_]\w*$/) !== null ? n : `'${n}'`);
-
-            const buildRef = (col: number): string => {
-                const colLetter = indexToColumnLetter(col);
-                return `${quoteIfNeeded(tableName)}::${colLetter}1:${colLetter}${rowCount}`;
-            };
-
-            chart['dataSource'] = {
-                labelRef: { refString: buildRef((ds['labelCol'] as number) ?? 0) },
-                seriesRefs: ((ds['valueCols'] as number[]) ?? []).map((col: number): { refString: string } => ({
-                    refString: buildRef(col),
-                })),
-                useHeader: (ds['useHeader'] as boolean) ?? true,
-            };
-        }
-
-        return chart;
-    }
-
     // ── Deserialization ──────────────────────────────────────────────────────
 
     function deserializeState(jsonContent: string): boolean {
         try {
-            const data = JSON.parse(jsonContent) as Record<string, unknown>;
-
-            // An empty canvas list is not a loadable document: the whole state model
-            // assumes an active canvas exists, so it is rejected here rather than
-            // leaving every reader of `activeCanvas` to cope with its absence.
-            if (data['version'] === '2.0' && Array.isArray(data['canvases']) && data['canvases'].length > 0) {
-                const rawCanvases = data['canvases'] as Record<string, unknown>[];
-                state.canvases.value = rawCanvases.map((cv) => {
-                    const tables = ((cv['tables'] as unknown[]) ?? []).map((t): SpreadsheetTable =>
-                        migrateTable(t as Record<string, unknown>),
-                    );
-                    const charts = ((cv['charts'] as unknown[]) ?? []).map((ch): Record<string, unknown> =>
-                        migrateChartDataSource(ch as Record<string, unknown>, tables),
-                    );
-                    return {
-                        id: cv['id'] as string,
-                        name: cv['name'] as string,
-                        canvasOffset: (cv['canvasOffset'] as { x: number; y: number }) ?? { x: 0, y: 0 },
-                        canvasZoom: (cv['canvasZoom'] as number) ?? 1.0,
-                        tables,
-                        textBoxes: (cv['textBoxes'] as unknown[]) ?? [],
-                        charts,
-                    };
-                }) as typeof state.canvases.value;
-
-                state.counters.canvasCount = state.canvases.value.length;
-                // A v2.0 file with an empty `canvases` array names no active canvas.
-                state.activeCanvasId.value =
-                    (data['activeCanvasId'] as string | undefined) ?? state.canvases.value[0]?.id ?? '';
-                deps.recalculateMaxZ();
-                state.counters.tableCount = state.canvases.value.reduce((sum, cv): number => sum + cv.tables.length, 0);
-            } else if (Array.isArray(data['tables'])) {
-                // V1 format — single canvas, migrate
-                const migrated = (data['tables'] as unknown[]).map((t): SpreadsheetTable =>
-                    migrateTable(t as Record<string, unknown>),
-                );
-                const canvas = createDefaultCanvas('Canvas 1');
-                canvas.tables = migrated;
-                if (data['canvasOffset'] !== undefined && data['canvasOffset'] !== null) {
-                    canvas.canvasOffset = data['canvasOffset'] as { x: number; y: number };
-                }
-                state.canvases.value = [canvas];
-                state.counters.canvasCount = 1;
-                state.activeCanvasId.value = canvas.id;
-                state.counters.maxZ = Math.max(0, ...migrated.map((t: SpreadsheetTable): number => t.zIndex));
-                state.counters.tableCount = migrated.length;
-            }
+            const document = parseSlateDocument(jsonContent);
+            state.canvases.value = document.canvases;
+            state.activeCanvasId.value = document.activeCanvasId;
+            state.counters.canvasCount = document.canvases.length;
+            deps.recalculateMaxZ();
+            state.counters.tableCount = document.canvases.reduce((sum, cv): number => sum + cv.tables.length, 0);
 
             state.activeCell.value = null;
             state.activeTextBoxId.value = null;
@@ -175,7 +77,7 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
 
     async function saveFile(filePath?: string): Promise<boolean> {
         if (window.electronAPI === undefined) {
-            alert('File operations require Electron');
+            notify.error(ELECTRON_ONLY);
             return false;
         }
 
@@ -195,7 +97,7 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
             state.isDirty.value = false;
             return true;
         }
-        alert(`Failed to save file: ${result.error}`);
+        notify.error(fileFailureMessage('saved', result.error));
         return false;
     }
 
@@ -205,7 +107,7 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
 
     async function openFile(): Promise<boolean> {
         if (window.electronAPI === undefined) {
-            alert('File operations require Electron');
+            notify.error(ELECTRON_ONLY);
             return false;
         }
 
@@ -227,10 +129,10 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
                 state.currentFilePath.value = filePath;
                 return true;
             }
-            alert('Failed to parse file');
+            notify.error('The file could not be opened. It is not a Slate spreadsheet, or it is damaged.');
             return false;
         }
-        alert(`Failed to open file: ${readResult.error}`);
+        notify.error(fileFailureMessage('opened', readResult.error));
         return false;
     }
 
@@ -250,4 +152,8 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
     }
 
     return { saveFile, saveAsFile, openFile, loadFileFromPath, newFile };
+}
+
+function fileFailureMessage(action: 'saved' | 'opened', code: IpcErrorCode | undefined): string {
+    return `The file could not be ${action}. ${FILE_ERROR_REASONS[code ?? 'UNKNOWN']}`;
 }

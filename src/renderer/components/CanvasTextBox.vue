@@ -79,8 +79,8 @@ function startTextEdit(): void {
 }
 
 function onInput(e: Event): void {
-    const val = (e.target as HTMLTextAreaElement).value;
-    ss.updateTextBox(props.textBox.id, { text: val });
+    if (!(e.target instanceof HTMLTextAreaElement)) return;
+    ss.updateTextBox(props.textBox.id, { text: e.target.value });
 }
 
 function finishTextEdit(): void {

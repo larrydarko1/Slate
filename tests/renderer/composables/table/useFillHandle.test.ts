@@ -4,6 +4,7 @@ import { ref, type Ref } from 'vue';
 import { useFillHandle } from '@/renderer/composables/table/useFillHandle';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+import { rect } from '@test-utils';
 
 const CELL = 20;
 
@@ -23,14 +24,14 @@ function buildGrid(cols: number, rows: number): HTMLElement {
     for (let ci = 0; ci < cols; ci++) {
         const th = document.createElement('th');
         th.className = 'col-header';
-        th.getBoundingClientRect = () => ({ left: ci * CELL, right: (ci + 1) * CELL }) as DOMRect;
+        th.getBoundingClientRect = () => rect({ left: ci * CELL, right: (ci + 1) * CELL });
         headRow.appendChild(th);
     }
     thead.appendChild(headRow);
     const tbody = document.createElement('tbody');
     for (let ri = 0; ri < rows; ri++) {
         const tr = document.createElement('tr');
-        tr.getBoundingClientRect = () => ({ top: ri * CELL, bottom: (ri + 1) * CELL }) as DOMRect;
+        tr.getBoundingClientRect = () => rect({ top: ri * CELL, bottom: (ri + 1) * CELL });
         tbody.appendChild(tr);
     }
     table.append(thead, tbody);

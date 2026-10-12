@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, useId } from 'vue';
 
+import IconChevronDown from '@/renderer/components/icons/IconChevronDown.vue';
+import IconClose from '@/renderer/components/icons/IconClose.vue';
+
 const props = defineProps<{
     label: string;
     clearLabel: string;
@@ -38,7 +41,7 @@ function toggleDropdown(): void {
 }
 
 function onCustomColor(e: Event): void {
-    emit('apply', (e.target as HTMLInputElement).value);
+    if (e.target instanceof HTMLInputElement) emit('apply', e.target.value);
 }
 </script>
 
@@ -58,18 +61,9 @@ function onCustomColor(e: Event): void {
             class="tb color-chevron"
             :disabled="disabled"
             @click.stop="toggleDropdown">
-            <svg
+            <IconChevronDown
                 width="8"
-                height="8"
-                viewBox="0 0 8 8">
-                <path
-                    d="M2 3l2 2 2-2"
-                    stroke="currentColor"
-                    stroke-width="1.2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    fill="none" />
-            </svg>
+                height="8" />
         </button>
         <div
             v-if="open"
@@ -89,17 +83,9 @@ function onCustomColor(e: Event): void {
             <button
                 class="color-clear-btn"
                 @click="emit('clear')">
-                <svg
+                <IconClose
                     width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    fill="none">
-                    <path
-                        d="M2 2l8 8M10 2l-8 8"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                        stroke-linecap="round" />
-                </svg>
+                    height="12" />
                 <span>{{ clearLabel }}</span>
             </button>
             <div

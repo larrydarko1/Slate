@@ -29,7 +29,8 @@ let panState: { startX: number; startY: number; origX: number; origY: number } |
 
 function onCanvasMouseDown(e: MouseEvent): void {
     // Only pan when clicking directly on the canvas background
-    if (e.target !== canvasRef.value && !(e.target as HTMLElement)?.classList?.contains('canvas-bg')) return;
+    const onBackground = e.target instanceof Element && e.target.classList.contains('canvas-bg');
+    if (e.target !== canvasRef.value && !onBackground) return;
     if (e.button !== 0) return;
 
     // Deselect any active cell, text box, or chart

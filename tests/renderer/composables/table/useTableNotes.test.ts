@@ -4,11 +4,12 @@ import { ref, nextTick, type Ref } from 'vue';
 import { useTableNotes } from '@/renderer/composables/table/useTableNotes';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+import { eventAt, rect } from '@test-utils';
 
 /** A stand-in for the note indicator, positioned so the popup has a rect to read. */
 function anchorElement(): HTMLElement {
     const el = document.createElement('div');
-    el.getBoundingClientRect = () => ({ right: 100, top: 50 }) as DOMRect;
+    el.getBoundingClientRect = () => rect({ right: 100, top: 50 });
     return el;
 }
 
@@ -32,18 +33,18 @@ describe('useTableNotes', () => {
     describe('the hover popup', () => {
         it('opens beside the indicator it was given', () => {
             ss.setCellNote(table.value.id, 0, 0, 'a note');
-            notes.showNotePopup(0, 0, { target: anchorElement() } as unknown as Event);
+            notes.showNotePopup(0, 0, eventAt(anchorElement()));
             expect(notes.notePopup.value).toMatchObject({ visible: true, x: 104, y: 46, text: 'a note' });
         });
 
         it('stays shut for a cell with no note', () => {
-            notes.showNotePopup(0, 0, { target: anchorElement() } as unknown as Event);
+            notes.showNotePopup(0, 0, eventAt(anchorElement()));
             expect(notes.notePopup.value.visible).toBe(false);
         });
 
         it('closes after the grace period', () => {
             ss.setCellNote(table.value.id, 0, 0, 'a note');
-            notes.showNotePopup(0, 0, { target: anchorElement() } as unknown as Event);
+            notes.showNotePopup(0, 0, eventAt(anchorElement()));
             notes.hideNotePopup();
             expect(notes.notePopup.value.visible).toBe(true);
             vi.advanceTimersByTime(200);
@@ -52,7 +53,7 @@ describe('useTableNotes', () => {
 
         it('stays open while the pointer is over the popup itself', () => {
             ss.setCellNote(table.value.id, 0, 0, 'a note');
-            notes.showNotePopup(0, 0, { target: anchorElement() } as unknown as Event);
+            notes.showNotePopup(0, 0, eventAt(anchorElement()));
             notes.onNotePopupEnter();
             notes.hideNotePopup();
             vi.advanceTimersByTime(200);
@@ -61,7 +62,7 @@ describe('useTableNotes', () => {
 
         it('closes once the pointer leaves the popup', () => {
             ss.setCellNote(table.value.id, 0, 0, 'a note');
-            notes.showNotePopup(0, 0, { target: anchorElement() } as unknown as Event);
+            notes.showNotePopup(0, 0, eventAt(anchorElement()));
             notes.onNotePopupEnter();
             notes.onNotePopupLeave();
             vi.advanceTimersByTime(200);
@@ -70,9 +71,9 @@ describe('useTableNotes', () => {
 
         it('cancels a pending close when the popup reopens', () => {
             ss.setCellNote(table.value.id, 0, 0, 'a note');
-            notes.showNotePopup(0, 0, { target: anchorElement() } as unknown as Event);
+            notes.showNotePopup(0, 0, eventAt(anchorElement()));
             notes.hideNotePopup();
-            notes.showNotePopup(0, 0, { target: anchorElement() } as unknown as Event);
+            notes.showNotePopup(0, 0, eventAt(anchorElement()));
             vi.advanceTimersByTime(200);
             expect(notes.notePopup.value.visible).toBe(true);
         });
@@ -81,7 +82,7 @@ describe('useTableNotes', () => {
     describe('the editor', () => {
         it('opens at the pointer, seeded with the existing note', () => {
             ss.setCellNote(table.value.id, 1, 2, 'existing');
-            notes.openNoteEditor(1, 2, { clientX: 10, clientY: 20 } as MouseEvent);
+            notes.openNoteEditor(1, 2, new MouseEvent('contextmenu', { clientX: 10, clientY: 20 }));
             expect(notes.noteEditor.value).toMatchObject({
                 visible: true,
                 x: 10,
@@ -100,7 +101,7 @@ describe('useTableNotes', () => {
         });
 
         it('keeps itself inside the viewport', () => {
-            notes.openNoteEditor(0, 0, { clientX: 99999, clientY: 99999 } as MouseEvent);
+            notes.openNoteEditor(0, 0, new MouseEvent('contextmenu', { clientX: 99999, clientY: 99999 }));
             expect(notes.noteEditor.value.x).toBe(window.innerWidth - 280);
             expect(notes.noteEditor.value.y).toBe(window.innerHeight - 180);
         });

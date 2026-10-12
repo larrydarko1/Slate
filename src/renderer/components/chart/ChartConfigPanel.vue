@@ -3,7 +3,7 @@ import { useId } from 'vue';
 
 import { chartRefColor } from '@/renderer/composables/spreadsheet/state';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
-import type { ChartObject } from '@/renderer/types/spreadsheet';
+import { type ChartObject, CHART_TYPES, LEGEND_POSITIONS } from '@/renderer/types/spreadsheet';
 
 const props = defineProps<{ chart: ChartObject }>();
 
@@ -22,7 +22,10 @@ function refFieldStyle(mode: string): Record<string, string> {
 }
 
 function onTypeChange(e: Event): void {
-    ss.updateChart(props.chart.id, { chartType: (e.target as HTMLSelectElement).value as ChartObject['chartType'] });
+    if (!(e.target instanceof HTMLSelectElement)) return;
+    const { value } = e.target;
+    const chartType = CHART_TYPES.find((type): boolean => type === value);
+    if (chartType !== undefined) ss.updateChart(props.chart.id, { chartType });
 }
 
 function onRefFieldClick(mode: string): void {
@@ -30,7 +33,7 @@ function onRefFieldClick(mode: string): void {
 }
 
 function onRefInput(mode: string, e: Event): void {
-    ss.setChartDataRef(mode, (e.target as HTMLInputElement).value);
+    if (e.target instanceof HTMLInputElement) ss.setChartDataRef(mode, e.target.value);
 }
 
 function clearRef(mode: string): void {
@@ -41,24 +44,24 @@ function clearRef(mode: string): void {
 }
 
 function onHeaderToggle(e: Event): void {
-    const checked = (e.target as HTMLInputElement).checked;
     const ds = props.chart.dataSource;
-    if (ds !== null) {
-        ss.updateChart(props.chart.id, { dataSource: { ...ds, useHeader: checked } });
-    }
+    if (!(e.target instanceof HTMLInputElement) || ds === null) return;
+    ss.updateChart(props.chart.id, { dataSource: { ...ds, useHeader: e.target.checked } });
 }
 
 function onLegendChange(e: Event): void {
-    const val = (e.target as HTMLSelectElement).value;
-    if (val === 'off') {
+    if (!(e.target instanceof HTMLSelectElement)) return;
+    const { value } = e.target;
+    if (value === 'off') {
         ss.updateChart(props.chart.id, { showLegend: false });
-    } else {
-        ss.updateChart(props.chart.id, { showLegend: true, legendPosition: val as ChartObject['legendPosition'] });
+        return;
     }
+    const legendPosition = LEGEND_POSITIONS.find((position): boolean => position === value);
+    if (legendPosition !== undefined) ss.updateChart(props.chart.id, { showLegend: true, legendPosition });
 }
 
 function onGridToggle(e: Event): void {
-    ss.updateChart(props.chart.id, { showGrid: (e.target as HTMLInputElement).checked });
+    if (e.target instanceof HTMLInputElement) ss.updateChart(props.chart.id, { showGrid: e.target.checked });
 }
 </script>
 

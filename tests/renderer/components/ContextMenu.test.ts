@@ -3,6 +3,19 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import ContextMenu from '@/renderer/components/ContextMenu.vue';
 import type { ContextMenuApi, MenuItem } from '@/renderer/types/contextMenu';
+import { getElement } from '@test-utils';
+
+/** What the component exposes, checked: the SFC shim types `wrapper.vm` as nothing in particular. */
+function isContextMenuApi(value: unknown): value is ContextMenuApi {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        'open' in value &&
+        typeof value.open === 'function' &&
+        'close' in value &&
+        typeof value.close === 'function'
+    );
+}
 
 describe('ContextMenu', () => {
     let wrapper: VueWrapper;
@@ -18,7 +31,8 @@ describe('ContextMenu', () => {
     beforeEach(() => {
         action = vi.fn<() => void>();
         wrapper = mount(ContextMenu);
-        api = wrapper.vm as unknown as ContextMenuApi;
+        if (!isContextMenuApi(wrapper.vm)) throw new Error('ContextMenu does not expose open/close');
+        api = wrapper.vm;
     });
 
     // The menu teleports into <body>; without this every query would also see
@@ -34,7 +48,7 @@ describe('ContextMenu', () => {
     it('opens at the given point', async () => {
         api.open(40, 60, ITEMS());
         await wrapper.vm.$nextTick();
-        const menu = document.body.querySelector('.context-menu') as HTMLElement;
+        const menu = getElement('.context-menu', HTMLElement);
         expect(menu.style.left).toBe('40px');
         expect(menu.style.top).toBe('60px');
     });
@@ -50,7 +64,7 @@ describe('ContextMenu', () => {
     it('runs an item action on click and closes', async () => {
         api.open(0, 0, ITEMS());
         await wrapper.vm.$nextTick();
-        (document.body.querySelectorAll('[role="menuitem"]')[0] as HTMLElement).click();
+        getElement('[role="menuitem"]', HTMLElement).click();
         await wrapper.vm.$nextTick();
         expect(action).toHaveBeenCalledTimes(1);
         expect(document.body.querySelector('.context-menu')).toBeNull();
@@ -82,7 +96,7 @@ describe('ContextMenu', () => {
     it('closes on a click outside', async () => {
         api.open(0, 0, ITEMS());
         await wrapper.vm.$nextTick();
-        const overlay = document.body.querySelector('.context-menu-overlay') as HTMLElement;
+        const overlay = getElement('.context-menu-overlay', HTMLElement);
         overlay.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
         await wrapper.vm.$nextTick();
         expect(document.body.querySelector('.context-menu')).toBeNull();
@@ -99,7 +113,7 @@ describe('ContextMenu', () => {
     it('ignores a click on a separator', async () => {
         api.open(0, 0, ITEMS());
         await wrapper.vm.$nextTick();
-        (document.body.querySelector('[role="separator"]') as HTMLElement).click();
+        getElement('[role="separator"]', HTMLElement).click();
         expect(action).not.toHaveBeenCalled();
     });
 });

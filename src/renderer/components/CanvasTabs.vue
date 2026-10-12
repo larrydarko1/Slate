@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { nextTick, ref, computed } from 'vue';
 
+import IconCloseSmall from '@/renderer/components/icons/IconCloseSmall.vue';
+import IconPlus from '@/renderer/components/icons/IconPlus.vue';
+import IconZoomIn from '@/renderer/components/icons/IconZoomIn.vue';
+import IconZoomOut from '@/renderer/components/icons/IconZoomOut.vue';
+import { parseTables } from '@/renderer/composables/spreadsheet/documentSchema';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
-import { MAX_CANVASES, createDefaultCanvas, type SpreadsheetTable } from '@/renderer/types/spreadsheet';
+import { MAX_CANVASES, createDefaultCanvas } from '@/renderer/types/spreadsheet';
 
 const ss = injectSpreadsheet();
 const maxCanvases = MAX_CANVASES;
@@ -45,7 +50,8 @@ function onDragOver(e: DragEvent, index: number): void {
         dropSide.value = null;
         return;
     }
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    if (!(e.currentTarget instanceof Element)) return;
+    const rect = e.currentTarget.getBoundingClientRect();
     const midX = rect.left + rect.width / 2;
     dropTarget.value = index;
     dropSide.value = e.clientX < midX ? 'before' : 'after';
@@ -103,10 +109,13 @@ function cancelRename(): void {
     renamingId.value = null;
 }
 
-function confirmRemove(id: string, name: string): void {
-    if (confirm(`Delete canvas "${name}"? This cannot be undone.`)) {
-        ss.removeCanvas(id);
-    }
+async function confirmRemove(id: string, name: string): Promise<void> {
+    const confirmed = await window.electronAPI?.showConfirmDialog({
+        message: `Delete canvas "${name}"?`,
+        detail: 'This cannot be undone.',
+        confirmLabel: 'Delete',
+    });
+    if (confirmed === true) ss.removeCanvas(id);
 }
 
 function onContextMenu(e: MouseEvent, canvasId: string): void {
@@ -132,8 +141,8 @@ function ctxDuplicate(): void {
     }
 
     const dup = createDefaultCanvas(src.name + ' Copy');
-    // Deep-clone tables
-    dup.tables = JSON.parse(JSON.stringify(src.tables)) as SpreadsheetTable[];
+    // Deep-clone tables through JSON, which reads through Vue's reactive proxies.
+    dup.tables = parseTables(JSON.stringify(src.tables));
     dup.canvasOffset = { ...src.canvasOffset };
     ss.canvases.value.push(dup);
     ss.switchCanvas(dup.id);
@@ -144,7 +153,7 @@ function ctxDelete(): void {
     if (contextMenu.value === null) return;
     const { canvasId } = contextMenu.value;
     const cv = ss.canvases.value.find((c): boolean => c.id === canvasId);
-    if (cv !== undefined) confirmRemove(cv.id, cv.name);
+    if (cv !== undefined) void confirmRemove(cv.id, cv.name);
     contextMenu.value = null;
 }
 </script>
@@ -196,17 +205,9 @@ function ctxDelete(): void {
                         class="canvas-tab-close"
                         title="Remove canvas"
                         @click.stop="confirmRemove(canvas.id, canvas.name)">
-                        <svg
+                        <IconCloseSmall
                             width="10"
-                            height="10"
-                            viewBox="0 0 10 10"
-                            fill="none">
-                            <path
-                                d="M2.5 2.5l5 5M7.5 2.5l-5 5"
-                                stroke="currentColor"
-                                stroke-width="1.3"
-                                stroke-linecap="round" />
-                        </svg>
+                            height="10" />
                     </button>
                 </template>
             </div>
@@ -216,17 +217,9 @@ function ctxDelete(): void {
             :disabled="ss.canvases.value.length >= maxCanvases"
             :title="ss.canvases.value.length >= maxCanvases ? `Maximum ${maxCanvases} canvases` : 'Add canvas'"
             @click="ss.addCanvas()">
-            <svg
+            <IconPlus
                 width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none">
-                <path
-                    d="M6 2v8M2 6h8"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                    stroke-linecap="round" />
-            </svg>
+                height="12" />
         </button>
 
         <!-- Zoom controls -->
@@ -243,17 +236,9 @@ function ctxDelete(): void {
                 title="Zoom out (⌘−)"
                 :disabled="ss.canvasZoom.value <= 0.25"
                 @click="ss.zoomOut()">
-                <svg
+                <IconZoomOut
                     width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    fill="none">
-                    <path
-                        d="M2.5 6h7"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                        stroke-linecap="round" />
-                </svg>
+                    height="12" />
             </button>
             <button
                 class="zoom-label"
@@ -266,17 +251,9 @@ function ctxDelete(): void {
                 title="Zoom in (⌘+)"
                 :disabled="ss.canvasZoom.value >= 4"
                 @click="ss.zoomIn()">
-                <svg
+                <IconZoomIn
                     width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    fill="none">
-                    <path
-                        d="M6 2.5v7M2.5 6h7"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                        stroke-linecap="round" />
-                </svg>
+                    height="12" />
             </button>
         </div>
 

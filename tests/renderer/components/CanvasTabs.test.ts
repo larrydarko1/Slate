@@ -1,8 +1,10 @@
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 import CanvasTabs from '@/renderer/components/CanvasTabs.vue';
 import { useSpreadsheet, SPREADSHEET_KEY, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+import type { ElectronAPI } from '@/schemas/electron';
+import { getElement, stubElectronApi } from '@test-utils';
 
 function mountTabs(ss: SpreadsheetState): VueWrapper {
     return mount(CanvasTabs, { global: { provide: { [SPREADSHEET_KEY as symbol]: ss } } });
@@ -11,14 +13,17 @@ function mountTabs(ss: SpreadsheetState): VueWrapper {
 describe('CanvasTabs', () => {
     let ss: SpreadsheetState;
     let wrapper: VueWrapper;
+    let api: ElectronAPI;
 
     beforeEach(() => {
+        api = stubElectronApi();
         ss = useSpreadsheet();
         wrapper = mountTabs(ss);
     });
 
     afterEach(() => {
         wrapper.unmount();
+        delete window.electronAPI;
         vi.restoreAllMocks();
     });
 
@@ -77,18 +82,20 @@ describe('CanvasTabs', () => {
         });
 
         it('removes a canvas after confirmation', async () => {
-            vi.spyOn(window, 'confirm').mockReturnValue(true);
             ss.addCanvas();
             await wrapper.vm.$nextTick();
             await wrapper.findAll('.canvas-tab-close')[0]!.trigger('click');
+            await flushPromises();
+            expect(api.showConfirmDialog).toHaveBeenCalledWith(expect.objectContaining({ confirmLabel: 'Delete' }));
             expect(ss.canvases.value).toHaveLength(1);
         });
 
         it('keeps the canvas when the confirmation is declined', async () => {
-            vi.spyOn(window, 'confirm').mockReturnValue(false);
+            vi.mocked(api.showConfirmDialog).mockResolvedValue(false);
             ss.addCanvas();
             await wrapper.vm.$nextTick();
             await wrapper.findAll('.canvas-tab-close')[0]!.trigger('click');
+            await flushPromises();
             expect(ss.canvases.value).toHaveLength(2);
         });
     });
@@ -234,19 +241,17 @@ describe('CanvasTabs', () => {
         });
 
         it('deletes through the menu after confirmation', async () => {
-            vi.spyOn(window, 'confirm').mockReturnValue(true);
             ss.addCanvas();
             await wrapper.vm.$nextTick();
             await openMenu(1);
             items()[2]!.click();
-            await wrapper.vm.$nextTick();
+            await flushPromises();
             expect(ss.canvases.value).toHaveLength(1);
         });
 
         it('closes on a click outside', async () => {
             await openMenu();
-            const backdrop = document.body.querySelector('.canvas-ctx-backdrop') as HTMLElement;
-            backdrop.click();
+            getElement('.canvas-ctx-backdrop', HTMLElement).click();
             await wrapper.vm.$nextTick();
             expect(menu()).toBeNull();
         });

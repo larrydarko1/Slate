@@ -20,6 +20,7 @@ import {
     utilsBannedImportPatterns,
     libBannedImportPatterns,
     noStoreLibraryPatterns,
+    noToastLibraryPatterns,
     aliasOnlyImportPatterns,
     functionContractsPlugin,
 } from '@larrydarko/lint-config/eslint/electron';
@@ -153,6 +154,7 @@ export default larry({
                         patterns: [
                             ...rendererBannedImports.patterns,
                             ...noStoreLibraryPatterns,
+                            ...noToastLibraryPatterns,
                             ...aliasOnlyImportPatterns,
                         ],
                     },
@@ -169,6 +171,7 @@ export default larry({
                         patterns: [
                             ...rendererBannedImports.patterns,
                             ...noStoreLibraryPatterns,
+                            ...noToastLibraryPatterns,
                             ...aliasOnlyImportPatterns,
                             ...utilsBannedImportPatterns,
                         ],

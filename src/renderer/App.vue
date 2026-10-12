@@ -4,16 +4,20 @@ import { provide, onMounted, onBeforeUnmount } from 'vue';
 import CanvasTabs from '@/renderer/components/CanvasTabs.vue';
 import CanvasWorkspace from '@/renderer/components/CanvasWorkspace.vue';
 import FormulaBar from '@/renderer/components/FormulaBar.vue';
+import NotificationCenter from '@/renderer/components/NotificationCenter.vue';
 import Toolbar from '@/renderer/components/Toolbar.vue';
 import { useSpreadsheet, SPREADSHEET_KEY } from '@/renderer/composables/useSpreadsheet';
 
 const ss = useSpreadsheet();
 
-// Handle new file with confirmation
-const handleNewFile = (): void => {
-    if (confirm('Create a new file? Any unsaved changes will be lost.')) {
-        ss.newFile();
-    }
+// Asked through the main process's message box: a native confirm() would freeze the window.
+const handleNewFile = async (): Promise<void> => {
+    const confirmed = await window.electronAPI?.showConfirmDialog({
+        message: 'Create a new file?',
+        detail: 'Any unsaved changes will be lost.',
+        confirmLabel: 'New File',
+    });
+    if (confirmed === true) ss.newFile();
 };
 
 /**
@@ -42,7 +46,7 @@ const handleKeydown = (e: KeyboardEvent): void => {
             break;
         case 'n':
             e.preventDefault();
-            handleNewFile();
+            void handleNewFile();
             break;
         case '=':
         case '+':
@@ -103,6 +107,7 @@ onBeforeUnmount((): void => {
         <FormulaBar />
         <CanvasWorkspace />
         <CanvasTabs />
+        <NotificationCenter />
     </div>
 </template>
 

@@ -18,6 +18,10 @@ const emit = defineEmits<{
 
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
+function onInput(e: Event): void {
+    if (e.target instanceof HTMLTextAreaElement) emit('update:text', e.target.value);
+}
+
 watch(
     () => props.visible,
     (v) => {
@@ -44,7 +48,7 @@ watch(
                     class="note-editor-textarea"
                     :value="text"
                     placeholder="Type a note…"
-                    @input="emit('update:text', ($event.target as HTMLTextAreaElement).value)"
+                    @input="onInput"
                     @keydown.escape.prevent="emit('cancel')"></textarea>
                 <div class="note-editor-actions">
                     <button

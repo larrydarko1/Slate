@@ -8,7 +8,7 @@ import { nextTick, ref, type Ref } from 'vue';
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
-export type TableNotes = {
+type TableNotes = {
     notePopup: Ref<
         { visible: boolean; x: number; y: number; text: string },
         { visible: boolean; x: number; y: number; text: string }
@@ -40,7 +40,8 @@ export function useTableNotes(table: Ref<SpreadsheetTable>, ss: SpreadsheetState
         const text = ss.getCellNote(table.value.id, ci, ri);
         if (text === '') return;
         if (notePopupTimeout !== null) clearTimeout(notePopupTimeout);
-        const rect = (e.target as HTMLElement).getBoundingClientRect();
+        if (!(e.target instanceof Element)) return;
+        const rect = e.target.getBoundingClientRect();
         notePopup.value = {
             visible: true,
             x: rect.right + 4,

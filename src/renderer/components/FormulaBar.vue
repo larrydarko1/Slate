@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 
+import IconCrosshair from '@/renderer/components/icons/IconCrosshair.vue';
 import { getTypeLabel, type CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { FormulaToken } from '@/renderer/composables/spreadsheet/formulas';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
@@ -97,7 +98,8 @@ function onFocus(): void {
 }
 
 function onInput(e: Event): void {
-    const val = (e.target as HTMLInputElement).value;
+    if (!(e.target instanceof HTMLInputElement)) return;
+    const val = e.target.value;
     ss.editValue.value = val;
     if (!ss.isEditing.value) ss.isEditing.value = true;
     // Auto-activate formula mode when user starts typing a formula
@@ -205,28 +207,9 @@ watch(
                 :disabled="!activeCell"
                 title="Point-to-insert mode — click cells to add references to formula"
                 @click.stop="ss.toggleFormulaMode()">
-                <svg
+                <IconCrosshair
                     width="14"
-                    height="14"
-                    viewBox="0 0 14 14"
-                    fill="none">
-                    <circle
-                        cx="7"
-                        cy="7"
-                        r="5.5"
-                        stroke="currentColor"
-                        stroke-width="1.3" />
-                    <circle
-                        cx="7"
-                        cy="7"
-                        r="1.5"
-                        fill="currentColor" />
-                    <path
-                        d="M7 1.5v2M7 10.5v2M1.5 7h2M10.5 7h2"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                        stroke-linecap="round" />
-                </svg>
+                    height="14" />
             </button>
         </div>
     </div>

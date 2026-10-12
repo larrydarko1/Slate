@@ -1,7 +1,9 @@
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import App from '@/renderer/App.vue';
+import type { ElectronAPI } from '@/schemas/electron';
+import { stubElectronApi } from '@test-utils';
 
 /**
  * App is the only place the toolbar's events are wired to the spreadsheet, and
@@ -10,6 +12,7 @@ import App from '@/renderer/App.vue';
  */
 describe('App', () => {
     let wrapper: VueWrapper;
+    let api: ElectronAPI;
 
     const byTitle = (title: string) => wrapper.get(`[title="${title}"]`);
 
@@ -33,11 +36,13 @@ describe('App', () => {
         // attachTo appends to <body>; anything a previous test left behind would
         // otherwise still be matched by findAll.
         document.body.innerHTML = '';
+        api = stubElectronApi();
         wrapper = mount(App, { attachTo: document.body });
     });
 
     afterEach(() => {
         wrapper.unmount();
+        delete window.electronAPI;
         document.documentElement.removeAttribute('data-theme');
         vi.restoreAllMocks();
     });
@@ -72,16 +77,18 @@ describe('App', () => {
         });
 
         it('clears the canvas on new file', async () => {
-            vi.spyOn(window, 'confirm').mockReturnValue(true);
             await byTitle('Add Table').trigger('click');
             await byTitle('New (⌘N)').trigger('click');
+            await flushPromises();
+            expect(api.showConfirmDialog).toHaveBeenCalledWith(expect.objectContaining({ confirmLabel: 'New File' }));
             expect(wrapper.findAll('.spreadsheet-table')).toHaveLength(0);
         });
 
         it('keeps the canvas when the new-file confirmation is declined', async () => {
-            vi.spyOn(window, 'confirm').mockReturnValue(false);
+            vi.mocked(api.showConfirmDialog).mockResolvedValue(false);
             await byTitle('Add Table').trigger('click');
             await byTitle('New (⌘N)').trigger('click');
+            await flushPromises();
             expect(wrapper.findAll('.spreadsheet-table')).toHaveLength(2);
         });
 
@@ -119,10 +126,9 @@ describe('App', () => {
         });
 
         it('creates a new file', async () => {
-            vi.spyOn(window, 'confirm').mockReturnValue(true);
             await wrapper.vm.$nextTick();
             press('n');
-            await wrapper.vm.$nextTick();
+            await flushPromises();
             expect(wrapper.findAll('.spreadsheet-table')).toHaveLength(0);
         });
 

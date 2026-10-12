@@ -24,7 +24,7 @@ type ObjectPosition = {
     height: number;
 };
 
-export type DragResize = {
+type DragResize = {
     startDrag: (e: MouseEvent, pos: ObjectPosition) => void;
     startResize: (dir: ResizeDir, e: MouseEvent, pos: ObjectPosition) => void;
 };

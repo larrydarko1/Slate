@@ -8,7 +8,7 @@ import { ref, type Ref } from 'vue';
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
-export type FillHandle = {
+type FillHandle = {
     fillDragState: Ref<
         {
             active: boolean;

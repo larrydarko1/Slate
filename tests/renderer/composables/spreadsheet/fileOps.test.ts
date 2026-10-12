@@ -1,43 +1,25 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
 
+import { notify } from '@/renderer/composables/useNotifications';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+import { stubElectronApi as stubApi } from '@test-utils';
 
-type Api = NonNullable<typeof window.electronAPI>;
-
-/**
- * The bridge is the whole external surface of this module, so it is stubbed
- * rather than mocked at the import boundary — every path here is "what did the
- * composable ask Electron to do, and what did it do with the answer".
- */
-function stubApi(overrides: Partial<Api> = {}): Api {
-    const api = {
-        isElectron: () => true,
-        log: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
-        showSaveDialog: vi.fn().mockResolvedValue({ canceled: false, filePath: '/tmp/book.slate' }),
-        showOpenDialog: vi.fn().mockResolvedValue({ canceled: false, filePaths: ['/tmp/book.slate'] }),
-        writeFile: vi.fn().mockResolvedValue({ success: true }),
-        readFile: vi.fn().mockResolvedValue({ success: true, content: '{}' }),
-        onOpenFile: vi.fn().mockReturnValue(() => {}),
-        openExternal: vi.fn().mockResolvedValue({ success: true }),
-        ...overrides,
-    };
-    window.electronAPI = api;
-    return api;
-}
+// The bridge is the whole external surface of this module, so it is stubbed rather
+// than mocked at the import boundary: every path here is "what did the composable
+// ask Electron to do, and what did it do with the answer".
 
 describe('fileOps', () => {
     let ss: SpreadsheetState;
-    // Held rather than re-read off `window`: asserting on `window.alert` passes the
-    // method around unbound, and the spy is what the cases actually mean.
-    let alert: MockInstance<typeof window.alert>;
+    // Held rather than re-read off `notify`: the spy is what the cases actually mean.
+    let notifyError: MockInstance<typeof notify.error>;
 
     beforeEach(() => {
         ss = useSpreadsheet();
-        alert = vi.spyOn(window, 'alert').mockImplementation(() => {});
+        notifyError = vi.spyOn(notify, 'error').mockImplementation(() => {});
     });
 
     afterEach(() => {
-        delete (window as { electronAPI?: Api }).electronAPI;
+        delete window.electronAPI;
         vi.restoreAllMocks();
     });
 
@@ -60,7 +42,7 @@ describe('fileOps', () => {
         it('reuses the remembered path on the next save', async () => {
             const api = stubApi();
             await ss.saveFile();
-            (api.showSaveDialog as ReturnType<typeof vi.fn>).mockClear();
+            vi.mocked(api.showSaveDialog).mockClear();
             await ss.saveFile();
             expect(api.showSaveDialog).not.toHaveBeenCalled();
         });
@@ -100,16 +82,16 @@ describe('fileOps', () => {
             expect(api.writeFile).not.toHaveBeenCalled();
         });
 
-        it('reports a write failure', async () => {
-            stubApi({ writeFile: vi.fn().mockResolvedValue({ success: false, error: 'disk full' }) });
+        it('tells the user why a write failed, in words rather than the code', async () => {
+            stubApi({ writeFile: vi.fn().mockResolvedValue({ success: false, error: 'DISK_FULL' }) });
             expect(await ss.saveFile()).toBe(false);
-            expect(alert).toHaveBeenCalledWith(expect.stringContaining('disk full'));
+            expect(notifyError).toHaveBeenCalledWith('The file could not be saved. There is not enough disk space.');
         });
 
         it('refuses outside Electron', async () => {
-            delete (window as { electronAPI?: Api }).electronAPI;
+            delete window.electronAPI;
             expect(await ss.saveFile()).toBe(false);
-            expect(alert).toHaveBeenCalled();
+            expect(notifyError).toHaveBeenCalledWith('Opening and saving files needs the desktop app.');
         });
     });
 
@@ -121,7 +103,7 @@ describe('fileOps', () => {
             ss.setCellValue(id, 0, 0, '5');
             ss.setCellValue(id, 1, 0, '=A1*3');
             await ss.saveFile();
-            const written = (api.writeFile as ReturnType<typeof vi.fn>).mock.calls[0]![1] as string;
+            const written = vi.mocked(api.writeFile).mock.calls[0]![1];
 
             const reopened = useSpreadsheet();
             stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: written }) });
@@ -151,20 +133,39 @@ describe('fileOps', () => {
             expect(api.readFile).not.toHaveBeenCalled();
         });
 
-        it('reports a read failure', async () => {
-            stubApi({ readFile: vi.fn().mockResolvedValue({ success: false, error: 'missing' }) });
+        it('tells the user why a read failed', async () => {
+            stubApi({ readFile: vi.fn().mockResolvedValue({ success: false, error: 'NOT_FOUND' }) });
             expect(await ss.loadFileFromPath('/tmp/x.slate')).toBe(false);
-            expect(alert).toHaveBeenCalledWith(expect.stringContaining('missing'));
+            expect(notifyError).toHaveBeenCalledWith('The file could not be opened. The file could not be found.');
+        });
+
+        it('falls back to the generic reason when the reply carries no code', async () => {
+            stubApi({ readFile: vi.fn().mockResolvedValue({ success: false }) });
+            expect(await ss.loadFileFromPath('/tmp/x.slate')).toBe(false);
+            expect(notifyError).toHaveBeenCalledWith(expect.stringContaining('The log has the details.'));
         });
 
         it('reports unparseable content', async () => {
             stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: 'not json' }) });
             expect(await ss.loadFileFromPath('/tmp/x.slate')).toBe(false);
             expect(window.electronAPI?.log.error).toHaveBeenCalledWith('Failed to load file', expect.any(Object));
+            expect(notifyError).toHaveBeenCalledWith(expect.stringContaining('not a Slate spreadsheet'));
+        });
+
+        it.each([
+            ['an empty object', {}],
+            ['a v2 file with no canvases', { version: '2.0', canvases: [] }],
+            ['a cell of the wrong type', { tables: [{ id: 't', name: 'T', columns: [], rows: [[{ value: {} }]] }] }],
+        ])('refuses %s and keeps the open workbook', async (_label, content) => {
+            const before = ss.canvases.value;
+            stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: JSON.stringify(content) }) });
+            expect(await ss.loadFileFromPath('/tmp/x.slate')).toBe(false);
+            expect(ss.canvases.value).toBe(before);
+            expect(ss.currentFilePath.value).toBeNull();
         });
 
         it('refuses outside Electron', async () => {
-            delete (window as { electronAPI?: Api }).electronAPI;
+            delete window.electronAPI;
             expect(await ss.loadFileFromPath('/tmp/x.slate')).toBe(false);
             expect(await ss.openFile()).toBe(false);
         });

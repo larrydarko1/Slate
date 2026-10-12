@@ -4,18 +4,14 @@
  * Does NOT own: formula parsing (parser.ts), evaluation (evaluator.ts).
  */
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 export type CellDataType =
     'integer' | 'float' | 'percent' | 'currency_eur' | 'currency_usd' | 'text' | 'boolean' | 'url' | 'empty';
 
-export type TypedValue = {
+type TypedValue = {
     type: CellDataType;
     numericValue: number | null; // underlying number (null for text/empty)
     rawInput: string; // what the user originally typed
 };
-
-// ── Constants ───────────────────────────────────────────────────────────────────
 
 // Currency regex patterns
 const CURRENCY_USD_PATTERNS = [
@@ -36,11 +32,9 @@ const CURRENCY_EUR_PATTERNS = [
     /^-?[\d.,]+€$/,
 ];
 
-// ── Detection ───────────────────────────────────────────────────────────────────
-
 // Detect the type of a raw input string and extract its components.
 export function detectType(raw: string): TypedValue {
-    if (raw === '' || raw === null || raw === undefined) {
+    if (raw === '') {
         return { type: 'empty', numericValue: null, rawInput: '' };
     }
 
@@ -106,8 +100,6 @@ export function detectType(raw: string): TypedValue {
     // Anything else is text
     return { type: 'text', numericValue: null, rawInput: trimmed };
 }
-
-// ── Type Hierarchy & Conversion ────────────────────────────────────────────────
 
 /**
  * Returns true if the type is numeric (can participate in arithmetic).

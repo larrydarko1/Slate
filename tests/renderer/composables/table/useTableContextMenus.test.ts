@@ -3,26 +3,26 @@ import { ref, type Ref } from 'vue';
 
 import { useTableContextMenus } from '@/renderer/composables/table/useTableContextMenus';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
-import type { ContextMenuApi, MenuItem } from '@/renderer/types/contextMenu';
+import type { ContextMenuApi } from '@/renderer/types/contextMenu';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
-const EVENT = { clientX: 30, clientY: 40 } as MouseEvent;
+const EVENT = new MouseEvent('contextmenu', { clientX: 30, clientY: 40 });
 
 describe('useTableContextMenus', () => {
     let ss: SpreadsheetState;
     let table: Ref<SpreadsheetTable>;
-    let open: ReturnType<typeof vi.fn>;
+    let open: ReturnType<typeof vi.fn<ContextMenuApi['open']>>;
     let menus: ReturnType<typeof useTableContextMenus>;
     let openNoteEditor: ReturnType<typeof vi.fn<(ci: number, ri: number, e?: MouseEvent) => void>>;
 
     /** The labels the last open() call was given, separators stripped. */
     function labels(): string[] {
-        const items = open.mock.calls.at(-1)?.[2] as MenuItem[];
+        const items = open.mock.calls.at(-1)?.[2] ?? [];
         return items.filter((i) => i.separator !== true).map((i) => i.label);
     }
 
     function invoke(label: string): void {
-        const items = open.mock.calls.at(-1)?.[2] as MenuItem[];
+        const items = open.mock.calls.at(-1)?.[2] ?? [];
         items.find((i) => i.label === label)?.action?.();
     }
 
@@ -30,9 +30,9 @@ describe('useTableContextMenus', () => {
         ss = useSpreadsheet();
         ss.addTable();
         table = ref(ss.tables.value[0]!);
-        open = vi.fn();
+        open = vi.fn<ContextMenuApi['open']>();
         openNoteEditor = vi.fn<(ci: number, ri: number, e?: MouseEvent) => void>();
-        const ctxMenu = ref({ open, close: vi.fn() } as ContextMenuApi) as Ref<ContextMenuApi | null>;
+        const ctxMenu = ref<ContextMenuApi | null>({ open, close: vi.fn() });
         menus = useTableContextMenus(table, ss, ctxMenu, openNoteEditor);
     });
 

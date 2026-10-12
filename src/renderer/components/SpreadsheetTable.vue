@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, toRef, watch } from 'vue';
 
 import ContextMenu from '@/renderer/components/ContextMenu.vue';
+import IconExternalLink from '@/renderer/components/icons/IconExternalLink.vue';
 import NoteEditor from '@/renderer/components/table/NoteEditor.vue';
 import NotePopup from '@/renderer/components/table/NotePopup.vue';
 import { useFillHandle } from '@/renderer/composables/table/useFillHandle';
@@ -196,7 +197,8 @@ function onCellDblClick(ci: number, ri: number): void {
 }
 
 function onCellInput(e: Event): void {
-    const val = (e.target as HTMLInputElement).value;
+    if (!(e.target instanceof HTMLInputElement)) return;
+    const val = e.target.value;
     ss.editValue.value = val;
     if (val.startsWith('=') && !ss.formulaMode.value) ss.formulaMode.value = true;
     if (!val.startsWith('=') && ss.formulaMode.value) ss.formulaMode.value = false;
@@ -498,25 +500,9 @@ watch(
                                         title="Open link in browser"
                                         @mousedown.stop
                                         @click.stop="openCellUrl(ss.getDisplayValue(table.id, ci, ri))">
-                                        <svg
+                                        <IconExternalLink
                                             width="10"
-                                            height="10"
-                                            viewBox="0 0 10 10"
-                                            fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M4 2H2a1 1 0 00-1 1v5a1 1 0 001 1h5a1 1 0 001-1V6"
-                                                stroke="currentColor"
-                                                stroke-width="1.2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round" />
-                                            <path
-                                                d="M6.5 1H9v2.5M9 1L5.5 4.5"
-                                                stroke="currentColor"
-                                                stroke-width="1.2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round" />
-                                        </svg>
+                                            height="10" />
                                     </button>
                                 </template>
                                 <!-- Fill handle at bottom-right corner of selection -->

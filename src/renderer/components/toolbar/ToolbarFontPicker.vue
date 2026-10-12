@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 
+import IconChevronDown from '@/renderer/components/icons/IconChevronDown.vue';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 
 const fontOptions = [
@@ -56,7 +57,11 @@ function fmtSetFont(font: string): void {
 }
 
 function onClickOutside(e: MouseEvent): void {
-    if (fontMenuOpen.value && fontSelectorRef.value !== null && !fontSelectorRef.value.contains(e.target as Node)) {
+    if (
+        fontMenuOpen.value &&
+        fontSelectorRef.value !== null &&
+        !(e.target instanceof Node && fontSelectorRef.value.contains(e.target))
+    ) {
         fontMenuOpen.value = false;
     }
 }
@@ -79,19 +84,10 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
                     :style="{ fontFamily: fmtFontFamily !== 'System Default' ? fmtFontFamily : undefined }"
                     >{{ fmtFontFamily }}</span
                 >
-                <svg
+                <IconChevronDown
                     class="chevron"
                     width="8"
-                    height="8"
-                    viewBox="0 0 8 8">
-                    <path
-                        d="M2 3l2 2 2-2"
-                        stroke="currentColor"
-                        stroke-width="1.2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        fill="none" />
-                </svg>
+                    height="8" />
             </button>
             <div
                 v-if="fontMenuOpen"

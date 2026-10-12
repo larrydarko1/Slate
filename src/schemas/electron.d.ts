@@ -7,7 +7,13 @@
  * renderer's `window.electronAPI`. That is what stops the two from drifting —
  * a renamed method fails the type check instead of at the first click.
  */
-import type { FileReadResult, FileWriteResult, OpenDialogResult, SaveDialogResult } from '@/schemas/file';
+import type {
+    ConfirmDialogOptions,
+    FileReadResult,
+    FileWriteResult,
+    OpenDialogResult,
+    SaveDialogResult,
+} from '@/schemas/file';
 import type { ShellOpenResult } from '@/schemas/shell';
 
 export type ElectronAPI = {
@@ -21,6 +27,8 @@ export type ElectronAPI = {
 
     showSaveDialog: (defaultPath?: string) => Promise<SaveDialogResult>;
     showOpenDialog: () => Promise<OpenDialogResult>;
+    /** Resolves true only when the user picked the confirm button. */
+    showConfirmDialog: (options: ConfirmDialogOptions) => Promise<boolean>;
     writeFile: (filePath: string, content: string) => Promise<FileWriteResult>;
     readFile: (filePath: string) => Promise<FileReadResult>;
 
@@ -31,8 +39,7 @@ export type ElectronAPI = {
 };
 
 declare global {
-    // Must be an interface, not a type: this merges with the DOM's own Window declaration.
-    // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+    // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- an interface, not a type: this merges with the DOM's own Window declaration.
     interface Window {
         electronAPI?: ElectronAPI;
     }

@@ -3,8 +3,8 @@
  * Owns: undo/redo stacks, snapshot/restore, canUndo/canRedo updates.
  * Does NOT own: reactive state (state.ts), recalculation (useFormulaEngine.ts).
  */
+import { parseCanvases } from '@/renderer/composables/spreadsheet/documentSchema';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-import type { Canvas } from '@/renderer/types/spreadsheet';
 
 export type SpreadsheetUndoRedo = {
     pushUndo: () => void;
@@ -26,12 +26,14 @@ export function createUndoRedo(state: SpreadsheetCoreState, deps: UndoRedoDeps):
     let undoNesting = 0;
     let undoBatchActive = false;
 
+    // JSON, not structuredClone: state can hold reactive proxies, which JSON reads
+    // through and structuredClone refuses.
     function snapshotState(): string {
         return JSON.stringify(state.canvases.value);
     }
 
     function restoreState(snapshot: string): void {
-        state.canvases.value = JSON.parse(snapshot) as Canvas[];
+        state.canvases.value = parseCanvases(snapshot);
         if (state.canvases.value.find((c): boolean => c.id === state.activeCanvasId.value) === undefined) {
             const first = state.canvases.value[0];
             if (first !== undefined) state.activeCanvasId.value = first.id;

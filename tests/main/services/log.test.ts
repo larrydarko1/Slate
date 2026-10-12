@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+import type { IpcMain } from '@/main/lib/ipc';
+
 type Listener = (event: unknown, ...args: unknown[]) => void;
 
 vi.mock('electron', () => ({}));
@@ -10,10 +12,15 @@ vi.mock('@/main/lib/logger', () => ({ log }));
 
 const { register } = await import('@/main/services/log');
 
-function fakeIpc(): { listeners: Map<string, Listener>; ipc: Parameters<typeof register>[0] } {
+function fakeIpc(): { listeners: Map<string, Listener>; ipc: IpcMain } {
     const listeners = new Map<string, Listener>();
-    const ipc = { on: (channel: string, fn: Listener) => listeners.set(channel, fn) };
-    return { listeners, ipc: ipc as unknown as Parameters<typeof register>[0] };
+    const ipc: IpcMain = {
+        handle: vi.fn(),
+        on(channel, fn) {
+            listeners.set(channel, fn);
+        },
+    };
+    return { listeners, ipc };
 }
 
 describe('log service', () => {

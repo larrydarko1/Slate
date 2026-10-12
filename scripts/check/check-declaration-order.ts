@@ -9,8 +9,8 @@
  *   - src/ and tests/ are the whole of it.
  *   - No workspace scope: Slate is a single package, so imports get three groups,
  *     not four — builtin → external → local.
- *   - No local aliases beyond `@/`: the tests import the code under test through the
- *     same alias the source uses, and there is no test-utils path to sort.
+ *   - `@test-utils` is a tsconfig path into this repo, not an npm package, so it
+ *     sorts as local.
  *
  * Run `node scripts/check/check-declaration-order.ts --fix` to rewrite the import
  * block in place. That is the only pass with a fixer, because it is the only one
@@ -18,4 +18,7 @@
  */
 import { checkDeclarationOrder } from '@larrydarko/lint-config/gates/declaration-order';
 
-checkDeclarationOrder({ sourceRoots: ['src', 'tests'] });
+checkDeclarationOrder({
+    sourceRoots: ['src', 'tests'],
+    importOrder: { localAliases: ['@test-utils'] },
+});

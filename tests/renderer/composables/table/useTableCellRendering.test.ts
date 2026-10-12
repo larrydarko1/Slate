@@ -4,6 +4,7 @@ import { ref, type Ref } from 'vue';
 import { useTableCellRendering } from '@/renderer/composables/table/useTableCellRendering';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+import { stubElectronApi } from '@test-utils';
 
 describe('useTableCellRendering', () => {
     let ss: SpreadsheetState;
@@ -171,19 +172,14 @@ describe('useTableCellRendering', () => {
 
     describe('openCellUrl', () => {
         it('hands an http url to the shell', () => {
-            const openExternal = (url: string): Promise<{ success: boolean }> => {
-                calls.push(url);
-                return Promise.resolve({ success: true });
-            };
-            const calls: string[] = [];
-            window.electronAPI = { openExternal } as unknown as NonNullable<typeof window.electronAPI>;
+            const api = stubElectronApi();
             render.openCellUrl('https://example.com');
-            expect(calls).toEqual(['https://example.com']);
-            delete (window as { electronAPI?: unknown }).electronAPI;
+            expect(api.openExternal).toHaveBeenCalledWith('https://example.com');
+            delete window.electronAPI;
         });
 
         it('does nothing outside Electron', () => {
-            delete (window as { electronAPI?: unknown }).electronAPI;
+            delete window.electronAPI;
             expect(() => render.openCellUrl('https://example.com')).not.toThrow();
         });
     });

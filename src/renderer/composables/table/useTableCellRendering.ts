@@ -9,7 +9,7 @@ import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 import { indexToColumnLetter } from '@/renderer/types/spreadsheet';
 
-export type TableCellRendering = {
+type TableCellRendering = {
     isActiveTable: ComputedRef<boolean>;
     columnLetter: (ci: number) => string;
     isSelected: (ci: number, ri: number) => boolean;

@@ -193,7 +193,7 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
         const textMuted = cssVar('--text-muted');
         const borderColor = cssVar('--border-color');
 
-        let scales: Record<string, unknown> = {};
+        let scales: NonNullable<ChartOptions['scales']> = {};
         if (isRadar) {
             scales = {
                 r: {
@@ -206,22 +206,16 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
                 },
             };
         } else if (!isPie) {
-            const xScale: Record<string, unknown> = {
+            const axis = {
                 display: chart.value.showGrid,
                 grid: { color: borderColor },
                 ticks: { color: textMuted, font: { size: 10 } },
             };
-            const yScale: Record<string, unknown> = {
-                display: chart.value.showGrid,
-                grid: { color: borderColor },
-                ticks: { color: textMuted, font: { size: 10 } },
-                beginAtZero: true,
+            scales = {
+                // A scatter plot's x values are numbers, so its x axis is linear too.
+                x: isScatter ? { ...axis, type: 'linear', beginAtZero: true } : axis,
+                y: { ...axis, beginAtZero: true },
             };
-            if (isScatter) {
-                xScale['type'] = 'linear';
-                xScale['beginAtZero'] = true;
-            }
-            scales = { x: xScale, y: yScale };
         }
 
         return {
@@ -245,7 +239,7 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
                     },
                 },
             },
-            scales: scales as NonNullable<ChartOptions['scales']>,
+            scales,
         };
     });
 

@@ -2,6 +2,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, it, expect, afterEach } from 'vitest';
 
 import NoteEditor from '@/renderer/components/table/NoteEditor.vue';
+import { getElement } from '@test-utils';
 
 describe('NoteEditor', () => {
     let wrapper: VueWrapper;
@@ -32,7 +33,7 @@ describe('NoteEditor', () => {
 
     it('reports what is typed', async () => {
         mountEditor();
-        const area = textarea() as HTMLTextAreaElement;
+        const area = getElement('.note-editor textarea', HTMLTextAreaElement);
         area.value = 'typed';
         area.dispatchEvent(new Event('input'));
         await wrapper.vm.$nextTick();

@@ -51,7 +51,7 @@ export type FormulaContext = {
 };
 
 /** Result of a type-aware formula evaluation */
-export type TypedResult = {
+type TypedResult = {
     value: CellValue;
     type: CellDataType;
 };

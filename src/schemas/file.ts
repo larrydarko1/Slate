@@ -18,13 +18,18 @@
 
 import { z } from 'zod';
 
+import type { IpcErrorCode } from '@/schemas/errors';
+
 export type SaveDialogResult = { canceled: boolean; filePath?: string };
 
 export type OpenDialogResult = { canceled: boolean; filePaths: string[] };
 
-export type FileWriteResult = { success: boolean; error?: string };
+export type FileWriteResult = { success: boolean; error?: IpcErrorCode };
 
-export type FileReadResult = { success: boolean; content?: string; error?: string };
+export type FileReadResult = { success: boolean; content?: string; error?: IpcErrorCode };
+
+/** A yes/no question asked through the OS message box, modal to the window. */
+export type ConfirmDialogOptions = { message: string; detail?: string; confirmLabel: string };
 
 /**
  * A path the renderer is allowed to name.
@@ -54,6 +59,13 @@ const FileContentSchema = z
 export const FileWriteArgsSchema = z.object({
     filePath: FilePathSchema,
     content: FileContentSchema,
+});
+
+/** Bounded so a renderer cannot hand the OS an unreadable wall of text. */
+export const ConfirmDialogArgsSchema = z.object({
+    message: z.string().min(1).max(500),
+    detail: z.string().max(2000).optional(),
+    confirmLabel: z.string().min(1).max(40),
 });
 
 /** The dialog's starting filename. Absent means "let the dialog choose". */

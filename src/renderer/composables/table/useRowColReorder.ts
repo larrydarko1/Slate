@@ -9,7 +9,7 @@ import { nextTick, ref, type Ref } from 'vue';
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
-export type RowColReorder = {
+type RowColReorder = {
     reorderRowState: Ref<
         {
             active: boolean;

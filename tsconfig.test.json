@@ -18,7 +18,8 @@
             "@/main/*": ["./src/main/*"],
             "@/renderer/*": ["./src/renderer/*"],
             "@/schemas/*": ["./src/schemas/*"],
-            "@/preload/*": ["./src/preload/*"]
+            "@/preload/*": ["./src/preload/*"],
+            "@test-utils": ["./tests/renderer/test-utils"]
         },
         "types": ["node", "vitest/globals"]
     },
