@@ -69,14 +69,14 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
 
         const sourceInfo = deps.findTableGlobal(state.activeCell.value.tableId);
         const targetTableName = targetInfo.table.name;
-        const quoteTable = (n: string): string => (n.match(/^[A-Za-z_]\w*$/) !== null ? n : `'${n}'`);
+        const quoteTable = (n: string): string => (/^[A-Za-z_]\w*$/.exec(n) !== null ? n : `'${n}'`);
 
         if (sourceInfo !== null && sourceInfo.canvas.id === targetInfo.canvas.id) {
             return `${quoteTable(targetTableName)}::${cellRef}`;
         }
 
         const targetCanvasName = targetInfo.canvas.name;
-        const quoteCanvas = (n: string): string => (n.match(/^[A-Za-z_]\w*$/) !== null ? n : `'${n}'`);
+        const quoteCanvas = (n: string): string => (/^[A-Za-z_]\w*$/.exec(n) !== null ? n : `'${n}'`);
         return `${quoteCanvas(targetCanvasName)}::${quoteTable(targetTableName)}::${cellRef}`;
     }
 
@@ -91,7 +91,7 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
 
         const current = state.editValue.value;
         if (current === '' || current === '=') {
-            state.editValue.value = '=' + refStr;
+            state.editValue.value = `=${refStr}`;
             return;
         }
 
@@ -102,7 +102,7 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
         if (lastChar !== '' && '+-*/^(,'.includes(lastChar)) {
             state.editValue.value = current + refStr;
         } else {
-            state.editValue.value = current + '+' + refStr;
+            state.editValue.value = `${current}+${refStr}`;
         }
     }
 
@@ -112,17 +112,17 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
         const parts = refText.split('::');
         const cellPart = parts[parts.length - 1] ?? '';
 
-        const rangeMatch = cellPart.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
-        const singleMatch = rangeMatch === null ? cellPart.match(/^([A-Z]+)(\d+)$/) : null;
+        const rangeMatch = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(cellPart);
+        const singleMatch = rangeMatch === null ? /^([A-Z]+)(\d+)$/.exec(cellPart) : null;
 
         const [, startLetters, startDigits] = rangeMatch ?? singleMatch ?? [];
         if (startLetters === undefined || startDigits === undefined) return null;
 
         const col = columnLetterToIndex(startLetters);
-        const row = parseInt(startDigits) - 1;
+        const row = parseInt(startDigits, 10) - 1;
         const [, , , endLetters, endDigits] = rangeMatch ?? [];
         const endCol = endLetters !== undefined ? columnLetterToIndex(endLetters) : undefined;
-        const endRow = endDigits !== undefined ? parseInt(endDigits) - 1 : undefined;
+        const endRow = endDigits !== undefined ? parseInt(endDigits, 10) - 1 : undefined;
         const isRange = rangeMatch !== null;
 
         const buildResult = (tableId: string): ResolvedRef => ({ tableId, col, row, endCol, endRow, isRange });
@@ -200,7 +200,7 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
                 state.activeCell.value.row,
             );
             if (cell?.formula === undefined) return [];
-            tokens = getFormulaTokens('=' + cell.formula);
+            tokens = getFormulaTokens(`=${cell.formula}`);
         } else {
             return [];
         }

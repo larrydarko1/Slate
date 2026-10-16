@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
+import { watch, nextTick, useTemplateRef } from 'vue';
 
 const props = defineProps<{
     visible: boolean;
@@ -16,7 +16,7 @@ const emit = defineEmits<{
     'update:text': [text: string];
 }>();
 
-const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const textareaRef = useTemplateRef<HTMLTextAreaElement>('textareaRef');
 
 function onInput(e: Event): void {
     if (e.target instanceof HTMLTextAreaElement) emit('update:text', e.target.value);

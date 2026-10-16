@@ -84,7 +84,7 @@ export function createSelection(state: SpreadsheetCoreState, deps: SelectionDeps
     }
 
     function extendSelection(tableId: string, col: number, row: number): void {
-        if (state.activeCell.value === null || state.activeCell.value.tableId !== tableId) return;
+        if (state.activeCell.value?.tableId !== tableId) return;
         if (state.isEditing.value) deps.commitEdit();
         const sr = state.selectionRange.value ?? anchorRange(state.activeCell.value);
         state.selectionRange.value = {
@@ -97,7 +97,7 @@ export function createSelection(state: SpreadsheetCoreState, deps: SelectionDeps
     }
 
     function extendRowSelection(tableId: string, row: number): void {
-        if (state.activeCell.value === null || state.activeCell.value.tableId !== tableId) return;
+        if (state.activeCell.value?.tableId !== tableId) return;
         const table = deps.findTable(tableId);
         if (table === null) return;
         if (state.isEditing.value) deps.commitEdit();
@@ -112,7 +112,7 @@ export function createSelection(state: SpreadsheetCoreState, deps: SelectionDeps
     }
 
     function extendColumnSelection(tableId: string, col: number): void {
-        if (state.activeCell.value === null || state.activeCell.value.tableId !== tableId) return;
+        if (state.activeCell.value?.tableId !== tableId) return;
         const table = deps.findTable(tableId);
         if (table === null) return;
         if (state.isEditing.value) deps.commitEdit();

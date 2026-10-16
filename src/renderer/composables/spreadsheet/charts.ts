@@ -160,7 +160,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
                 ds.labelRef = { refString: existing !== '' ? `${existing},${refStr}` : refStr };
             }
         } else if (mode.startsWith('series:')) {
-            const idx = parseInt(mode.split(':')[1] ?? '');
+            const idx = parseInt(mode.split(':')[1] ?? '', 10);
             while (ds.seriesRefs.length <= idx) {
                 ds.seriesRefs.push({ refString: '' });
             }
@@ -190,7 +190,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
         if (info === null) return '';
 
         const tableName = info.table.name;
-        const quoteIfNeeded = (n: string): string => (n.match(/^[A-Za-z_]\w*$/) !== null ? n : `'${n}'`);
+        const quoteIfNeeded = (n: string): string => (/^[A-Za-z_]\w*$/.exec(n) !== null ? n : `'${n}'`);
 
         const startRef = `${indexToColumnLetter(startCol)}${startRow + 1}`;
         const isSingleCell = startCol === endCol && startRow === endRow;
@@ -212,19 +212,19 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
         const cellPart = parts[parts.length - 1] ?? '';
 
         const rangeParts = cellPart.split(':');
-        const [, startLetters, startDigits] = (rangeParts[0] ?? '').match(/^([A-Z]+)(\d+)$/) ?? [];
+        const [, startLetters, startDigits] = /^([A-Z]+)(\d+)$/.exec(rangeParts[0] ?? '') ?? [];
         if (startLetters === undefined || startDigits === undefined) return null;
 
         const startCol = columnLetterToIndex(startLetters);
-        const startRow = parseInt(startDigits) - 1;
+        const startRow = parseInt(startDigits, 10) - 1;
         let endCol = startCol;
         let endRow = startRow;
 
         if (rangeParts.length === 2) {
-            const [, endLetters, endDigits] = (rangeParts[1] ?? '').match(/^([A-Z]+)(\d+)$/) ?? [];
+            const [, endLetters, endDigits] = /^([A-Z]+)(\d+)$/.exec(rangeParts[1] ?? '') ?? [];
             if (endLetters !== undefined && endDigits !== undefined) {
                 endCol = columnLetterToIndex(endLetters);
-                endRow = parseInt(endDigits) - 1;
+                endRow = parseInt(endDigits, 10) - 1;
             }
         }
 
@@ -318,7 +318,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
     function getChartDataHighlights(): { tableId: string; col: number; row: number; color: string }[] {
         if (state.activeChartId.value === null) return [];
         const chart = deps.findChart(state.activeChartId.value);
-        if (chart === null || chart.dataSource === null) return [];
+        if (chart?.dataSource == null) return [];
 
         const ds = chart.dataSource;
         const highlights: { tableId: string; col: number; row: number; color: string }[] = [];
@@ -367,7 +367,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
     function removeChartSeries(index: number): void {
         if (state.activeChartId.value === null) return;
         const chart = deps.findChart(state.activeChartId.value);
-        if (chart === null || chart.dataSource === null) return;
+        if (chart?.dataSource == null) return;
         const ds = { ...chart.dataSource, seriesRefs: [...chart.dataSource.seriesRefs] };
         ds.seriesRefs.splice(index, 1);
         updateChart(chart.id, { dataSource: ds });
@@ -392,7 +392,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
         if (mode === 'labels') {
             ds.labelRef = refString !== '' ? { refString } : null;
         } else if (mode.startsWith('series:')) {
-            const idx = parseInt(mode.split(':')[1] ?? '');
+            const idx = parseInt(mode.split(':')[1] ?? '', 10);
             while (ds.seriesRefs.length <= idx) {
                 ds.seriesRefs.push({ refString: '' });
             }
@@ -406,7 +406,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
         const result: { canvasId: string; canvasName: string; table: SpreadsheetTable }[] = [];
         for (const cv of state.canvases.value) {
             for (const table of cv.tables) {
-                result.push({ canvasId: cv.id, canvasName: cv.name, table: table });
+                result.push({ canvasId: cv.id, canvasName: cv.name, table });
             }
         }
         return result;

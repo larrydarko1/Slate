@@ -131,9 +131,9 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                     if (refCell === null) return 'empty';
                     if (refCell.formula !== undefined) {
                         resolveCellValue(tableId, c, r);
-                        return refCell.computedType ?? refCell.cellType ?? 'empty';
+                        return refCell.computedType ?? refCell.cellType;
                     }
-                    return refCell.cellType ?? 'empty';
+                    return refCell.cellType;
                 },
                 getCellRange: (sc, sr, ec, er): CellValue[] => {
                     const vals: CellValue[] = [];
@@ -153,9 +153,9 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                             }
                             if (refCell.formula !== undefined) {
                                 resolveCellValue(tableId, colIdx, rowIdx);
-                                types.push(refCell.computedType ?? refCell.cellType ?? 'empty');
+                                types.push(refCell.computedType ?? refCell.cellType);
                             } else {
-                                types.push(refCell.cellType ?? 'empty');
+                                types.push(refCell.cellType);
                             }
                         }
                     return types;
@@ -172,9 +172,9 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                     if (cell === null) return 'empty';
                     if (cell.formula !== undefined) {
                         resolveCellValue(table.id, c, r);
-                        return cell.computedType ?? cell.cellType ?? 'empty';
+                        return cell.computedType ?? cell.cellType;
                     }
-                    return cell.cellType ?? 'empty';
+                    return cell.cellType;
                 },
                 resolveExternalCellRange: (canvasName, tableName, sc, sr, ec, er): CellValue[] => {
                     const table = deps.findTableByName(tableName, { canvasName, sourceCanvasId });
@@ -198,9 +198,9 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                             }
                             if (cell.formula !== undefined) {
                                 resolveCellValue(table.id, colIdx, rowIdx);
-                                types.push(cell.computedType ?? cell.cellType ?? 'empty');
+                                types.push(cell.computedType ?? cell.cellType);
                             } else {
-                                types.push(cell.cellType ?? 'empty');
+                                types.push(cell.cellType);
                             }
                         }
                     return types;
@@ -250,7 +250,7 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                 continue;
             }
 
-            const cellRefMatch = formula.substring(pos).match(/^([A-Za-z]+)(\d+)/);
+            const cellRefMatch = /^([A-Za-z]+)(\d+)/.exec(formula.substring(pos));
             if (cellRefMatch === null) {
                 result += formula[pos];
                 pos++;
@@ -259,12 +259,12 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
 
             const letters = (cellRefMatch[1] ?? '').toUpperCase();
             const isFunction = /^\s*\(/.test(formula.substring(pos + cellRefMatch[0].length));
-            const qualified = result.length >= 2 && result.slice(-2) === '::';
+            const qualified = result.length >= 2 && result.endsWith('::');
 
             if (isFunction || FORMULA_KEYWORDS.includes(letters) || qualified) {
                 result += cellRefMatch[0];
             } else {
-                const [col, row] = move(columnLetterToIndex(letters), parseInt(cellRefMatch[2] ?? '') - 1);
+                const [col, row] = move(columnLetterToIndex(letters), parseInt(cellRefMatch[2] ?? '', 10) - 1);
                 result += indexToColumnLetter(col) + (row + 1);
             }
             pos += cellRefMatch[0].length;

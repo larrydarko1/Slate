@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, watch, useTemplateRef } from 'vue';
 
 import IconCrosshair from '@/renderer/components/icons/IconCrosshair.vue';
 import { getTypeLabel, type CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
@@ -8,7 +8,7 @@ import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 import { indexToColumnLetter } from '@/renderer/types/spreadsheet';
 
 const ss = injectSpreadsheet();
-const inputRef = ref<HTMLInputElement | null>(null);
+const inputRef = useTemplateRef<HTMLInputElement>('inputRef');
 
 const activeCell = computed((): { tableId: string; col: number; row: number } | null => ss.activeCell.value);
 
@@ -75,7 +75,7 @@ const formulaTokens = computed((): FormulaToken[] => {
     // When not editing, parse the stored formula of the selected cell
     if (activeCell.value !== null && hasFormula.value) {
         const cell = ss.findCell(activeCell.value.tableId, activeCell.value.col, activeCell.value.row);
-        if (cell?.formula !== undefined) return ss.getFormulaTokens('=' + cell.formula);
+        if (cell?.formula !== undefined) return ss.getFormulaTokens(`=${cell.formula}`);
     }
     return [];
 });

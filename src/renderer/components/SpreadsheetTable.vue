@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, toRef, watch } from 'vue';
+import { computed, nextTick, ref, toRef, watch, useTemplateRef } from 'vue';
 
 import ContextMenu from '@/renderer/components/ContextMenu.vue';
 import IconExternalLink from '@/renderer/components/icons/IconExternalLink.vue';
@@ -23,10 +23,10 @@ const ss = injectSpreadsheet();
 const tableRef = toRef(props, 'table');
 
 // DOM refs
-const tableEl = ref<HTMLElement | null>(null);
-const nameInputRef = ref<HTMLInputElement | null>(null);
-const cellInputRef = ref<HTMLInputElement[] | null>(null);
-const ctxMenu = ref<ContextMenuApi | null>(null);
+const tableEl = useTemplateRef<HTMLElement>('tableEl');
+const nameInputRef = useTemplateRef<HTMLInputElement>('nameInputRef');
+const cellInputRef = useTemplateRef<HTMLInputElement[]>('cellInputRef');
+const ctxMenu = useTemplateRef<ContextMenuApi>('ctxMenu');
 
 // ── Name editing ─────────────────────────────────────────────────────────────
 
@@ -84,8 +84,8 @@ const { onColumnContextMenu, onRowContextMenu, onCellContextMenu } = useTableCon
 // ── Table position ───────────────────────────────────────────────────────────
 
 const tableStyle = computed((): { left: string; top: string; zIndex: number } => ({
-    left: props.table.x + 'px',
-    top: props.table.y + 'px',
+    left: `${props.table.x}px`,
+    top: `${props.table.y}px`,
     zIndex: props.table.zIndex,
 }));
 
@@ -227,7 +227,7 @@ function onCellEditBlur(): void {
 function onKeyDown(e: KeyboardEvent): void {
     if (ss.isEditing.value) return;
     const ac = ss.activeCell.value;
-    if (ac === null || ac.tableId !== props.table.id) return;
+    if (ac?.tableId !== props.table.id) return;
 
     const mod = e.metaKey || e.ctrlKey;
     if (mod && e.key === 'c') {

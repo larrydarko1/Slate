@@ -146,13 +146,13 @@ export function createHelpers(state: SpreadsheetCoreState): SpreadsheetHelpers {
 
     function isInSelection(tableId: string, col: number, row: number): boolean {
         const sr = findNormalizedSelection();
-        if (sr === null || sr.tableId !== tableId) return false;
+        if (sr?.tableId !== tableId) return false;
         return col >= sr.startCol && col <= sr.endCol && row >= sr.startRow && row <= sr.endRow;
     }
 
     function isRowInSelection(tableId: string, row: number): boolean {
         const sr = findNormalizedSelection();
-        if (sr === null || sr.tableId !== tableId) return false;
+        if (sr?.tableId !== tableId) return false;
         const table = findTable(tableId);
         if (table === null) return false;
         return row >= sr.startRow && row <= sr.endRow && sr.startCol === 0 && sr.endCol === table.columns.length - 1;
@@ -160,7 +160,7 @@ export function createHelpers(state: SpreadsheetCoreState): SpreadsheetHelpers {
 
     function isColInSelection(tableId: string, col: number): boolean {
         const sr = findNormalizedSelection();
-        if (sr === null || sr.tableId !== tableId) return false;
+        if (sr?.tableId !== tableId) return false;
         const table = findTable(tableId);
         if (table === null) return false;
         return col >= sr.startCol && col <= sr.endCol && sr.startRow === 0 && sr.endRow === table.rows.length - 1;
@@ -168,7 +168,7 @@ export function createHelpers(state: SpreadsheetCoreState): SpreadsheetHelpers {
 
     function isEntireTableSelected(tableId: string): boolean {
         const sr = findNormalizedSelection();
-        if (sr === null || sr.tableId !== tableId) return false;
+        if (sr?.tableId !== tableId) return false;
         const table = findTable(tableId);
         if (table === null) return false;
         return (

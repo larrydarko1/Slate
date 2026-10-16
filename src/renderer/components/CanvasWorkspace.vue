@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, useTemplateRef } from 'vue';
 
 import CanvasChart from '@/renderer/components/CanvasChart.vue';
 import CanvasTextBox from '@/renderer/components/CanvasTextBox.vue';
@@ -7,7 +7,7 @@ import SpreadsheetTable from '@/renderer/components/SpreadsheetTable.vue';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 
 const ss = injectSpreadsheet();
-const canvasRef = ref<HTMLElement | null>(null);
+const canvasRef = useTemplateRef<HTMLElement>('canvasRef');
 
 const contentStyle = computed((): { transform: string; transformOrigin: string } => ({
     transform: `translate(${ss.canvasOffset.value.x}px, ${ss.canvasOffset.value.y}px) scale(${ss.canvasZoom.value})`,
@@ -67,7 +67,7 @@ function onPanEnd(): void {
 // ── Wheel to pan / zoom ──
 
 function onWheel(e: WheelEvent): void {
-    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const isMac = navigator.platform.toUpperCase().includes('MAC');
     const modifier = isMac ? e.metaKey : e.ctrlKey;
 
     if (modifier || e.ctrlKey) {

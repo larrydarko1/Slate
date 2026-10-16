@@ -33,18 +33,13 @@ describe('log service', () => {
         register(fake.ipc);
     });
 
-    it('registers one channel per severity', () => {
-        expect([...listeners.keys()]).toEqual(['log:error', 'log:warn', 'log:info', 'log:debug']);
-    });
-
-    it.each(['error', 'warn', 'info', 'debug'] as const)('routes log:%s to the matching method', (level) => {
-        listeners.get(`log:${level}`)?.(null, { message: 'hello' });
-        expect(log[level]).toHaveBeenCalledWith('[renderer] hello');
+    it('registers only the error channel', () => {
+        expect([...listeners.keys()]).toEqual(['log:error']);
     });
 
     it('marks the message as coming from the renderer', () => {
-        listeners.get('log:info')?.(null, { message: 'plain' });
-        expect(log.info).toHaveBeenCalledWith('[renderer] plain');
+        listeners.get('log:error')?.(null, { message: 'plain' });
+        expect(log.error).toHaveBeenCalledWith('[renderer] plain');
     });
 
     it('passes structured details through alongside the message', () => {
@@ -62,13 +57,13 @@ describe('log service', () => {
     });
 
     it('rejects an entry that is not an object at all', () => {
-        listeners.get('log:info')?.(null, 'just a string');
-        expect(log.info).not.toHaveBeenCalled();
+        listeners.get('log:error')?.(null, 'just a string');
+        expect(log.error).not.toHaveBeenCalled();
         expect(log.warn).toHaveBeenCalled();
     });
 
     it('rejects details that are not a record', () => {
-        listeners.get('log:info')?.(null, { message: 'ok', details: 'nope' });
-        expect(log.info).not.toHaveBeenCalled();
+        listeners.get('log:error')?.(null, { message: 'ok', details: 'nope' });
+        expect(log.error).not.toHaveBeenCalled();
     });
 });

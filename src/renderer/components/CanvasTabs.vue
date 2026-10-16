@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, computed } from 'vue';
+import { nextTick, ref, computed, useTemplateRef } from 'vue';
 
 import IconCloseSmall from '@/renderer/components/icons/IconCloseSmall.vue';
 import IconPlus from '@/renderer/components/icons/IconPlus.vue';
@@ -28,7 +28,7 @@ const dropTarget = ref<number | null>(null);
 const dropSide = ref<'before' | 'after' | null>(null);
 const renamingId = ref<string | null>(null);
 const renameValue = ref('');
-const renameInputRef = ref<HTMLInputElement[] | null>(null);
+const renameInputRef = useTemplateRef<HTMLInputElement[]>('renameInputRef');
 const contextMenu = ref<{ x: number; y: number; canvasId: string } | null>(null);
 
 function onDragStart(e: DragEvent, index: number): void {
@@ -140,7 +140,7 @@ function ctxDuplicate(): void {
         return;
     }
 
-    const dup = createDefaultCanvas(src.name + ' Copy');
+    const dup = createDefaultCanvas(`${src.name} Copy`);
     // Deep-clone tables through JSON, which reads through Vue's reactive proxies.
     dup.tables = parseTables(JSON.stringify(src.tables));
     dup.canvasOffset = { ...src.canvasOffset };

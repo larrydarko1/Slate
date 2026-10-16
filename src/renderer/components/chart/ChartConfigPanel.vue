@@ -14,10 +14,10 @@ const uid = useId();
 function refFieldStyle(mode: string): Record<string, string> {
     const isPicking = ss.chartSelectionMode.value === mode;
     if (!isPicking) return {};
-    const color = mode === 'labels' ? '#94a3b8' : chartRefColor(parseInt(mode.split(':')[1] ?? '0'));
+    const color = mode === 'labels' ? '#94a3b8' : chartRefColor(parseInt(mode.split(':')[1] ?? '0', 10));
     return {
         borderColor: color,
-        boxShadow: '0 0 0 1px ' + color,
+        boxShadow: `0 0 0 1px ${color}`,
     };
 }
 

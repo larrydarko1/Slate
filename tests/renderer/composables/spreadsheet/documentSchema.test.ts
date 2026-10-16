@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { z } from 'zod';
 
 import { parseCanvases, parseSlateDocument, parseTables } from '@/renderer/composables/spreadsheet/documentSchema';
 import {
@@ -54,17 +55,18 @@ describe('parseSlateDocument', () => {
     });
 
     it.each([
-        ['text that is not JSON', 'not json'],
-        ['a canvas without an id', JSON.stringify({ version: '2.0', canvases: [{ name: 'A' }] })],
+        ['text that is not JSON', 'not json', SyntaxError],
+        ['a canvas without an id', JSON.stringify({ version: '2.0', canvases: [{ name: 'A' }] }), z.ZodError],
         [
             'an unknown chart type',
             JSON.stringify({
                 version: '2.0',
                 canvases: [{ id: 'a', name: 'A', charts: [{ id: 'c', chartType: 'gantt' }] }],
             }),
+            z.ZodError,
         ],
-    ])('throws on %s', (_label, json) => {
-        expect(() => parseSlateDocument(json)).toThrow();
+    ])('throws on %s', (_label, json, error) => {
+        expect(() => parseSlateDocument(json)).toThrow(error);
     });
 });
 

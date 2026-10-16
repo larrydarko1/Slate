@@ -26,7 +26,7 @@ const handleNewFile = async (): Promise<void> => {
  * fires while focus happens to be inside it.
  */
 const handleKeydown = (e: KeyboardEvent): void => {
-    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const isMac = navigator.platform.toUpperCase().includes('MAC');
     const modifier = isMac ? e.metaKey : e.ctrlKey;
 
     if (!modifier) return;

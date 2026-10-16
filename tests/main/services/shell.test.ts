@@ -71,8 +71,8 @@ describe('shell service', () => {
     });
 
     describe('openExternalIfSafe', () => {
-        it('opens a safe url without returning a result', () => {
-            expect(openExternalIfSafe('https://example.com')).toBeUndefined();
+        it('opens a safe url', () => {
+            openExternalIfSafe('https://example.com');
             expect(openExternal).toHaveBeenCalledWith('https://example.com');
         });
 

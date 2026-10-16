@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { createFileOps } from '@/renderer/composables/spreadsheet/fileOps';
 import { createFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
 import { createState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import { createUndoRedo } from '@/renderer/composables/spreadsheet/undoRedo';
+import { stubElectronApi } from '@test-utils';
 
 function setupState() {
     const state = createState();
@@ -34,6 +35,10 @@ describe('isDirty state management', () => {
         fileOps = setup.fileOps;
     });
 
+    afterEach(() => {
+        delete window.electronAPI;
+    });
+
     it('should start as false', () => {
         expect(state.isDirty.value).toBe(false);
     });
@@ -58,29 +63,18 @@ describe('isDirty state management', () => {
         expect(state.isDirty.value).toBe(false);
     });
 
-    it('should reset to false after deserializeState (file load)', () => {
-        // Simulate unsaved state
+    it('should reset to false after loading a file', async () => {
         undoRedo.pushUndo();
         expect(state.isDirty.value).toBe(true);
 
-        // Mock window.electronAPI to avoid dependency on Electron IPC. Deleted
-        // rather than set to `undefined`: the property is optional, and the code
-        // under test asks whether it is there, not what it holds.
-        const originalAPI = window.electronAPI;
-        delete window.electronAPI;
-
-        // Call deserialize by recreating a fresh state for load scenario
-        const freshSetup = setupState();
-        const freshState = freshSetup.state;
-        freshSetup.undoRedo.pushUndo();
-        expect(freshState.isDirty.value).toBe(true);
-
-        // Simulate file load by checking newFile resets it
-        freshSetup.fileOps.newFile();
-        expect(freshState.isDirty.value).toBe(false);
-
-        if (originalAPI === undefined) delete window.electronAPI;
-        else window.electronAPI = originalAPI;
+        stubElectronApi({
+            readFile: vi.fn().mockResolvedValue({
+                success: true,
+                content: JSON.stringify({ version: '2.0', canvases: [{ id: 'a', name: 'A' }], activeCanvasId: 'a' }),
+            }),
+        });
+        expect(await fileOps.loadFileFromPath('/tmp/book.slate')).toBe(true);
+        expect(state.isDirty.value).toBe(false);
     });
 
     it('should not be affected by undo/redo after being set', () => {

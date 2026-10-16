@@ -39,14 +39,13 @@ const CHART_COMPONENTS: Record<string, Component> = {
 export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): ChartRendering {
     // Reactive theme tracking
     // Chart.js renders to <canvas> and can't use CSS variables, so we resolve
-    // them to actual color values. A MutationObserver watches for data-theme
-    // changes on <html> so the computed re-evaluates on theme switch.
-    const themeKey = ref(0);
+    // them to actual color values, re-read whenever data-theme changes on <html>.
+    const themeColors = ref(readThemeColors());
     let themeObserver: MutationObserver | null = null;
 
     onMounted((): void => {
         themeObserver = new MutationObserver((): void => {
-            themeKey.value++;
+            themeColors.value = readThemeColors();
         });
         themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     });
@@ -88,7 +87,7 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
             .filter((sref) => sref.refString !== '')
             .map((sref, seriesIdx) => {
                 const vals = ss.getChartRefValues(sref.refString);
-                let name = 'Series ' + (seriesIdx + 1);
+                let name = `Series ${seriesIdx + 1}`;
                 let dataVals: unknown[];
 
                 if (useHeader && vals.length > 0) {
@@ -151,7 +150,7 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
                 return {
                     label: entry.name,
                     data: entry.data,
-                    backgroundColor: color + '40',
+                    backgroundColor: `${color}40`,
                     borderColor: color,
                     borderWidth: 2,
                     fill: true,
@@ -169,7 +168,7 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
             return {
                 label: entry.name,
                 data: entry.data,
-                backgroundColor: color + '99',
+                backgroundColor: `${color}99`,
                 borderColor: color,
                 borderWidth: 2,
                 fill: chartType === 'area',
@@ -183,15 +182,12 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
     // Chart options
 
     const chartOptions = computed((): ChartOptions => {
-        void themeKey.value;
         const chartType = chart.value.chartType;
         const isPie = chartType === 'pie' || chartType === 'doughnut';
         const isScatter = chartType === 'scatter';
         const isRadar = chartType === 'radar';
 
-        const textPrimary = cssVar('--text-primary');
-        const textMuted = cssVar('--text-muted');
-        const borderColor = cssVar('--border-color');
+        const { textPrimary, textMuted, borderColor } = themeColors.value;
 
         let scales: NonNullable<ChartOptions['scales']> = {};
         if (isRadar) {
@@ -232,9 +228,9 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
                 tooltip: {
                     callbacks: {
                         label: (ctx: TooltipItem<keyof ChartTypeRegistry>): string => {
-                            const label = ctx.dataset?.label ?? '';
-                            const val = isScatter ? `(${ctx.parsed?.x}, ${ctx.parsed?.y})` : ctx.formattedValue;
-                            return label !== '' ? `${label}: ${val}` : String(val);
+                            const label = ctx.dataset.label ?? '';
+                            const val = isScatter ? `(${ctx.parsed.x}, ${ctx.parsed.y})` : ctx.formattedValue;
+                            return label !== '' ? `${label}: ${val}` : val;
                         },
                     },
                 },
@@ -293,4 +289,12 @@ function toChartNumber(v: unknown): number {
 
 function cssVar(name: string): string {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function readThemeColors(): { textPrimary: string; textMuted: string; borderColor: string } {
+    return {
+        textPrimary: cssVar('--text-primary'),
+        textMuted: cssVar('--text-muted'),
+        borderColor: cssVar('--border-color'),
+    };
 }

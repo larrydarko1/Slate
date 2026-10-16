@@ -43,7 +43,7 @@ describe('NoteEditor', () => {
     it('saves on the save button', async () => {
         mountEditor({ text: 'typed' });
         const buttons = [...(editor()?.querySelectorAll('button') ?? [])];
-        buttons.find((b) => /save/i.test(b.textContent ?? ''))?.click();
+        buttons.find((b) => /save/i.test(b.textContent))?.click();
         await wrapper.vm.$nextTick();
         expect(wrapper.emitted('save')?.[0]).toEqual(['typed']);
     });
@@ -51,7 +51,7 @@ describe('NoteEditor', () => {
     it('cancels on the cancel button', async () => {
         mountEditor();
         const buttons = [...(editor()?.querySelectorAll('button') ?? [])];
-        buttons.find((b) => /cancel/i.test(b.textContent ?? ''))?.click();
+        buttons.find((b) => /cancel/i.test(b.textContent))?.click();
         await wrapper.vm.$nextTick();
         expect(wrapper.emitted('cancel')).toHaveLength(1);
     });
@@ -59,18 +59,18 @@ describe('NoteEditor', () => {
     it('offers delete only for a note that already exists', () => {
         mountEditor({ hasExisting: false });
         const withoutDelete = [...(editor()?.querySelectorAll('button') ?? [])];
-        expect(withoutDelete.some((b) => /delete/i.test(b.textContent ?? ''))).toBe(false);
+        expect(withoutDelete.some((b) => /delete/i.test(b.textContent))).toBe(false);
         wrapper.unmount();
 
         mountEditor({ hasExisting: true });
         const withDelete = [...(editor()?.querySelectorAll('button') ?? [])];
-        expect(withDelete.some((b) => /delete/i.test(b.textContent ?? ''))).toBe(true);
+        expect(withDelete.some((b) => /delete/i.test(b.textContent))).toBe(true);
     });
 
     it('deletes on the delete button', async () => {
         mountEditor({ hasExisting: true, text: 'old' });
         const buttons = [...(editor()?.querySelectorAll('button') ?? [])];
-        buttons.find((b) => /delete/i.test(b.textContent ?? ''))?.click();
+        buttons.find((b) => /delete/i.test(b.textContent))?.click();
         await wrapper.vm.$nextTick();
         expect(wrapper.emitted('delete')).toHaveLength(1);
     });

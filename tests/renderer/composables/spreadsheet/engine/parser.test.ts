@@ -321,7 +321,7 @@ describe('error handling', () => {
     });
 
     it('throws on unexpected EOF mid-expression', () => {
-        expect(() => parse('1 +')).toThrow();
+        expect(() => parse('1 +')).toThrow('Unexpected token: EOF');
     });
 
     it('throws on trailing tokens', () => {

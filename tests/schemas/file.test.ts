@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { assert, describe, it, expect } from 'vitest';
 
 import { FilePathSchema, FileWriteArgsSchema } from '@/schemas/file';
 
@@ -43,8 +43,8 @@ describe('FilePathSchema', () => {
 
     it('reports why it rejected a path', () => {
         const result = FilePathSchema.safeParse('notes.txt');
-        expect(result.success).toBe(false);
-        if (!result.success) expect(result.error.issues[0]!.message).toContain('.slate');
+        assert(!result.success, 'expected a rejection');
+        expect(result.error.issues[0]!.message).toContain('.slate');
     });
 });
 

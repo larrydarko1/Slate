@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { assert, describe, it, expect } from 'vitest';
 
 import { ExternalUrlSchema } from '@/schemas/shell';
 
@@ -29,7 +29,7 @@ describe('ExternalUrlSchema', () => {
 
     it('explains why it rejected a scheme', () => {
         const result = ExternalUrlSchema.safeParse('file:///etc/passwd');
-        expect(result.success).toBe(false);
-        if (!result.success) expect(result.error.issues[0]!.message).toContain('http/https');
+        assert(!result.success, 'expected a rejection');
+        expect(result.error.issues[0]!.message).toContain('http/https');
     });
 });

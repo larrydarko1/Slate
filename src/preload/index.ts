@@ -15,14 +15,9 @@ import type { ConfirmDialogOptions } from '@/schemas/file';
 import type { LogEntry } from '@/schemas/log';
 
 const api: ElectronAPI = {
-    isElectron: () => true,
-
     // ── Logging ──────────────────────────────────────────────────────────────
     log: {
         error: (message: string, details?: LogEntry['details']) => ipcRenderer.send('log:error', { message, details }),
-        warn: (message: string, details?: LogEntry['details']) => ipcRenderer.send('log:warn', { message, details }),
-        info: (message: string, details?: LogEntry['details']) => ipcRenderer.send('log:info', { message, details }),
-        debug: (message: string, details?: LogEntry['details']) => ipcRenderer.send('log:debug', { message, details }),
     },
 
     // ── File operations ──────────────────────────────────────────────────────

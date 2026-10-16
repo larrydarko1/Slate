@@ -27,7 +27,7 @@ export type ASTNode =
     | { type: 'function'; name: string; args: ASTNode[] };
 
 export class Parser {
-    private tokens: Token[];
+    private readonly tokens: Token[];
     private pos = 0;
 
     constructor(tokens: Token[]) {
@@ -257,7 +257,7 @@ export class Parser {
 }
 
 function parseCellRef(ref: string): { col: number; row: number } {
-    const [, letters, digits] = ref.match(/^([A-Z]+)(\d+)$/) ?? [];
+    const [, letters, digits] = /^([A-Z]+)(\d+)$/.exec(ref) ?? [];
     if (letters === undefined || digits === undefined) throw new Error(`Invalid cell reference: ${ref}`);
-    return { col: columnLetterToIndex(letters), row: parseInt(digits) - 1 };
+    return { col: columnLetterToIndex(letters), row: parseInt(digits, 10) - 1 };
 }
