@@ -1,5 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { assert, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import FormulaBar from '@/renderer/components/FormulaBar.vue';
 import { useSpreadsheet, SPREADSHEET_KEY, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
@@ -62,7 +62,7 @@ describe('FormulaBar', () => {
             ss.selectCell(id, 0, 0);
             await wrapper.vm.$nextTick();
             const { element } = wrapper.get('.formula-input');
-            if (!(element instanceof HTMLInputElement)) throw new Error('.formula-input is not an <input>');
+            assert.instanceOf(element, HTMLInputElement);
             expect(element.value).toBe('=1+1');
         });
 

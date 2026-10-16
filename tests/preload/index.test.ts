@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { assert, describe, it, expect, vi } from 'vitest';
 
 import type { ElectronAPI } from '@/schemas/electron';
 
@@ -108,7 +108,7 @@ describe('preload bridge', () => {
             const seen: string[] = [];
             api.onOpenFile((filePath) => seen.push(filePath));
             const handler = on.mock.calls.at(-1)?.[1];
-            if (handler === undefined) throw new Error('onOpenFile registered no listener');
+            assert.isDefined(handler, 'onOpenFile registered no listener');
             handler({}, '/tmp/opened.slate');
             expect(seen).toEqual(['/tmp/opened.slate']);
         });
