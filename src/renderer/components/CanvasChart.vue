@@ -29,10 +29,10 @@ const ss = injectSpreadsheet();
 const isActive = computed((): boolean => ss.activeChartId.value === props.chart.id);
 
 const boxStyle = computed((): { left: string; top: string; width: string; height: string; zIndex: number } => ({
-    left: props.chart.x + 'px',
-    top: props.chart.y + 'px',
-    width: props.chart.width + 'px',
-    height: props.chart.height + 'px',
+    left: `${props.chart.x}px`,
+    top: `${props.chart.y}px`,
+    width: `${props.chart.width}px`,
+    height: `${props.chart.height}px`,
     zIndex: props.chart.zIndex,
 }));
 

@@ -122,7 +122,7 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
             const colDelta = startCol + colIdx - (srcStartCol + colIdx);
             const rowDelta = startRow + rowIdx - (srcStartRow + rowIdx);
             if (colDelta === 0 && rowDelta === 0) return raw;
-            return '=' + deps.shiftFormulaReferences(raw.substring(1), colDelta, rowDelta);
+            return `=${deps.shiftFormulaReferences(raw.substring(1), colDelta, rowDelta)}`;
         }
 
         for (const [rowIdx, dataRow] of data.entries()) {
@@ -204,7 +204,7 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
 
                 if (srcCell.formula !== undefined) {
                     const shifted = deps.shiftFormulaReferences(srcCell.formula, colDelta, rowDelta);
-                    deps.setCellValue(tableId, colIdx, rowIdx, '=' + shifted);
+                    deps.setCellValue(tableId, colIdx, rowIdx, `=${shifted}`);
                 } else {
                     const raw = deps.getRawValue(tableId, srcC, srcR);
                     deps.setCellValue(tableId, colIdx, rowIdx, raw);

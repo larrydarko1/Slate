@@ -122,12 +122,12 @@ export function useTableCellRendering(
             for (let colIdx = merge.startCol; colIdx <= merge.endCol; colIdx++) {
                 totalWidth += table.value.columns[colIdx]?.width ?? 120;
             }
-            base['width'] = totalWidth + 'px';
-            base['minWidth'] = totalWidth + 'px';
+            base['width'] = `${totalWidth}px`;
+            base['minWidth'] = `${totalWidth}px`;
         } else {
             // Same fallback as the merged branch: without it a missing column
             // rendered the literal string "undefinedpx" as the width.
-            base['width'] = (table.value.columns[ci]?.width ?? 120) + 'px';
+            base['width'] = `${table.value.columns[ci]?.width ?? 120}px`;
         }
         if (cell?.format?.bgColor !== undefined && cell.format.bgColor !== '') {
             base['backgroundColor'] = hexToRgba(cell.format.bgColor, 0.5);
