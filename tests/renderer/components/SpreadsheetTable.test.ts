@@ -56,7 +56,7 @@ describe('SpreadsheetTable', () => {
             await wrapper.find('.add-row-cell').trigger('mousedown');
             document.dispatchEvent(new MouseEvent('mouseup'));
             await wrapper.vm.$nextTick();
-            expect(wrapper.findAll('.row-header').length).toBe(before + 1);
+            expect(wrapper.findAll('.row-header')).toHaveLength(before + 1);
         });
 
         it('grows when a column is dragged out', async () => {
@@ -64,7 +64,7 @@ describe('SpreadsheetTable', () => {
             await wrapper.find('.add-col-header').trigger('mousedown');
             document.dispatchEvent(new MouseEvent('mouseup'));
             await wrapper.vm.$nextTick();
-            expect(wrapper.findAll('.col-header').length).toBe(before + 1);
+            expect(wrapper.findAll('.col-header')).toHaveLength(before + 1);
         });
     });
 

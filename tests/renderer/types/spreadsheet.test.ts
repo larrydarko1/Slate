@@ -30,7 +30,7 @@ describe('generateId', () => {
     it('includes a timestamp-like component', () => {
         const id = generateId('test');
         const parts = id.split('_');
-        expect(parts.length).toBe(3);
+        expect(parts).toHaveLength(3);
         expect(Number(parts[1])).toBeGreaterThan(0);
     });
 });

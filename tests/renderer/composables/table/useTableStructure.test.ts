@@ -96,7 +96,7 @@ describe('useTableStructure', () => {
             const before = table.value.rows.length;
             structure.startAddRowDrag(new MouseEvent('mousedown', { clientX: 0, clientY: 0 }));
             mouse('mousemove', 0, 26 * 3);
-            expect(table.value.rows.length).toBe(before + 3);
+            expect(table.value.rows).toHaveLength(before + 3);
         });
 
         it('takes them back when the drag returns', () => {
@@ -104,14 +104,14 @@ describe('useTableStructure', () => {
             structure.startAddRowDrag(new MouseEvent('mousedown', { clientX: 0, clientY: 0 }));
             mouse('mousemove', 0, 26 * 3);
             mouse('mousemove', 0, 26);
-            expect(table.value.rows.length).toBe(before + 1);
+            expect(table.value.rows).toHaveLength(before + 1);
         });
 
         it('treats a click with no movement as adding one row', () => {
             const before = table.value.rows.length;
             structure.startAddRowDrag(new MouseEvent('mousedown', { clientX: 0, clientY: 0 }));
             mouse('mouseup', 0, 0);
-            expect(table.value.rows.length).toBe(before + 1);
+            expect(table.value.rows).toHaveLength(before + 1);
         });
 
         it('keeps a row that has content', () => {
@@ -120,7 +120,7 @@ describe('useTableStructure', () => {
             const grown = table.value.rows.length;
             ss.setCellValue(table.value.id, 0, grown - 1, 'keep');
             mouse('mousemove', 0, 0);
-            expect(table.value.rows.length).toBe(grown);
+            expect(table.value.rows).toHaveLength(grown);
         });
     });
 
@@ -129,14 +129,14 @@ describe('useTableStructure', () => {
             const before = table.value.columns.length;
             structure.startAddColDrag(new MouseEvent('mousedown', { clientX: 0, clientY: 0 }));
             mouse('mousemove', 120 * 2, 0);
-            expect(table.value.columns.length).toBe(before + 2);
+            expect(table.value.columns).toHaveLength(before + 2);
         });
 
         it('treats a click with no movement as adding one column', () => {
             const before = table.value.columns.length;
             structure.startAddColDrag(new MouseEvent('mousedown', { clientX: 0, clientY: 0 }));
             mouse('mouseup', 0, 0);
-            expect(table.value.columns.length).toBe(before + 1);
+            expect(table.value.columns).toHaveLength(before + 1);
         });
 
         it('takes them back when the drag returns', () => {
@@ -144,7 +144,7 @@ describe('useTableStructure', () => {
             structure.startAddColDrag(new MouseEvent('mousedown', { clientX: 0, clientY: 0 }));
             mouse('mousemove', 120 * 2, 0);
             mouse('mousemove', 0, 0);
-            expect(table.value.columns.length).toBe(before);
+            expect(table.value.columns).toHaveLength(before);
         });
     });
 });

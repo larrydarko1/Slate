@@ -169,21 +169,21 @@ describe('useTableContextMenus', () => {
             const before = table.value.rows.length;
             menus.onCellContextMenu(0, 0, EVENT);
             invoke('Delete Row');
-            expect(table.value.rows.length).toBe(before - 1);
+            expect(table.value.rows).toHaveLength(before - 1);
         });
 
         it('deletes just the one row otherwise', () => {
             const before = table.value.rows.length;
             menus.onCellContextMenu(0, 0, EVENT);
             invoke('Delete Row');
-            expect(table.value.rows.length).toBe(before - 1);
+            expect(table.value.rows).toHaveLength(before - 1);
         });
 
         it('deletes just the one column otherwise', () => {
             const before = table.value.columns.length;
             menus.onCellContextMenu(0, 0, EVENT);
             invoke('Delete Column');
-            expect(table.value.columns.length).toBe(before - 1);
+            expect(table.value.columns).toHaveLength(before - 1);
         });
     });
 
