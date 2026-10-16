@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, useTemplateRef } from 'vue';
 
 import IconChevronDown from '@/renderer/components/icons/IconChevronDown.vue';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
@@ -25,7 +25,7 @@ const fontOptions = [
 
 const ss = injectSpreadsheet();
 
-const fontSelectorRef = ref<HTMLElement | null>(null);
+const fontSelectorRef = useTemplateRef<HTMLElement>('fontSelectorRef');
 const fontMenuOpen = ref(false);
 
 const hasActiveTextBox = computed((): boolean => ss.activeTextBoxId.value !== null);

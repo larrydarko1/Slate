@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, ref, useTemplateRef } from 'vue';
 
 import ResizeHandles from '@/renderer/components/canvas/ResizeHandles.vue';
 import { useDragResize, type ResizeDir } from '@/renderer/composables/useDragResize';
@@ -9,26 +9,26 @@ import type { TextBox } from '@/renderer/types/spreadsheet';
 const props = defineProps<{ textBox: TextBox }>();
 
 const ss = injectSpreadsheet();
-const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const textareaRef = useTemplateRef<HTMLTextAreaElement>('textareaRef');
 const isTextEditing = ref(false);
 
 const isActive = computed((): boolean => ss.activeTextBoxId.value === props.textBox.id);
 
 const boxStyle = computed(() => ({
-    left: props.textBox.x + 'px',
-    top: props.textBox.y + 'px',
-    width: props.textBox.width + 'px',
-    height: props.textBox.height + 'px',
+    left: `${props.textBox.x}px`,
+    top: `${props.textBox.y}px`,
+    width: `${props.textBox.width}px`,
+    height: `${props.textBox.height}px`,
     zIndex: props.textBox.zIndex,
     backgroundColor: props.textBox.bgColor !== '' ? props.textBox.bgColor : undefined,
     borderColor: props.textBox.borderColor !== '' ? props.textBox.borderColor : undefined,
-    borderWidth: props.textBox.borderWidth !== 0 ? props.textBox.borderWidth + 'px' : undefined,
+    borderWidth: props.textBox.borderWidth !== 0 ? `${props.textBox.borderWidth}px` : undefined,
     borderStyle: props.textBox.borderWidth !== 0 ? 'solid' : undefined,
-    borderRadius: props.textBox.borderRadius + 'px',
+    borderRadius: `${props.textBox.borderRadius}px`,
 }));
 
 const textStyle = computed(() => ({
-    fontSize: props.textBox.fontSize + 'px',
+    fontSize: `${props.textBox.fontSize}px`,
     fontFamily:
         props.textBox.fontFamily !== '' && props.textBox.fontFamily !== 'System Default'
             ? props.textBox.fontFamily

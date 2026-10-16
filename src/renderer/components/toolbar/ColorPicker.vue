@@ -21,9 +21,14 @@ const emit = defineEmits<{
     'update:open': [value: boolean];
 }>();
 
+defineSlots<{
+    icon: () => unknown;
+    extra?: () => unknown;
+}>();
+
 const uid = useId();
 
-const showCustom = computed((): boolean => props.showCustomInput !== false);
+const showCustom = computed((): boolean => props.showCustomInput);
 
 function isLightColor(hex: string): boolean {
     const red = parseInt(hex.slice(1, 3), 16);

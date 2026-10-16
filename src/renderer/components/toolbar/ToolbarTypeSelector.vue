@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, useTemplateRef } from 'vue';
 
 import IconCellType from '@/renderer/components/icons/IconCellType.vue';
 import IconChevronDown from '@/renderer/components/icons/IconChevronDown.vue';
@@ -20,7 +20,7 @@ const typeOptions: { value: CellDataType; label: string; short: string }[] = [
 
 const ss = injectSpreadsheet();
 
-const typeSelectorRef = ref<HTMLElement | null>(null);
+const typeSelectorRef = useTemplateRef<HTMLElement>('typeSelectorRef');
 const typeMenuOpen = ref(false);
 
 const hasActiveCell = computed(() => !(ss.activeCell.value === null));
