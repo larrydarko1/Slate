@@ -25,7 +25,7 @@ describe('NotePopup', () => {
 
     it('shows the note text at the given point', () => {
         mountPopup();
-        expect(popup()?.textContent?.trim()).toBe('a note');
+        expect(popup()?.textContent.trim()).toBe('a note');
         expect(popup()?.style.left).toBe('10px');
         expect(popup()?.style.top).toBe('20px');
     });
