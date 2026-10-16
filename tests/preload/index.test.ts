@@ -40,14 +40,9 @@ describe('preload bridge', () => {
         expect(namespace).toBe('electronAPI');
     });
 
-    it('tells the renderer it is running under Electron', () => {
-        expect(api.isElectron()).toBe(true);
-    });
-
     it('exposes exactly the documented surface — nothing more', () => {
         expect(Object.keys(api).sort()).toEqual(
             [
-                'isElectron',
                 'log',
                 'onOpenFile',
                 'openExternal',
@@ -61,16 +56,16 @@ describe('preload bridge', () => {
     });
 
     describe('logging', () => {
-        it.each(['error', 'warn', 'info', 'debug'] as const)('sends log:%s as an entry object', (level) => {
+        it('sends log:error as an entry object', () => {
             send.mockClear();
-            api.log[level]('hello', { code: 1 });
-            expect(send).toHaveBeenCalledWith(`log:${level}`, { message: 'hello', details: { code: 1 } });
+            api.log.error('hello', { code: 1 });
+            expect(send).toHaveBeenCalledWith('log:error', { message: 'hello', details: { code: 1 } });
         });
 
         it('sends an entry with no details when none are given', () => {
             send.mockClear();
-            api.log.info('plain');
-            expect(send).toHaveBeenCalledWith('log:info', { message: 'plain', details: undefined });
+            api.log.error('plain');
+            expect(send).toHaveBeenCalledWith('log:error', { message: 'plain', details: undefined });
         });
     });
 

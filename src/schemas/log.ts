@@ -9,7 +9,7 @@
 import { z } from 'zod';
 
 /** The severities the renderer may write at. Anything lower is main-process only. */
-export type LogLevel = 'error' | 'warn' | 'info' | 'debug';
+export type LogLevel = 'error';
 
 /**
  * One log entry from the renderer.

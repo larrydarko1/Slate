@@ -6,7 +6,7 @@
  * IPC handler ownership:
  *   file-service → dialog:save, dialog:open, dialog:confirm, file:write, file:read
  *   shell-service → shell:openExternal
- *   log-service → log:error, log:warn, log:info, log:debug
+ *   log-service → log:error
  */
 
 import { existsSync } from 'fs';

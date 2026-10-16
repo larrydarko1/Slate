@@ -19,11 +19,7 @@ import type { ShellOpenResult } from '@/schemas/shell';
 export type ElectronAPI = {
     log: {
         error: (message: string, details?: Record<string, unknown>) => void;
-        warn: (message: string, details?: Record<string, unknown>) => void;
-        info: (message: string, details?: Record<string, unknown>) => void;
-        debug: (message: string, details?: Record<string, unknown>) => void;
     };
-    isElectron: () => boolean;
 
     showSaveDialog: (defaultPath?: string) => Promise<SaveDialogResult>;
     showOpenDialog: () => Promise<OpenDialogResult>;

@@ -9,8 +9,7 @@ import type { ElectronAPI } from '@/schemas/electron';
  */
 export function stubElectronApi(overrides: Partial<ElectronAPI> = {}): ElectronAPI {
     const api: ElectronAPI = {
-        isElectron: () => true,
-        log: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
+        log: { error: vi.fn() },
         showSaveDialog: vi.fn().mockResolvedValue({ canceled: false, filePath: '/tmp/book.slate' }),
         showOpenDialog: vi.fn().mockResolvedValue({ canceled: false, filePaths: ['/tmp/book.slate'] }),
         showConfirmDialog: vi.fn().mockResolvedValue(true),
