@@ -253,7 +253,7 @@ function isCurrencyType(t: CellDataType): boolean {
  * Internal: `formatCellDisplay` is the entry point callers use.
  */
 function formatValue(value: number | null, type: CellDataType, decimalPlaces?: number): string {
-    if (value === null || value === undefined) return '';
+    if (value === null) return '';
 
     switch (type) {
         case 'integer':
@@ -316,7 +316,8 @@ function toDisplayString(value: unknown): string {
     if (typeof value === 'string') return value;
     if (typeof value === 'number' || typeof value === 'boolean') return String(value);
     if (value === null || value === undefined) return '';
-    return JSON.stringify(value) ?? '';
+    // Functions and symbols have no JSON form.
+    return typeof value === 'object' ? JSON.stringify(value) : '';
 }
 
 function parseCurrencyUSD(raw: string): number | null {

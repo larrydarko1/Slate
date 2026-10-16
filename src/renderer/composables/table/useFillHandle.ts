@@ -49,13 +49,13 @@ export function useFillHandle(
     function isSelectionCorner(ci: number, ri: number): boolean {
         if (ss.activeCell.value?.tableId !== table.value.id) return false;
         const sr = ss.findNormalizedSelection();
-        if (sr === null || sr.tableId !== table.value.id) return false;
+        if (sr?.tableId !== table.value.id) return false;
         return ci === sr.endCol && ri === sr.endRow;
     }
 
     function isCellInFillPreview(ci: number, ri: number): boolean {
         const st = fillDragState.value;
-        if (st === null || !st.active) return false;
+        if (st?.active !== true) return false;
         const fr = findFillRange();
         if (fr === null) return false;
         const inSource =
@@ -71,7 +71,7 @@ export function useFillHandle(
 
     function findFillRange(): { startCol: number; startRow: number; endCol: number; endRow: number } | null {
         const st = fillDragState.value;
-        if (st === null || !st.active) return null;
+        if (st?.active !== true) return null;
         const src = st.sourceRange;
         const dCol = st.currentCol - src.endCol;
         const dRow = st.currentRow - src.endRow;
@@ -101,7 +101,7 @@ export function useFillHandle(
 
     function startFillDrag(_ci: number, _ri: number, _e: MouseEvent): void {
         const sr = ss.findNormalizedSelection();
-        if (sr === null || sr.tableId !== table.value.id) return;
+        if (sr?.tableId !== table.value.id) return;
         fillDragState.value = {
             active: true,
             sourceRange: { startCol: sr.startCol, startRow: sr.startRow, endCol: sr.endCol, endRow: sr.endRow },
@@ -114,7 +114,7 @@ export function useFillHandle(
 
     function onFillDragMove(e: MouseEvent): void {
         const st = fillDragState.value;
-        if (st === null || !st.active) return;
+        if (st?.active !== true) return;
         const gridWrapper = tableEl.value?.querySelector('.table-grid-wrapper');
         if (gridWrapper == null) return;
 
@@ -150,7 +150,7 @@ export function useFillHandle(
 
     function onFillDragEnd(): void {
         const st = fillDragState.value;
-        if (st !== null && st.active) {
+        if (st?.active === true) {
             const fr = findFillRange();
             if (fr !== null) {
                 const tableId = table.value.id;

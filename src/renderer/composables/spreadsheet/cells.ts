@@ -107,7 +107,7 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
     function getRawValue(tableId: string, col: number, row: number): string {
         const cell = findCell(tableId, col, row);
         if (cell === null) return '';
-        if (cell.formula !== undefined) return '=' + cell.formula;
+        if (cell.formula !== undefined) return `=${cell.formula}`;
         if (cell.value === null) return '';
         return String(cell.value);
     }
@@ -115,8 +115,8 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
     function getCellType(tableId: string, col: number, row: number): CellDataType {
         const cell = findCell(tableId, col, row);
         if (cell === null) return 'empty';
-        if (cell.formula !== undefined) return cell.computedType ?? cell.cellType ?? 'empty';
-        return cell.cellType ?? 'empty';
+        if (cell.formula !== undefined) return cell.computedType ?? cell.cellType;
+        return cell.cellType;
     }
 
     function getCellAlignment(tableId: string, col: number, row: number): 'left' | 'right' | 'center' {
@@ -137,7 +137,7 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
             cell.computedType = newType;
         }
 
-        if (cell.value !== null && cell.value !== undefined && cell.formula === undefined) {
+        if (cell.value !== null && cell.formula === undefined) {
             if (typeof cell.value === 'number') {
                 if (newType === 'integer') {
                     cell.value = Math.round(cell.value);
