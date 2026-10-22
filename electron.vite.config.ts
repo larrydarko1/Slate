@@ -11,7 +11,6 @@ export default defineConfig({
                 '@/schemas': fileURLToPath(new URL('./src/schemas', import.meta.url)),
             },
         },
-        esbuild: { tsconfigRaw: { compilerOptions: { target: 'ESNext' } } },
         build: {
             rollupOptions: {
                 input: {
@@ -27,7 +26,6 @@ export default defineConfig({
                 '@/schemas': fileURLToPath(new URL('./src/schemas', import.meta.url)),
             },
         },
-        esbuild: { tsconfigRaw: { compilerOptions: { target: 'ESNext' } } },
         build: {
             rollupOptions: {
                 input: {
