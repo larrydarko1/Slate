@@ -23,20 +23,22 @@ vi.mock('electron', () => ({
  * exposed can only be read back once that import has resolved. Reading the spy
  * through this arrow is what keeps the two in order: as separate statements the
  * dependency runs through `exposeInMainWorld`'s recorded calls rather than
- * through a binding, which nothing — reader or tool — can see.
+ * through a binding, which nothing — reader or tool — can see. The call count is
+ * captured here too, since Vitest clears every mock's history before each test.
  */
-const loadBridge = async (): Promise<[string, ElectronAPI]> => {
+const loadBridge = async (): Promise<[number, string, ElectronAPI]> => {
     await import('@/preload/index');
-    const exposed = exposeInMainWorld.mock.calls[0];
+    const { calls } = exposeInMainWorld.mock;
+    const exposed = calls[0];
     if (exposed === undefined) throw new Error('The preload exposed nothing');
-    return exposed;
+    return [calls.length, ...exposed];
 };
 
-const [namespace, api] = await loadBridge();
+const [exposeCount, namespace, api] = await loadBridge();
 
 describe('preload bridge', () => {
     it('exposes one namespace on the window', () => {
-        expect(exposeInMainWorld).toHaveBeenCalledTimes(1);
+        expect(exposeCount).toBe(1);
         expect(namespace).toBe('electronAPI');
     });
 
