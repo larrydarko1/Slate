@@ -24,5 +24,11 @@
         "allowImportingTsExtensions": true,
         "moduleDetection": "force"
     },
-    "include": ["electron.vite.config.ts", "vitest.config.ts", "src/main/**/*.ts", "src/preload/**/*.ts"]
+    "include": [
+        "electron.vite.config.ts",
+        "vitest.config.ts",
+        "larry.config.ts",
+        "src/main/**/*.ts",
+        "src/preload/**/*.ts"
+    ]
 }
