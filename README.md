@@ -136,8 +136,7 @@ slate/
 ├── vitest.config.ts               # Vitest config (node + jsdom projects)
 ├── eslint.config.js               # ESLint, via the shared config plus per-process wiring
 ├── commitlint.config.js           # Conventional commit enforcement
-├── scripts/
-│   └── check/                     # The 15 quality gates run by `npm run ci:check`
+├── larry.config.ts                # The 15 quality gates and their options, run by `npm run check`
 ├── src/
 │   ├── main/                      # Electron main process
 │   │   ├── index.ts               #   BrowserWindow, navigation & permission policy,
@@ -229,33 +228,33 @@ slate/
 > shared `state.ts`. Modules under `table/` (and the three at the top level) are true
 > **composables** — they export `useFillHandle`, `useTableNotes`, … and own their own
 > reactive state, so each is called per component instance. A file whose name starts
-> with `use` must export that exact name; `code:check` enforces it.
+> with `use` must export that exact name; the `code-style` gate enforces it.
 
 ## Quality Gates
 
-Beyond lint and tests, the repo enforces its own architecture. Each script under
-[scripts/check/](scripts/check/) is a thin wrapper over a gate from
-[@larrydarko/lint-config](https://www.npmjs.com/package/@larrydarko/lint-config) that holds only this
-repo's answers. `npm run ci:check` runs the same list CI does, so a red check is always
-reproducible locally:
+Beyond lint and tests, the repo enforces its own architecture. Each gate comes from
+[@larrydarko/lint-config](https://www.npmjs.com/package/@larrydarko/lint-config), and
+[larry.config.ts](larry.config.ts) holds only this repo's answers. `npm run check` runs them all and
+`npx larry check ipc-standards` runs the ones named. `npm run ci:check` runs the same list CI does,
+so a red check is always reproducible locally:
 
-| Script            | Enforces                                                            |
-| ----------------- | ------------------------------------------------------------------- |
-| `audit:check`     | No high/critical production advisories outside a reasoned allowlist |
-| `pkg:check`       | Manifest metadata, semver ranges, field order, `os` ↔ build parity  |
-| `pipeline:check`  | Job timeouts, SHA-pinned actions, least-privilege workflow tokens   |
-| `code:check`      | Casing, file-length ratchet, SFC block order, comment formats       |
-| `declorder:check` | Canonical declaration order within every module                     |
-| `html:check`      | Document shell, CSP directives, no remote subresources              |
-| `scss:check`      | Token parity across themes, the style barrel, no remote assets      |
-| `refactor:check`  | No stray deferral markers                                           |
-| `ipc:check`       | Every channel documented, reachable, validated, and bridged         |
-| `security:check`  | Electron process model, navigation, permissions, HTML sinks         |
-| `error:check`     | IPC handlers contain their failures; no silent swallows             |
-| `dup:check`       | Copy-paste duplication                                              |
-| `dead:check`      | Unused files, exports and dependencies                              |
-| `test:check`      | Test layout, naming and coverage thresholds                         |
-| `tsconfig:check`  | Compiler flags stay at the standard; no Node types in the renderer  |
+| Gate                      | Enforces                                                            |
+| ------------------------- | ------------------------------------------------------------------- |
+| `audit`                   | No high/critical production advisories outside a reasoned allowlist |
+| `package-json`            | Manifest metadata, semver ranges, field order, `os` ↔ build parity  |
+| `pipeline`                | Job timeouts, SHA-pinned actions, least-privilege workflow tokens   |
+| `code-style`              | Casing, file-length ratchet, SFC block order, comment formats       |
+| `declaration-order`       | Canonical declaration order within every module                     |
+| `html-standards`          | Document shell, CSP directives, no remote subresources              |
+| `scss-standards`          | Token parity across themes, the style barrel, no remote assets      |
+| `refactoring`             | No stray deferral markers                                           |
+| `ipc-standards`           | Every channel documented, reachable, validated, and bridged         |
+| `electron-security`       | Electron process model, navigation, permissions, HTML sinks         |
+| `error-handling/electron` | IPC handlers contain their failures; no silent swallows             |
+| `duplication`             | Copy-paste duplication                                              |
+| `dead-code`               | Unused files, exports and dependencies                              |
+| `testing`                 | Test layout, naming and coverage thresholds                         |
+| `tsconfigs`               | Compiler flags stay at the standard; no Node types in the renderer  |
 
 ## Contributing
 
