@@ -54,6 +54,11 @@ describe('cell references', () => {
         expect(parse('Z1')).toEqual({ type: 'cell_ref', col: 25, row: 0 });
     });
 
+    it('reads an absolute reference as the same cell', () => {
+        expect(parse('$B$2')).toEqual({ type: 'cell_ref', col: 1, row: 1 });
+        expect(parse('$A1:B$3')).toEqual({ type: 'range', sc: 0, sr: 0, ec: 1, er: 2 });
+    });
+
     it('parses a two-letter column', () => {
         expect(parse('AA1')).toEqual({ type: 'cell_ref', col: 26, row: 0 });
         expect(parse('AB23')).toEqual({ type: 'cell_ref', col: 27, row: 22 });

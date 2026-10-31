@@ -57,7 +57,7 @@ export type SpreadsheetState = Omit<SpreadsheetCoreState, 'counters'> &
         | 'bringToFront'
         | 'bringToFrontById'
     > &
-    Pick<SpreadsheetFormulaEngine, 'recalculate' | 'shiftFormulaReferences'>;
+    Pick<SpreadsheetFormulaEngine, 'recalculate' | 'batchRecalculation' | 'shiftFormulaReferences'>;
 export const SPREADSHEET_KEY = Symbol('spreadsheet') as InjectionKey<SpreadsheetState>;
 
 export function useSpreadsheet(): SpreadsheetState {
@@ -85,6 +85,7 @@ export function useSpreadsheet(): SpreadsheetState {
         setCellValue: cells.setCellValue,
         getRawValue: cells.getRawValue,
         pushUndo: undoRedo.pushUndo,
+        batchRecalculation: formulaEngine.batchRecalculation,
     });
     const selection = createSelection(state, {
         findTable: helpers.findTable,
@@ -110,6 +111,7 @@ export function useSpreadsheet(): SpreadsheetState {
         remapRowIdx: formulaEngine.remapRowIdx,
         remapColIdx: formulaEngine.remapColIdx,
         rewriteTableNameReferences: formulaEngine.rewriteTableNameReferences,
+        shiftFormulaReferences: formulaEngine.shiftFormulaReferences,
     });
     const merge = createMerge(state, {
         findTable: helpers.findTable,
@@ -126,7 +128,7 @@ export function useSpreadsheet(): SpreadsheetState {
         getRawValue: cells.getRawValue,
         setCellFormat: cells.setCellFormat,
         shiftFormulaReferences: formulaEngine.shiftFormulaReferences,
-        recalculate: formulaEngine.recalculate,
+        batchRecalculation: formulaEngine.batchRecalculation,
     });
     const formulas = createFormulas(state, {
         findTableGlobal: helpers.findTableGlobal,
@@ -227,6 +229,7 @@ export function useSpreadsheet(): SpreadsheetState {
 
         // Engine & helpers (used by components)
         recalculate: formulaEngine.recalculate,
+        batchRecalculation: formulaEngine.batchRecalculation,
         findTable: helpers.findTable,
         findTableGlobal: helpers.findTableGlobal,
         findTextBox: helpers.findTextBox,

@@ -164,6 +164,40 @@ describe('useFillHandle', () => {
         });
     });
 
+    describe('double-clicking', () => {
+        it('fills a formula down to the last row of the data beside it', () => {
+            for (const r of [0, 1, 2, 3]) ss.setCellValue(id, 0, r, String(r + 1));
+            ss.setCellValue(id, 1, 0, '=A1*2');
+            ss.selectCell(id, 1, 0);
+            fill.fillToEnd();
+            expect([1, 2, 3].map((r) => ss.getRawValue(id, 1, r))).toEqual(['=A2*2', '=A3*2', '=A4*2']);
+            expect(ss.getRawValue(id, 1, 4)).toBe('');
+            expect(ss.selectionRange.value).toMatchObject({ startCol: 1, startRow: 0, endCol: 1, endRow: 3 });
+        });
+
+        it('fills to the bottom of the table with nothing beside it', () => {
+            ss.setCellValue(id, 0, 0, 'x');
+            ss.selectCell(id, 0, 0);
+            fill.fillToEnd();
+            expect(ss.getDisplayValue(id, 0, table.value.rows.length - 1)).toBe('x');
+        });
+
+        it('does nothing from the last row', () => {
+            const last = table.value.rows.length - 1;
+            ss.setCellValue(id, 0, last, 'x');
+            ss.selectCell(id, 0, last);
+            fill.fillToEnd();
+            expect(table.value.rows).toHaveLength(last + 1);
+            expect(ss.selectionRange.value).toMatchObject({ startRow: last, endRow: last });
+        });
+
+        it('does nothing without a selection in this table', () => {
+            ss.setCellValue(id, 0, 0, 'x');
+            fill.fillToEnd();
+            expect(ss.getDisplayValue(id, 0, 1)).toBe('');
+        });
+    });
+
     describe('with no grid mounted', () => {
         it('ignores the move rather than throwing', () => {
             const detached = useFillHandle(table, ss, ref(null));

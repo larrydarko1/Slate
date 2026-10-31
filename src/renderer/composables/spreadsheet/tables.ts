@@ -15,7 +15,8 @@ export type SpreadsheetTables = {
     removeTable: (tableId: string) => void;
     renameTable: (tableId: string, name: string) => void;
     moveTable: (tableId: string, x: number, y: number) => void;
-    addRow: (tableId: string) => void;
+    addRow: (tableId: string, opts?: { inheritFormulas?: boolean }) => void;
+    inheritColumnFormulas: (tableId: string, fromRow: number, toRow: number) => void;
     addColumn: (tableId: string) => void;
     isRowEmpty: (tableId: string, rowIdx: number) => boolean;
     isColumnEmpty: (tableId: string, colIdx: number) => boolean;
@@ -48,6 +49,7 @@ type TablesDeps = {
     remapRowIdx: (idx: number, fromStart: number, fromEnd: number, insertAt: number) => number;
     remapColIdx: (idx: number, fromStart: number, fromEnd: number, insertAt: number) => number;
     rewriteTableNameReferences: (oldName: string, newName: string) => void;
+    shiftFormulaReferences: (formula: string, colDelta: number, rowDelta: number) => string;
 };
 
 export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): SpreadsheetTables {
@@ -92,11 +94,54 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
 
     // ── Row / Column operations ──────────────────────────────────────────────
 
-    function addRow(tableId: string): void {
+    /**
+     * Gives the new row at `rowIdx` the formula of every column whose two rows
+     * above it hold the same relative formula, shifted down one more row, and
+     * that formula's formatting. This is how Numbers extends a calculated
+     * column; two rows are required so a lone total or header is not copied.
+     * Returns whether anything was inherited.
+     */
+    function inheritIntoRow(table: SpreadsheetTable, rowIdx: number): boolean {
+        const row = table.rows[rowIdx];
+        const above = table.rows[rowIdx - 1];
+        const twoAbove = table.rows[rowIdx - 2];
+        if (row === undefined || above === undefined || twoAbove === undefined) return false;
+
+        let inherited = false;
+        for (const [colIdx, source] of above.entries()) {
+            const target = row[colIdx];
+            const earlier = twoAbove[colIdx]?.formula;
+            if (source.formula === undefined || earlier === undefined || target === undefined) continue;
+            // Shifting by zero spells both formulas the same way before comparing.
+            const expected = deps.shiftFormulaReferences(source.formula, 0, 0);
+            if (deps.shiftFormulaReferences(earlier, 0, 1) !== expected) continue;
+            target.formula = deps.shiftFormulaReferences(source.formula, 0, 1);
+            if (source.format !== undefined) target.format = { ...source.format };
+            inherited = true;
+        }
+        return inherited;
+    }
+
+    /**
+     * Runs inheritance down `fromRow..toRow`, top first, so each row can build
+     * on the one just filled above it. For new rows added without it, such as
+     * the rows a drag adds and may still take back.
+     */
+    function inheritColumnFormulas(tableId: string, fromRow: number, toRow: number): void {
+        const table = deps.findTable(tableId);
+        if (table === null) return;
+        deps.pushUndo();
+        let inherited = false;
+        for (let rowIdx = fromRow; rowIdx <= toRow; rowIdx++) inherited = inheritIntoRow(table, rowIdx) || inherited;
+        if (inherited) deps.recalculate();
+    }
+
+    function addRow(tableId: string, { inheritFormulas = true }: { inheritFormulas?: boolean } = {}): void {
         deps.pushUndo();
         const table = deps.findTable(tableId);
         if (table === null) return;
         table.rows.push(table.columns.map((): Cell => createEmptyCell()));
+        if (inheritFormulas && inheritIntoRow(table, table.rows.length - 1)) deps.recalculate();
     }
 
     function addColumn(tableId: string): void {
@@ -205,6 +250,7 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
             0,
             table.columns.map((): Cell => createEmptyCell()),
         );
+        inheritIntoRow(table, rowIdx);
         deps.recalculate();
     }
 
@@ -286,6 +332,7 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
         renameTable,
         moveTable,
         addRow,
+        inheritColumnFormulas,
         addColumn,
         isRowEmpty,
         isColumnEmpty,

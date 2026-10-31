@@ -35,7 +35,7 @@ export class Parser {
     }
 
     /** Reading past the end yields EOF, which every caller already handles. */
-    private static readonly EOF: Token = { type: 'EOF', value: '' };
+    private static readonly EOF: Token = { type: 'EOF', value: '', start: 0, end: 0 };
 
     private peek(): Token {
         return this.tokens[this.pos] ?? Parser.EOF;
@@ -257,7 +257,8 @@ export class Parser {
 }
 
 function parseCellRef(ref: string): { col: number; row: number } {
-    const [, letters, digits] = /^([A-Z]+)(\d+)$/.exec(ref) ?? [];
+    // The `$` anchors only matter when a formula is copied; evaluation ignores them.
+    const [, letters, digits] = /^\$?([A-Z]+)\$?(\d+)$/.exec(ref) ?? [];
     if (letters === undefined || digits === undefined) throw new Error(`Invalid cell reference: ${ref}`);
     return { col: columnLetterToIndex(letters), row: parseInt(digits, 10) - 1 };
 }

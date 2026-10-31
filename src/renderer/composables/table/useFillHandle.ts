@@ -6,7 +6,7 @@
 import { ref, type Ref } from 'vue';
 
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
-import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+import type { Cell, SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 type FillHandle = {
     fillDragState: Ref<
@@ -28,7 +28,10 @@ type FillHandle = {
     isSelectionCorner: (ci: number, ri: number) => boolean;
     isCellInFillPreview: (ci: number, ri: number) => boolean;
     startFillDrag: (_ci: number, _ri: number, _e: MouseEvent) => void;
+    fillToEnd: () => void;
 };
+
+type CellRange = { startCol: number; startRow: number; endCol: number; endRow: number };
 
 type FillDragState = {
     active: boolean;
@@ -148,41 +151,44 @@ export function useFillHandle(
         st.currentRow = targetRow;
     }
 
+    /** Fills `target` from `source` and selects the result, the way a finished drag does. */
+    function applyFill(source: CellRange, target: CellRange): void {
+        const tableId = table.value.id;
+        ss.fillCells(tableId, { tableId, ...source }, { tableId, ...target });
+        ss.selectionRange.value = { tableId, ...target };
+    }
+
     function onFillDragEnd(): void {
         const st = fillDragState.value;
         if (st?.active === true) {
             const fr = findFillRange();
-            if (fr !== null) {
-                const tableId = table.value.id;
-                ss.fillCells(
-                    tableId,
-                    {
-                        tableId,
-                        startCol: st.sourceRange.startCol,
-                        startRow: st.sourceRange.startRow,
-                        endCol: st.sourceRange.endCol,
-                        endRow: st.sourceRange.endRow,
-                    },
-                    {
-                        tableId,
-                        startCol: fr.startCol,
-                        startRow: fr.startRow,
-                        endCol: fr.endCol,
-                        endRow: fr.endRow,
-                    },
-                );
-                ss.selectionRange.value = {
-                    tableId,
-                    startCol: fr.startCol,
-                    startRow: fr.startRow,
-                    endCol: fr.endCol,
-                    endRow: fr.endRow,
-                };
-            }
+            if (fr !== null) applyFill(st.sourceRange, fr);
         }
         fillDragState.value = null;
         document.removeEventListener('mousemove', onFillDragMove);
         document.removeEventListener('mouseup', onFillDragEnd);
+    }
+
+    // ── Double-click ─────────────────────────────────────────────────────────
+
+    /**
+     * Fills the selection down to the bottom of the data beside it: the last
+     * row with anything in a column the selection does not cover. With nothing
+     * beside it below the selection, it fills to the last row of the table.
+     */
+    function fillToEnd(): void {
+        const sr = ss.findNormalizedSelection();
+        if (sr?.tableId !== table.value.id) return;
+
+        const outsideSelection = (cell: Cell, ci: number): boolean =>
+            (ci < sr.startCol || ci > sr.endCol) && (cell.value !== null || cell.formula !== undefined);
+        let dataEnd = table.value.rows.length - 1;
+        while (dataEnd >= 0 && table.value.rows[dataEnd]?.some(outsideSelection) !== true) dataEnd--;
+        const endRow = dataEnd > sr.endRow ? dataEnd : table.value.rows.length - 1;
+        if (endRow <= sr.endRow) return;
+
+        const { startCol, startRow, endCol } = sr;
+        applyFill({ startCol, startRow, endCol, endRow: sr.endRow }, { startCol, startRow, endCol, endRow });
     }
 
     return {
@@ -190,5 +196,6 @@ export function useFillHandle(
         isSelectionCorner,
         isCellInFillPreview,
         startFillDrag,
+        fillToEnd,
     };
 }

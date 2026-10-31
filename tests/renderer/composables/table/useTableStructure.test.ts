@@ -114,6 +114,19 @@ describe('useTableStructure', () => {
             expect(table.value.rows).toHaveLength(before + 1);
         });
 
+        it('extends calculated columns onto the rows once the drag ends', () => {
+            const id = table.value.id;
+            const before = table.value.rows.length;
+            ss.setCellValue(id, 1, before - 2, `=A${before - 1}`);
+            ss.setCellValue(id, 1, before - 1, `=A${before}`);
+            structure.startAddRowDrag(new MouseEvent('mousedown', { clientX: 0, clientY: 0 }));
+            mouse('mousemove', 0, 26 * 2);
+            expect(ss.getRawValue(id, 1, before)).toBe('');
+            mouse('mouseup', 0, 26 * 2);
+            expect(ss.getRawValue(id, 1, before)).toBe(`=A${before + 1}`);
+            expect(ss.getRawValue(id, 1, before + 1)).toBe(`=A${before + 2}`);
+        });
+
         it('keeps a row that has content', () => {
             structure.startAddRowDrag(new MouseEvent('mousedown', { clientX: 0, clientY: 0 }));
             mouse('mousemove', 0, 26 * 2);

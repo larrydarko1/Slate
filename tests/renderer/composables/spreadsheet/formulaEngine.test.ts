@@ -88,6 +88,28 @@ describe('formulaEngine', () => {
             expect(lookups).toBeLessThan(length * 10);
         });
 
+        it('holds recalculation back until a batch ends, then runs it once', () => {
+            ss.setCellValue(id, 0, 0, '2');
+            ss.setCellValue(id, 1, 0, '=A1*2');
+            ss.batchRecalculation(() => {
+                ss.setCellValue(id, 0, 0, '3');
+                ss.batchRecalculation(() => ss.setCellValue(id, 0, 0, '5'));
+                expect(ss.getDisplayValue(id, 1, 0)).toBe('4');
+            });
+            expect(ss.getDisplayValue(id, 1, 0)).toBe('10');
+        });
+
+        it('still recalculates when a batch throws', () => {
+            ss.setCellValue(id, 1, 0, '=A1*2');
+            expect(() =>
+                ss.batchRecalculation(() => {
+                    ss.setCellValue(id, 0, 0, '4');
+                    throw new Error('boom');
+                }),
+            ).toThrow('boom');
+            expect(ss.getDisplayValue(id, 1, 0)).toBe('8');
+        });
+
         it('reads a cell in another table on the same canvas', () => {
             ss.addTable();
             const other = ss.tables.value[1]!.id;
@@ -183,8 +205,10 @@ describe('formulaEngine', () => {
             expect(ss.shiftFormulaReferences('"A1"&A1', 1, 0)).toBe('"A1"&B1');
         });
 
-        it('leaves a qualified reference to another table alone', () => {
-            expect(ss.shiftFormulaReferences('Other::A1+A1', 1, 0)).toBe('Other::A1+B1');
+        it('shifts a reference into another table the same way', () => {
+            expect(ss.shiftFormulaReferences("Other::A1+'My Canvas'::'T 2'::A1:A2+A1", 1, 0)).toBe(
+                "Other::B1+'My Canvas'::'T 2'::B1:B2+B1",
+            );
         });
 
         it('leaves a boolean literal alone', () => {
@@ -205,6 +229,42 @@ describe('formulaEngine', () => {
             const engine = bareEngine();
             expect(engine.remapFormulaReferences('A1', null, (row) => row + 1)).toBe('A2');
             expect(engine.remapFormulaReferences('A1', (col) => col + 1, null)).toBe('B1');
+        });
+
+        it('leaves a table whose name looks like a reference alone', () => {
+            expect(bareEngine().shiftFormulaReferences('Q1::A1+A1', 0, 1)).toBe('Q1::A2+A2');
+        });
+
+        it('leaves an underscored table name alone', () => {
+            expect(bareEngine().shiftFormulaReferences('my_table1::A1+A1', 0, 1)).toBe('my_table1::A2+A2');
+        });
+
+        it('leaves a reference into another table alone on a reorder, range end included', () => {
+            expect(bareEngine().remapFormulaReferences('SUM(T::A1:A3)+A1', null, (row) => row + 1)).toBe(
+                'SUM(T::A1:A3)+A2',
+            );
+        });
+
+        it('copies spacing and lowercase text through untouched', () => {
+            expect(bareEngine().shiftFormulaReferences('sum( a1 , "a1" )', 0, 1)).toBe('sum( A2 , "a1" )');
+        });
+
+        it('keeps an anchored axis in place and the anchors in the text', () => {
+            expect(bareEngine().shiftFormulaReferences('$A$1+$A1+A$1+A1', 1, 1)).toBe('$A$1+$A2+B$1+B2');
+        });
+
+        it('moves an anchored reference on a reorder', () => {
+            expect(
+                bareEngine().remapFormulaReferences(
+                    '$A$1',
+                    (col) => col + 1,
+                    (row) => row + 1,
+                ),
+            ).toBe('$B$2');
+        });
+
+        it('returns a formula that does not tokenize unchanged', () => {
+            expect(bareEngine().shiftFormulaReferences('A1 @ B1', 0, 1)).toBe('A1 @ B1');
         });
     });
 

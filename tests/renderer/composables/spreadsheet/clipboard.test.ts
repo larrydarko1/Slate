@@ -206,6 +206,58 @@ describe('clipboard', () => {
             expect(ss.getRawValue(id, 1, 1)).toBe('=A2');
         });
 
+        it('keeps an anchored reference fixed as it fills', () => {
+            ss.setCellValue(id, 0, 0, '10');
+            ss.setCellValue(id, 1, 0, '1');
+            ss.setCellValue(id, 1, 1, '2');
+            ss.setCellValue(id, 2, 0, '=B1*$A$1');
+            ss.fillCells(
+                id,
+                { tableId: id, startCol: 2, startRow: 0, endCol: 2, endRow: 0 },
+                { tableId: id, startCol: 2, startRow: 1, endCol: 2, endRow: 1 },
+            );
+            expect(ss.getRawValue(id, 2, 1)).toBe('=B2*$A$1');
+            expect(ss.getDisplayValue(id, 2, 1)).toBe('20');
+        });
+
+        it('walks a reference into another table down with the fill', () => {
+            ss.addTable();
+            const salesId = ss.tables.value[1]!.id;
+            ss.renameTable(salesId, 'Sales');
+            ss.setCellValue(salesId, 1, 1, '3');
+            ss.setCellValue(salesId, 1, 2, '4');
+            ss.setCellValue(id, 0, 0, '=Sales::B2*2');
+            ss.fillCells(
+                id,
+                { tableId: id, startCol: 0, startRow: 0, endCol: 0, endRow: 0 },
+                { tableId: id, startCol: 0, startRow: 1, endCol: 0, endRow: 1 },
+            );
+            expect(ss.getRawValue(id, 0, 1)).toBe('=Sales::B3*2');
+            expect(ss.getDisplayValue(id, 0, 1)).toBe('8');
+        });
+
+        it('continues the pattern backwards when filling up', () => {
+            ss.setCellValue(id, 0, 4, 'a');
+            ss.setCellValue(id, 0, 5, 'b');
+            ss.fillCells(
+                id,
+                { tableId: id, startCol: 0, startRow: 4, endCol: 0, endRow: 5 },
+                { tableId: id, startCol: 0, startRow: 1, endCol: 0, endRow: 5 },
+            );
+            expect([1, 2, 3].map((r) => ss.getDisplayValue(id, 0, r))).toEqual(['b', 'a', 'b']);
+        });
+
+        it('continues the pattern backwards when filling left', () => {
+            ss.setCellValue(id, 3, 0, 'a');
+            ss.setCellValue(id, 4, 0, 'b');
+            ss.fillCells(
+                id,
+                { tableId: id, startCol: 3, startRow: 0, endCol: 4, endRow: 0 },
+                { tableId: id, startCol: 0, startRow: 0, endCol: 4, endRow: 0 },
+            );
+            expect([0, 1, 2].map((c) => ss.getDisplayValue(id, c, 0))).toEqual(['b', 'a', 'b']);
+        });
+
         it('ignores an unknown table', () => {
             ss.fillCells(
                 'nope',

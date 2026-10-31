@@ -4,6 +4,7 @@
  *  - Concatenation: &
  *  - Comparison: =  <>  <  >  <=  >=
  *  - Cell references: A1, AB23
+ *  - Absolute references: $A$1, A$1, $A1 (anchored when a formula is copied)
  *  - Range references: A1:C5
  *  - Cross-table references: 'Table 1'::A1, 'Table 1'::A1:B5
  *  - Cross-canvas references: 'Canvas 1'::'Table 1'::A1
