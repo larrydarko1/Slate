@@ -98,8 +98,10 @@ export function useTableStructure(
         const zoom = ss.canvasZoom.value;
         const dy = (e.clientY - addRowDragState.startY) / zoom;
         const target = Math.round(dy / ROW_HEIGHT);
+        // Plain rows while the drag is live, so it can take back the ones it
+        // added; they inherit their column formulas when it ends.
         while (addRowDragState.added < target) {
-            ss.addRow(table.value.id);
+            ss.addRow(table.value.id, { inheritFormulas: false });
             addRowDragState.added++;
         }
         while (addRowDragState.added > target && table.value.rows.length > 1) {
@@ -111,6 +113,9 @@ export function useTableStructure(
     function onAddRowDragEnd(): void {
         if (addRowDragState !== null && addRowDragState.added === 0) {
             ss.addRow(table.value.id);
+        } else if (addRowDragState !== null && addRowDragState.added > 0) {
+            const { originalCount } = addRowDragState;
+            ss.inheritColumnFormulas(table.value.id, originalCount, table.value.rows.length - 1);
         }
         addRowDragState = null;
         document.removeEventListener('mousemove', onAddRowDragMove);

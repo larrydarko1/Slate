@@ -111,6 +111,7 @@ export function useSpreadsheet(): SpreadsheetState {
         remapRowIdx: formulaEngine.remapRowIdx,
         remapColIdx: formulaEngine.remapColIdx,
         rewriteTableNameReferences: formulaEngine.rewriteTableNameReferences,
+        shiftFormulaReferences: formulaEngine.shiftFormulaReferences,
     });
     const merge = createMerge(state, {
         findTable: helpers.findTable,

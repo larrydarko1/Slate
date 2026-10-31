@@ -256,6 +256,67 @@ describe('tables', () => {
             expect(firstTable(ss)!.columns).toHaveLength(6);
         });
 
+        describe('inheriting column formulas', () => {
+            /** Column A holds 1..rows; column B doubles it in every row. */
+            function calculatedColumn(): number {
+                const rows = firstTable(ss)!.rows.length;
+                for (let r = 0; r < rows; r++) {
+                    ss.setCellValue(id, 0, r, String(r + 1));
+                    ss.setCellValue(id, 1, r, `=A${r + 1}*2`);
+                }
+                return rows;
+            }
+
+            it('extends a column whose rows share a formula onto a new row', () => {
+                const rows = calculatedColumn();
+                ss.setCellFormat(id, 1, rows - 1, { bold: true });
+                ss.addRow(id);
+                ss.setCellValue(id, 0, rows, '50');
+                expect(ss.getRawValue(id, 1, rows)).toBe(`=A${rows + 1}*2`);
+                expect(ss.getDisplayValue(id, 1, rows)).toBe('100');
+                expect(ss.findCell(id, 1, rows)?.format).toEqual({ bold: true });
+                expect(ss.getRawValue(id, 0, rows)).toBe('50');
+            });
+
+            it('extends it onto a row inserted below two calculated rows', () => {
+                calculatedColumn();
+                ss.insertRowAt(id, 2);
+                expect(ss.getRawValue(id, 1, 2)).toBe('=A3*2');
+            });
+
+            it('does not copy a formula found in only one row above', () => {
+                const rows = firstTable(ss)!.rows.length;
+                ss.setCellValue(id, 1, rows - 1, '=SUM(A1:A7)');
+                ss.addRow(id);
+                expect(ss.getRawValue(id, 1, rows)).toBe('');
+            });
+
+            it('does not copy formulas that differ from row to row', () => {
+                const rows = firstTable(ss)!.rows.length;
+                ss.setCellValue(id, 1, rows - 2, '=A1');
+                ss.setCellValue(id, 1, rows - 1, '=A1');
+                ss.addRow(id);
+                expect(ss.getRawValue(id, 1, rows)).toBe('');
+            });
+
+            it('matches formulas however their references are cased', () => {
+                const rows = firstTable(ss)!.rows.length;
+                ss.setCellValue(id, 1, rows - 2, `=a${rows - 1}`);
+                ss.setCellValue(id, 1, rows - 1, `=a${rows}`);
+                ss.addRow(id);
+                expect(ss.getRawValue(id, 1, rows)).toBe(`=A${rows + 1}`);
+            });
+
+            it('adds a plain row when asked not to inherit, and inherits later on request', () => {
+                const rows = calculatedColumn();
+                ss.addRow(id, { inheritFormulas: false });
+                ss.addRow(id, { inheritFormulas: false });
+                expect(ss.getRawValue(id, 1, rows)).toBe('');
+                ss.inheritColumnFormulas(id, rows, rows + 1);
+                expect(ss.getRawValue(id, 1, rows + 1)).toBe(`=A${rows + 2}*2`);
+            });
+        });
+
         /**
          * Documents a gap, not a guarantee. `reorderRow` and `sortColumn` remap
          * every formula in the table through `remapAllFormulasInTable`; insert

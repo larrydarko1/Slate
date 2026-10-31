@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- New rows extend calculated columns. When the two rows above a new row hold the same formula, relative to their rows, the new row gets it too, along with its formatting. This works for rows added with the add-row handle and rows inserted between others.
 - Double-click the fill handle to fill the selection down to the bottom of the data beside it, or to the bottom of the table if there is none.
 - Absolute references. `$A$1`, `A$1` and `$A1` anchor the column, the row, or both, so they stay fixed when a formula is filled or pasted elsewhere.
 
