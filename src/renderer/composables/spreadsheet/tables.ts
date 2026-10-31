@@ -3,6 +3,7 @@
  * Owns: addTable, removeTable, renameTable, moveTable, row/col add/delete/insert, bulk delete.
  * Does NOT own: reordering (useTableReorder.ts), sorting (useTableSort.ts), cell access (useCells.ts).
  */
+import type { SpreadsheetFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import { createTableReorder } from '@/renderer/composables/spreadsheet/tableReorder';
@@ -46,6 +47,8 @@ type TablesDeps = {
         colMapper: ((col: number) => number) | null,
         rowMapper: ((row: number) => number) | null,
     ) => void;
+    shiftReferencesForInsert: SpreadsheetFormulaEngine['shiftReferencesForInsert'];
+    shiftReferencesForDelete: SpreadsheetFormulaEngine['shiftReferencesForDelete'];
     remapRowIdx: (idx: number, fromStart: number, fromEnd: number, insertAt: number) => number;
     remapColIdx: (idx: number, fromStart: number, fromEnd: number, insertAt: number) => number;
     rewriteTableNameReferences: (oldName: string, newName: string) => void;
@@ -210,6 +213,7 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
             })
             .filter((m): m is MergedRegion => m !== null && (m.startRow !== m.endRow || m.startCol !== m.endCol));
         table.rows.splice(rowIdx, 1);
+        deps.shiftReferencesForDelete(tableId, 'row', rowIdx, 1);
         if (state.activeCell.value?.tableId === tableId && state.activeCell.value.row >= table.rows.length) {
             state.activeCell.value.row = table.rows.length - 1;
         }
@@ -230,6 +234,7 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
             .filter((m): m is MergedRegion => m !== null && (m.startRow !== m.endRow || m.startCol !== m.endCol));
         table.columns.splice(colIdx, 1);
         for (const row of table.rows) row.splice(colIdx, 1);
+        deps.shiftReferencesForDelete(tableId, 'col', colIdx, 1);
         if (state.activeCell.value?.tableId === tableId && state.activeCell.value.col >= table.columns.length) {
             state.activeCell.value.col = table.columns.length - 1;
         }
@@ -250,6 +255,8 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
             0,
             table.columns.map((): Cell => createEmptyCell()),
         );
+        // References first, so the rows above already point where they will.
+        deps.shiftReferencesForInsert(tableId, 'row', rowIdx, 1);
         inheritIntoRow(table, rowIdx);
         deps.recalculate();
     }
@@ -265,6 +272,7 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
         });
         table.columns.splice(colIdx, 0, { id: generateId('col'), width: 120 });
         for (const row of table.rows) row.splice(colIdx, 0, createEmptyCell());
+        deps.shiftReferencesForInsert(tableId, 'col', colIdx, 1);
         deps.recalculate();
     }
 

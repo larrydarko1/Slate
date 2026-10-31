@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Recalculation no longer slows down exponentially as chains of dependent formulas get longer. A chain of 25 formulas used to freeze the app.
 - Filling up or left from a multi-cell selection now continues the pattern backwards from the source. Before, the cell next to the source could repeat the source's own first value.
+- Inserting or deleting a row or column now updates every formula and chart that points into the table. References past the change move with their cells, a range grows or shrinks to match, and a reference to a deleted cell becomes `#REF!`. Before, references kept their old coordinates and silently read different cells.
 - Reordering or sorting rows and columns now updates references from other tables and from charts as well, so they keep pointing at the same cells.
 - Filling or pasting a formula no longer rewrites a table name that looks like a cell reference: `Q1::A1` used to become `Q2::A1`. The same went for the end of a cross-table range and for names with underscores, such as `my_table1`.
 

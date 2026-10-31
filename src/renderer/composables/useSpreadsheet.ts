@@ -108,6 +108,8 @@ export function useSpreadsheet(): SpreadsheetState {
         startUndoBatch: undoRedo.startUndoBatch,
         recalculate: formulaEngine.recalculate,
         remapReferencesToTable: formulaEngine.remapReferencesToTable,
+        shiftReferencesForInsert: formulaEngine.shiftReferencesForInsert,
+        shiftReferencesForDelete: formulaEngine.shiftReferencesForDelete,
         remapRowIdx: formulaEngine.remapRowIdx,
         remapColIdx: formulaEngine.remapColIdx,
         rewriteTableNameReferences: formulaEngine.rewriteTableNameReferences,
