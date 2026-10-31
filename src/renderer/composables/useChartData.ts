@@ -70,11 +70,8 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
         // Resolve labels
         let labels: string[] = [];
         if (ds.labelRef !== null && ds.labelRef.refString !== '') {
-            const vals = ss.getChartRefValues(ds.labelRef.refString);
-            labels =
-                useHeader && vals.length > 0
-                    ? vals.slice(1).map((v) => (v !== null ? String(v) : ''))
-                    : vals.map((v) => (v !== null ? String(v) : ''));
+            const all = ss.getChartRefLabels(ds.labelRef.refString);
+            labels = useHeader ? all.slice(1) : all;
         }
 
         // Resolve series

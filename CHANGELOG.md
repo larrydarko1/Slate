@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A date cell type. Type `2026-03-04`, or a date written in your system's day/month order such as `04/03/2026`, and the cell holds a date: shown in that same order, right-aligned, and usable in arithmetic. A date plus 7 is a week later, and one date minus another is the number of days between them. Files that contain date cells cannot be opened by earlier versions of Slate.
+- The fill handle continues series. Drag a single date and it counts on a day per cell, or back when filling up or left. Two or more numbers or dates with a constant step carry on that step, so 1 and 3 continue 5, 7, 9 and two dates a week apart continue weekly. A single number, or values with no steady step, still repeat as before.
+- `DATE(year, month, day)`, `YEAR`, `MONTH` and `DAY` formula functions. `TODAY()` now returns a date rather than text.
+- Chart labels are shown the way their cells are, so a date axis reads as dates and a price axis carries its currency.
 - New rows extend calculated columns. When the two rows above a new row hold the same formula, relative to their rows, the new row gets it too, along with its formatting. This works for rows added with the add-row handle and rows inserted between others.
 - Double-click the fill handle to fill the selection down to the bottom of the data beside it, or to the bottom of the table if there is none.
 - Absolute references. `$A$1`, `A$1` and `$A1` anchor the column, the row, or both, so they stay fixed when a formula is filled or pasted elsewhere.

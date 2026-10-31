@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { dateToSerial } from '@/renderer/composables/spreadsheet/engine/dates';
 import { evaluateFormulaTyped, type FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
 import type { CellValue } from '@/renderer/types/spreadsheet';
 
@@ -50,6 +51,48 @@ describe('#REF!', () => {
     it('propagates through arithmetic and functions', () => {
         expect(evaluateFormula('#REF!*2', emptyCtx)).toBe('#REF!');
         expect(evaluateFormula('SUM(1,#REF!)', emptyCtx)).toBe('#REF!');
+    });
+});
+
+// ── Dates ────────────────────────────────────────────────────────────────────
+
+describe('dates', () => {
+    const march4 = dateToSerial(2026, 3, 4);
+    const dates = gridContext([[march4, dateToSerial(2026, 3, 1)]], [['date', 'date']]);
+
+    it('moves a date by a number of days and keeps it a date', () => {
+        expect(evaluateFormulaTyped('A1+7', dates)).toEqual({ value: march4 + 7, type: 'date' });
+        expect(evaluateFormulaTyped('A1-1', dates)).toEqual({ value: march4 - 1, type: 'date' });
+    });
+
+    it('counts the days between two dates', () => {
+        expect(evaluateFormulaTyped('A1-B1', dates)).toEqual({ value: 3, type: 'integer' });
+    });
+
+    it('builds a date with DATE, rolling over out-of-range parts', () => {
+        expect(evaluateFormulaTyped('DATE(2026,3,4)', emptyCtx)).toEqual({ value: march4, type: 'date' });
+        expect(evaluateFormula('DATE(2026,13,1)', emptyCtx)).toBe(dateToSerial(2027, 1, 1));
+        expect(evaluateFormula('DATE(2026,3)', emptyCtx)).toBe('#VALUE!');
+    });
+
+    it('takes a date apart with YEAR, MONTH and DAY', () => {
+        expect(evaluateFormulaTyped('YEAR(A1)', dates)).toEqual({ value: 2026, type: 'integer' });
+        expect(evaluateFormula('MONTH(A1)', dates)).toBe(3);
+        expect(evaluateFormula('DAY(A1)', dates)).toBe(4);
+    });
+
+    it('reads a typed date in a string', () => {
+        expect(evaluateFormula('YEAR("2026-03-04")', emptyCtx)).toBe(2026);
+    });
+
+    it('rejects what is not a date and passes errors on', () => {
+        expect(evaluateFormula('DAY("soon")', emptyCtx)).toBe('#VALUE!');
+        expect(evaluateFormula('MONTH(#REF!)', emptyCtx)).toBe('#REF!');
+        expect(evaluateFormula('DATE(2026,#REF!,1)', emptyCtx)).toBe('#REF!');
+    });
+
+    it('finds the latest of several dates and keeps it a date', () => {
+        expect(evaluateFormulaTyped('MAX(A1:B1)', dates)).toEqual({ value: march4, type: 'date' });
     });
 });
 

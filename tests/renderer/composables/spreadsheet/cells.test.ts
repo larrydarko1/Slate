@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
+import { dateToSerial, formatDate } from '@/renderer/composables/spreadsheet/engine/dates';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 
 describe('cells', () => {
@@ -80,6 +81,7 @@ describe('cells', () => {
             ['hello', 'text'],
             ['true', 'boolean'],
             ['https://example.com', 'url'],
+            ['2026-03-04', 'date'],
         ])('detects %s as %s', (raw, expected) => {
             ss.setCellValue(id, 0, 0, raw);
             expect(ss.getCellType(id, 0, 0)).toBe(expected);
@@ -107,6 +109,38 @@ describe('cells', () => {
             expect(ss.getCellType(id, 0, 0)).toBe('boolean');
             expect(ss.getDisplayValue(id, 0, 0)).toBe('TRUE');
             expect(ss.getRawValue(id, 0, 0)).toBe('1');
+        });
+    });
+
+    describe('dates', () => {
+        const march4 = dateToSerial(2026, 3, 4);
+
+        it('stores a typed date as its serial and shows it as a date', () => {
+            ss.setCellValue(id, 0, 0, '2026-03-04');
+            expect(ss.findCell(id, 0, 0)?.value).toBe(march4);
+            expect(ss.getDisplayValue(id, 0, 0)).toBe(formatDate(march4));
+        });
+
+        it('edits as a date and reads the same date back when committed unchanged', () => {
+            ss.setCellValue(id, 0, 0, '2026-03-04');
+            const raw = ss.getRawValue(id, 0, 0);
+            expect(raw).toBe(formatDate(march4));
+            ss.setCellValue(id, 0, 0, raw);
+            expect(ss.findCell(id, 0, 0)).toMatchObject({ value: march4, cellType: 'date' });
+        });
+
+        it('turns a number into the date it counts to when retyped as a date', () => {
+            ss.setCellValue(id, 0, 0, String(march4));
+            ss.setCellType(id, 0, 0, 'date');
+            expect(ss.getDisplayValue(id, 0, 0)).toBe(formatDate(march4));
+        });
+
+        it('counts the days between two date cells', () => {
+            ss.setCellValue(id, 0, 0, '2026-03-04');
+            ss.setCellValue(id, 0, 1, '2026-04-04');
+            ss.setCellValue(id, 0, 2, '=A2-A1');
+            expect(ss.getDisplayValue(id, 0, 2)).toBe('31');
+            expect(ss.getCellType(id, 0, 2)).toBe('integer');
         });
     });
 

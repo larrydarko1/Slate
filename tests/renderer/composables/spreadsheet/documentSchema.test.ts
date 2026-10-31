@@ -79,6 +79,12 @@ describe('the app reading its own state back', () => {
         expect(parseCanvases(JSON.stringify([canvas]))).toEqual([canvas]);
     });
 
+    it('reads a date cell', () => {
+        const table = createDefaultTable(0, 0, 'Dates');
+        table.rows[0]![0] = { value: 46085, cellType: 'date' };
+        expect(parseTables(JSON.stringify([table]))[0]?.rows[0]?.[0]).toEqual({ value: 46085, cellType: 'date' });
+    });
+
     it('round-trips tables unchanged', () => {
         const tables = [createDefaultTable(0, 0, 'A'), createDefaultTable(5, 5, 'B')];
         expect(parseTables(JSON.stringify(tables))).toEqual(tables);

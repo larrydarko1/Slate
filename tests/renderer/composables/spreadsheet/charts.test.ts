@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
+import { dateToSerial, formatDate } from '@/renderer/composables/spreadsheet/engine/dates';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 
 describe('charts', () => {
@@ -213,6 +214,12 @@ describe('charts', () => {
         it('returns nothing for an empty or unresolvable ref', () => {
             expect(ss.getChartRefValues('')).toEqual([]);
             expect(ss.getChartRefValues('Missing::A1')).toEqual([]);
+        });
+
+        it('reads labels the way the table shows them', () => {
+            ss.setCellValue(tableId, 1, 0, '2026-03-04');
+            ss.setCellValue(tableId, 1, 1, '$5');
+            expect(ss.getChartRefLabels('Table 1::B1:B3')).toEqual([formatDate(dateToSerial(2026, 3, 4)), '$5.00', '']);
         });
     });
 

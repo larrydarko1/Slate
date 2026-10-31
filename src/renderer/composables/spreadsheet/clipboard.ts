@@ -3,6 +3,7 @@
  * Owns: internal clipboard buffer, copyCells, cutCells, pasteCells, fillCells.
  * Does NOT own: cell access (useCells.ts), formula shifting (useFormulaEngine.ts).
  */
+import { isNumericType, type CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { Cell, CellFormat, SelectionRange } from '@/renderer/types/spreadsheet';
@@ -32,6 +33,30 @@ type ClipboardCell = {
     raw: string;
     format?: CellFormat;
 };
+
+/** A run of numbers or dates rising by a constant step, the way a fill continues it. */
+type Series = { start: number; step: number; type: CellDataType };
+
+/**
+ * The series `cells` form, if any: two or more plain numbers or dates of one
+ * type with a constant step, or a single date, which counts on a day at a time.
+ * Anything else, a single number included, is null and gets copied as it is.
+ */
+function findSeries(cells: (Cell | null)[]): Series | null {
+    const type = cells[0]?.cellType;
+    if (type === undefined || !isNumericType(type)) return null;
+    const values: number[] = [];
+    for (const cell of cells) {
+        if (cell === null || cell.formula !== undefined || cell.cellType !== type || typeof cell.value !== 'number')
+            return null;
+        values.push(cell.value);
+    }
+    const [start = 0, second] = values;
+    if (second === undefined) return type === 'date' ? { start, step: 1, type } : null;
+    const step = second - start;
+    const steady = values.every((value, i): boolean => Math.abs(value - (start + step * i)) < 1e-9);
+    return steady ? { start, step, type } : null;
+}
 
 /** `n` mod `size`, kept non-negative for an `n` below zero. */
 function wrap(n: number, size: number): number {
@@ -190,36 +215,58 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
             for (const row of table.rows) row.push(createEmptyCell());
         }
 
+        // A fill runs down or up when it adds rows, across otherwise. Each source
+        // column (or row) along that direction may be a series to continue.
+        const vertical = target.startRow !== source.startRow || target.endRow !== source.endRow;
+        const seriesByLine = new Map<number, Series>();
+        const [lineStart, lineEnd] = vertical ? [source.startCol, source.endCol] : [source.startRow, source.endRow];
+        const [stepStart, stepEnd] = vertical ? [source.startRow, source.endRow] : [source.startCol, source.endCol];
+        for (let line = lineStart; line <= lineEnd; line++) {
+            const cells: (Cell | null)[] = [];
+            for (let step = stepStart; step <= stepEnd; step++) {
+                cells.push(vertical ? deps.findCell(tableId, line, step) : deps.findCell(tableId, step, line));
+            }
+            const series = findSeries(cells);
+            if (series !== null) seriesByLine.set(line, series);
+        }
+
+        function fillCell(colIdx: number, rowIdx: number): void {
+            // Counted from the source, not the target, so a fill up or left
+            // runs the pattern backwards from the cell next to the source.
+            const srcR = source.startRow + wrap(rowIdx - source.startRow, srcRows);
+            const srcC = source.startCol + wrap(colIdx - source.startCol, srcCols);
+            const srcCell = deps.findCell(tableId, srcC, srcR);
+            if (srcCell === null) return;
+
+            const series = seriesByLine.get(vertical ? colIdx : rowIdx);
+            const cell = table?.rows[rowIdx]?.[colIdx];
+            if (series !== undefined && cell !== undefined) {
+                const offset = vertical ? rowIdx - source.startRow : colIdx - source.startCol;
+                // Clears whatever the cell held, then takes the next value as it is,
+                // rather than as text to detect a type from again.
+                deps.setCellValue(tableId, colIdx, rowIdx, '');
+                cell.value = parseFloat((series.start + series.step * offset).toFixed(10));
+                cell.cellType = series.type;
+            } else if (srcCell.formula !== undefined) {
+                const shifted = deps.shiftFormulaReferences(srcCell.formula, colIdx - srcC, rowIdx - srcR);
+                deps.setCellValue(tableId, colIdx, rowIdx, `=${shifted}`);
+            } else {
+                deps.setCellValue(tableId, colIdx, rowIdx, deps.getRawValue(tableId, srcC, srcR));
+            }
+            if (srcCell.format !== undefined) {
+                deps.setCellFormat(tableId, colIdx, rowIdx, { ...srcCell.format });
+            }
+        }
+
+        const inSource = (colIdx: number, rowIdx: number): boolean =>
+            rowIdx >= source.startRow &&
+            rowIdx <= source.endRow &&
+            colIdx >= source.startCol &&
+            colIdx <= source.endCol;
         deps.batchRecalculation((): void => {
             for (let rowIdx = target.startRow; rowIdx <= target.endRow; rowIdx++) {
                 for (let colIdx = target.startCol; colIdx <= target.endCol; colIdx++) {
-                    if (
-                        rowIdx >= source.startRow &&
-                        rowIdx <= source.endRow &&
-                        colIdx >= source.startCol &&
-                        colIdx <= source.endCol
-                    )
-                        continue;
-                    // Counted from the source, not the target, so a fill up or left
-                    // runs the pattern backwards from the cell next to the source.
-                    const srcR = source.startRow + wrap(rowIdx - source.startRow, srcRows);
-                    const srcC = source.startCol + wrap(colIdx - source.startCol, srcCols);
-                    const srcCell = deps.findCell(tableId, srcC, srcR);
-                    if (srcCell === null) continue;
-
-                    const colDelta = colIdx - srcC;
-                    const rowDelta = rowIdx - srcR;
-
-                    if (srcCell.formula !== undefined) {
-                        const shifted = deps.shiftFormulaReferences(srcCell.formula, colDelta, rowDelta);
-                        deps.setCellValue(tableId, colIdx, rowIdx, `=${shifted}`);
-                    } else {
-                        const raw = deps.getRawValue(tableId, srcC, srcR);
-                        deps.setCellValue(tableId, colIdx, rowIdx, raw);
-                    }
-                    if (srcCell.format !== undefined) {
-                        deps.setCellFormat(tableId, colIdx, rowIdx, { ...srcCell.format });
-                    }
+                    if (!inSource(colIdx, rowIdx)) fillCell(colIdx, rowIdx);
                 }
             }
         });

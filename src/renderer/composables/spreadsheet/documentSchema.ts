@@ -40,6 +40,7 @@ const CellDataTypeSchema = z.enum([
     'percent',
     'currency_eur',
     'currency_usd',
+    'date',
     'text',
     'boolean',
     'url',

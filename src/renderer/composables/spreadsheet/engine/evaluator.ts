@@ -6,6 +6,7 @@
 
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { resolveType, resolveTypeList, isNumericType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { dateToSerial, parseDate, serialToDate, todaySerial } from '@/renderer/composables/spreadsheet/engine/dates';
 import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
 import type { ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
 import type { CellValue } from '@/renderer/types/spreadsheet';
@@ -109,6 +110,8 @@ export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
                 case '+':
                     return { value: lNum + rNum, type: resolvedType ?? 'float' };
                 case '-':
+                    // Two dates apart is a number of days, not a date.
+                    if (left.type === 'date' && right.type === 'date') return { value: lNum - rNum, type: 'integer' };
                     return { value: lNum - rNum, type: resolvedType ?? 'float' };
                 case '*': {
                     // Multiplying currency by a plain integer/float keeps the currency —
@@ -153,6 +156,30 @@ function toNumber(v: CellValue): number {
     if (typeof v === 'number') return v;
     const parsed = Number(v);
     return isNaN(parsed) ? 0 : parsed;
+}
+
+function isError(v: CellValue): boolean {
+    return typeof v === 'string' && v.startsWith('#');
+}
+
+/** A value read as a date serial: a number as it is, a string if it is a typed date. */
+function toSerial(v: CellValue): number | null {
+    if (typeof v === 'number') return v;
+    if (typeof v === 'string') return parseDate(v);
+    return null;
+}
+
+/** YEAR, MONTH and DAY: one part of the date `arg` evaluates to. */
+function datePart(
+    arg: ASTNode,
+    ctx: FormulaContext,
+    pick: (date: ReturnType<typeof serialToDate>) => number,
+): TypedCellValue {
+    const result = evaluate(arg, ctx);
+    if (isError(result.value)) return result;
+    const serial = toSerial(result.value);
+    if (serial === null) return { value: '#VALUE!', type: 'text' };
+    return { value: pick(serialToDate(serial)), type: 'integer' };
 }
 
 /** Convenience: evaluate and return just the value. */
@@ -389,7 +416,21 @@ function evalFunction(name: string, args: ASTNode[], ctx: FormulaContext): Typed
         case 'NOW':
             return { value: new Date().toLocaleString(), type: 'text' };
         case 'TODAY':
-            return { value: new Date().toLocaleDateString(), type: 'text' };
+            return { value: todaySerial(), type: 'date' };
+        case 'DATE': {
+            const parts = args.slice(0, 3).map((arg) => evaluate(arg, ctx));
+            const err = parts.find((p) => isError(p.value));
+            if (err !== undefined) return err;
+            if (parts.length < 3) return { value: '#VALUE!', type: 'text' };
+            const [year, month, day] = parts.map((p) => Math.trunc(toNumber(p.value)));
+            return { value: dateToSerial(year ?? 0, month ?? 1, day ?? 1), type: 'date' };
+        }
+        case 'YEAR':
+            return datePart(argAt(args, 0), ctx, (date) => date.year);
+        case 'MONTH':
+            return datePart(argAt(args, 0), ctx, (date) => date.month);
+        case 'DAY':
+            return datePart(argAt(args, 0), ctx, (date) => date.day);
 
         default:
             return { value: `#NAME? (${name})`, type: 'text' };

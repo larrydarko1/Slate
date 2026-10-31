@@ -22,12 +22,12 @@ Slate is a **free and open-source, canvas-based spreadsheet app** for desktop bu
 
 ### Spreadsheet
 
-- **Formula engine** — 29 built-in functions (SUM, AVERAGE, IF, CONCAT, and more) with relative and absolute (`$A$1`) cell/range references
+- **Formula engine** — 33 built-in functions (SUM, AVERAGE, IF, CONCAT, DATE, and more) with relative and absolute (`$A$1`) cell/range references
 - **Cross-table & cross-canvas references** — reference cells across tables and canvases in formulas
 - **Cell formatting** — bold, italic, text/fill colors, alignment, font family
 - **Cell merging** — merge and unmerge arbitrary rectangular regions
-- **Autofill** — drag the fill handle to repeat values and formulas, or double-click it to fill a column down to the end of the data
-- **Smart cell types** — auto-detection of numbers, percentages, currency (USD/EUR), URLs, booleans, and text
+- **Autofill** — drag the fill handle to repeat values and formulas or continue a series of numbers or dates, or double-click it to fill a column down to the end of the data
+- **Smart cell types** — auto-detection of numbers, percentages, currency (USD/EUR), dates, URLs, booleans, and text
 
 ### Charts
 
@@ -205,9 +205,10 @@ slate/
 │       │   │   └── engine/             #   Formula engine (pure functions)
 │       │   │       ├── tokenizer.ts    #     Lexer — formula string → tokens
 │       │   │       ├── parser.ts       #     Recursive-descent → AST
-│       │   │       ├── evaluator.ts    #     AST → computed value (29 functions)
+│       │   │       ├── evaluator.ts    #     AST → computed value (33 functions)
 │       │   │       ├── formula.ts      #     Public API (evaluate, extractRefs)
-│       │   │       └── cellTypes.ts    #     Type detection, parsing, formatting
+│       │   │       ├── cellTypes.ts    #     Type detection, parsing, formatting
+│       │   │       └── dates.ts        #     Date serials, parsing, display
 │       │   └── table/                  # Table-level UI composables
 │       │       ├── useFillHandle.ts          # Drag-to-fill (autofill)
 │       │       ├── useRowColReorder.ts       # Header selection & drag-to-reorder

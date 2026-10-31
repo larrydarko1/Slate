@@ -16,6 +16,7 @@ const typeOptions: { value: CellDataType; label: string; short: string }[] = [
     { value: 'percent', label: 'Percent (%)', short: '%' },
     { value: 'currency_usd', label: 'Dollar ($)', short: '$' },
     { value: 'currency_eur', label: 'Euro (€)', short: '€' },
+    { value: 'date', label: 'Date', short: 'DATE' },
 ];
 
 const ss = injectSpreadsheet();

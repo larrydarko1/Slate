@@ -5,6 +5,7 @@
  */
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { detectType, formatCellDisplay, getTypeAlignment } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { formatDate } from '@/renderer/composables/spreadsheet/engine/dates';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { Cell, CellFormat, CellFormatUpdate } from '@/renderer/types/spreadsheet';
@@ -109,6 +110,9 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
         if (cell === null) return '';
         if (cell.formula !== undefined) return `=${cell.formula}`;
         if (cell.value === null) return '';
+        // A date is held as its serial; editing it should show the date, and
+        // committing that unchanged should read back the same date.
+        if (cell.cellType === 'date' && typeof cell.value === 'number') return formatDate(cell.value);
         return String(cell.value);
     }
 
