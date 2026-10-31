@@ -131,6 +131,8 @@ export function useSpreadsheet(): SpreadsheetState {
         setCellFormat: cells.setCellFormat,
         shiftFormulaReferences: formulaEngine.shiftFormulaReferences,
         batchRecalculation: formulaEngine.batchRecalculation,
+        shiftReferencesForMove: formulaEngine.shiftReferencesForMove,
+        recalculate: formulaEngine.recalculate,
     });
     const formulas = createFormulas(state, {
         findTableGlobal: helpers.findTableGlobal,
