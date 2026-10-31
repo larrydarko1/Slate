@@ -36,7 +36,7 @@ const localName = ref(props.table.name);
 // ── Composable wiring ────────────────────────────────────────────────────────
 
 const { startDrag, startColResize, startAddRowDrag, startAddColDrag } = useTableStructure(tableRef, ss, editingName);
-const { isSelectionCorner, isCellInFillPreview, startFillDrag } = useFillHandle(tableRef, ss, tableEl);
+const { isSelectionCorner, isCellInFillPreview, startFillDrag, fillToEnd } = useFillHandle(tableRef, ss, tableEl);
 
 const {
     isActiveTable,
@@ -510,7 +510,9 @@ watch(
                                     v-if="isSelectionCorner(ci, ri) && !ss.isEditing.value"
                                     class="fill-handle"
                                     role="presentation"
-                                    @mousedown.stop.prevent="startFillDrag(ci, ri, $event)"></div>
+                                    title="Drag to fill, or double-click to fill down"
+                                    @mousedown.stop.prevent="startFillDrag(ci, ri, $event)"
+                                    @dblclick.stop="fillToEnd"></div>
                             </td>
                         </template>
                     </tr>

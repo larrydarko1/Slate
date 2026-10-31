@@ -26,6 +26,7 @@ Slate is a **free and open-source, canvas-based spreadsheet app** for desktop bu
 - **Cross-table & cross-canvas references** — reference cells across tables and canvases in formulas
 - **Cell formatting** — bold, italic, text/fill colors, alignment, font family
 - **Cell merging** — merge and unmerge arbitrary rectangular regions
+- **Autofill** — drag the fill handle to repeat values and formulas, or double-click it to fill a column down to the end of the data
 - **Smart cell types** — auto-detection of numbers, percentages, currency (USD/EUR), URLs, booleans, and text
 
 ### Charts

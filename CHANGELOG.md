@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Double-click the fill handle to fill the selection down to the bottom of the data beside it, or to the bottom of the table if there is none.
 - Absolute references. `$A$1`, `A$1` and `$A1` anchor the column, the row, or both, so they stay fixed when a formula is filled or pasted elsewhere.
 
 ### Changed
