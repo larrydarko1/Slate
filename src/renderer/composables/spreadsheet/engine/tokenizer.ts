@@ -97,18 +97,23 @@ export function tokenize(src: string): Token[] {
             return { type: 'QUOTED_NAME', value: quoted };
         }
 
-        // word (cell ref, identifier, boolean)
-        if (/[A-Za-z_]/.test(at(pos))) {
+        // word (cell ref, identifier, boolean). A `$` before the letters or the
+        // digits of a cell ref anchors that axis: $A$1, A$1, $A1.
+        if (/[A-Za-z_$]/.test(at(pos))) {
+            const colAnchor = at(pos) === '$' ? at(pos++) : '';
             let word = '';
             while (pos < src.length && /[A-Za-z_]/.test(at(pos))) word += at(pos++);
+            if (word === '') throw new Error('Unexpected character: $');
             const up = word.toUpperCase();
 
-            if (up === 'TRUE' || up === 'FALSE') return { type: 'BOOLEAN', value: up };
+            if (colAnchor === '' && (up === 'TRUE' || up === 'FALSE')) return { type: 'BOOLEAN', value: up };
 
             // If followed by digits → cell reference (e.g. AB23)
+            const rowAnchor = at(pos) === '$' && /\d/.test(at(pos + 1)) ? at(pos++) : '';
             const digits = takeDigits();
-            if (digits !== '') return { type: 'CELL_REF', value: up + digits };
+            if (digits !== '') return { type: 'CELL_REF', value: colAnchor + up + rowAnchor + digits };
 
+            if (colAnchor !== '') throw new Error(`Invalid cell reference: $${word}`);
             return { type: 'IDENTIFIER', value: up };
         }
 

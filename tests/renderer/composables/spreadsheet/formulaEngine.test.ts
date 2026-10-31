@@ -223,6 +223,20 @@ describe('formulaEngine', () => {
             expect(bareEngine().shiftFormulaReferences('sum( a1 , "a1" )', 0, 1)).toBe('sum( A2 , "a1" )');
         });
 
+        it('keeps an anchored axis in place and the anchors in the text', () => {
+            expect(bareEngine().shiftFormulaReferences('$A$1+$A1+A$1+A1', 1, 1)).toBe('$A$1+$A2+B$1+B2');
+        });
+
+        it('moves an anchored reference on a reorder', () => {
+            expect(
+                bareEngine().remapFormulaReferences(
+                    '$A$1',
+                    (col) => col + 1,
+                    (row) => row + 1,
+                ),
+            ).toBe('$B$2');
+        });
+
         it('returns a formula that does not tokenize unchanged', () => {
             expect(bareEngine().shiftFormulaReferences('A1 @ B1', 0, 1)).toBe('A1 @ B1');
         });

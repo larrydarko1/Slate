@@ -110,7 +110,8 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
         if (state.activeCell.value === null) return null;
 
         const parts = refText.split('::');
-        const cellPart = parts[parts.length - 1] ?? '';
+        // `$` anchors change how a reference copies, not which cell it names.
+        const cellPart = (parts[parts.length - 1] ?? '').replaceAll('$', '');
 
         const rangeMatch = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(cellPart);
         const singleMatch = rangeMatch === null ? /^([A-Z]+)(\d+)$/.exec(cellPart) : null;
@@ -156,7 +157,7 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
 
         const body = val.substring(1);
         const tokens: FormulaToken[] = [];
-        const refRegex = /(?:(?:'[^']*'|\w+)::)*(?:(?:'[^']*'|\w+)::)?[A-Z]+\d+(?::[A-Z]+\d+)?/g;
+        const refRegex = /(?:(?:'[^']*'|\w+)::)*(?:(?:'[^']*'|\w+)::)?\$?[A-Z]+\$?\d+(?::\$?[A-Z]+\$?\d+)?/g;
         let lastIndex = 0;
         let colorIdx = 0;
         let match: RegExpExecArray | null;

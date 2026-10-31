@@ -126,6 +126,11 @@ describe('formulas', () => {
             expect(ss.getFormulaTokens().some((t) => t.isRef)).toBe(true);
         });
 
+        it('marks an absolute reference as one token', () => {
+            const tokens = ss.getFormulaTokens('=$A$1+B$2');
+            expect(tokens.filter((t) => t.isRef).map((t) => t.text)).toEqual(['$A$1', 'B$2']);
+        });
+
         it('marks a qualified reference as one token', () => {
             ss.addTable();
             ss.renameTable(ss.tables.value[1]!.id, 'Other');
@@ -148,6 +153,10 @@ describe('formulas', () => {
                 endRow: 2,
                 isRange: true,
             });
+        });
+
+        it('resolves an absolute reference to the cell it names', () => {
+            expect(ss.resolveRefString('$B$2')).toMatchObject({ tableId: id, col: 1, row: 1 });
         });
 
         it('resolves a table-qualified reference', () => {

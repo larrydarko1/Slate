@@ -22,7 +22,7 @@ Slate is a **free and open-source, canvas-based spreadsheet app** for desktop bu
 
 ### Spreadsheet
 
-- **Formula engine** — 29 built-in functions (SUM, AVERAGE, IF, CONCAT, and more) with cell/range references
+- **Formula engine** — 29 built-in functions (SUM, AVERAGE, IF, CONCAT, and more) with relative and absolute (`$A$1`) cell/range references
 - **Cross-table & cross-canvas references** — reference cells across tables and canvases in formulas
 - **Cell formatting** — bold, italic, text/fill colors, alignment, font family
 - **Cell merging** — merge and unmerge arbitrary rectangular regions

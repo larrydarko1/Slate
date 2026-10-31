@@ -206,6 +206,20 @@ describe('clipboard', () => {
             expect(ss.getRawValue(id, 1, 1)).toBe('=A2');
         });
 
+        it('keeps an anchored reference fixed as it fills', () => {
+            ss.setCellValue(id, 0, 0, '10');
+            ss.setCellValue(id, 1, 0, '1');
+            ss.setCellValue(id, 1, 1, '2');
+            ss.setCellValue(id, 2, 0, '=B1*$A$1');
+            ss.fillCells(
+                id,
+                { tableId: id, startCol: 2, startRow: 0, endCol: 2, endRow: 0 },
+                { tableId: id, startCol: 2, startRow: 1, endCol: 2, endRow: 1 },
+            );
+            expect(ss.getRawValue(id, 2, 1)).toBe('=B2*$A$1');
+            expect(ss.getDisplayValue(id, 2, 1)).toBe('20');
+        });
+
         it('ignores an unknown table', () => {
             ss.fillCells(
                 'nope',

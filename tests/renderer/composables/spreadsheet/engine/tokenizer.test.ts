@@ -102,6 +102,21 @@ describe('cell references', () => {
     it('tokenizes a range expression', () => {
         expect(types('A1:C3')).toEqual(['CELL_REF', 'COLON', 'CELL_REF']);
     });
+
+    it('keeps the $ anchors of an absolute reference', () => {
+        expect(tokenTypes('$A$1+A$2+$b3')).toEqual([
+            { type: 'CELL_REF', value: '$A$1' },
+            { type: 'PLUS', value: '+' },
+            { type: 'CELL_REF', value: 'A$2' },
+            { type: 'PLUS', value: '+' },
+            { type: 'CELL_REF', value: '$B3' },
+        ]);
+    });
+
+    it('throws on a $ that anchors nothing', () => {
+        expect(() => tokenize('$')).toThrow('Unexpected character: $');
+        expect(() => tokenize('$SUM(1)')).toThrow('Invalid cell reference: $SUM');
+    });
 });
 
 describe('identifiers', () => {

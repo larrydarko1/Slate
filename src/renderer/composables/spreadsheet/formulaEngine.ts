@@ -37,6 +37,14 @@ type FormulaEngineDeps = {
     replaceNameInRef: SpreadsheetHelpers['replaceNameInRef'];
 };
 
+/** What `rewriteCellRefs` tells its callback about each reference besides its cell. */
+type RefShape = {
+    /** It follows a `name::` prefix, so it points into another table. */
+    qualified: boolean;
+    colAnchored: boolean;
+    rowAnchored: boolean;
+};
+
 // ─── Factory ─────────────────────────────────────────────────────────────────
 
 export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEngineDeps): SpreadsheetFormulaEngine {
@@ -199,13 +207,14 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
      * The walk runs on the formula's tokens, so a reference here is exactly what
      * the evaluator reads as one. A ref-shaped name before `::` (a table called
      * Q1) is a name, not a reference, and a ref-shaped word before `(` is a call.
-     * `qualified` tells `move` whether the reference points into another table.
+     * `move` also learns whether the reference points into another table and
+     * which of its axes a `$` anchors; the anchors are written back as they were.
      * A formula that does not tokenize is returned as it is: there is nothing
      * reliable to move in it.
      */
     function rewriteCellRefs(
         formula: string,
-        move: (col: number, row: number, qualified: boolean) => [number, number],
+        move: (col: number, row: number, ref: RefShape) => [number, number],
     ): string {
         let tokens: Token[];
         try {
@@ -229,14 +238,16 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
             if (prevType === 'DOUBLE_COLON') qualified = true;
             else if (prevType !== 'COLON') qualified = false;
 
-            const refMatch = /^([A-Z]+)(\d+)$/.exec(tok.value);
-            if (refMatch === null) continue;
-            const [col, row] = move(
-                columnLetterToIndex(refMatch[1] ?? ''),
-                parseInt(refMatch[2] ?? '', 10) - 1,
+            const [, colAnchor = '', letters = '', rowAnchor = '', digits = ''] =
+                /^(\$?)([A-Z]+)(\$?)(\d+)$/.exec(tok.value) ?? [];
+            if (letters === '') continue;
+            const [col, row] = move(columnLetterToIndex(letters), parseInt(digits, 10) - 1, {
                 qualified,
-            );
-            result += formula.substring(copiedTo, tok.start) + indexToColumnLetter(col) + (row + 1);
+                colAnchored: colAnchor !== '',
+                rowAnchored: rowAnchor !== '',
+            });
+            result +=
+                formula.substring(copiedTo, tok.start) + colAnchor + indexToColumnLetter(col) + rowAnchor + (row + 1);
             copiedTo = tok.end;
         }
         return result + formula.substring(copiedTo);
@@ -249,7 +260,9 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
         rowMapper: ((row: number) => number) | null,
     ): string {
         // A reference into another table is that table's to move, not this one's.
-        return rewriteCellRefs(formula, (col, row, qualified) =>
+        // Anchors do not apply: a reorder moves the cell itself, wherever it is
+        // referenced from.
+        return rewriteCellRefs(formula, (col, row, { qualified }) =>
             qualified
                 ? [col, row]
                 : [colMapper !== null ? colMapper(col) : col, rowMapper !== null ? rowMapper(row) : row],
@@ -272,10 +285,15 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
 
     // ── Reference shifting (for fill & paste) ────────────────────────────────
 
-    /** Fill and paste: each axis slides by a fixed delta, clamped at the origin. */
+    /**
+     * Fill and paste: each axis slides by a fixed delta, clamped at the origin.
+     * An axis anchored with `$` stays where it is.
+     */
     function shiftFormulaReferences(formula: string, colDelta: number, rowDelta: number): string {
-        return rewriteCellRefs(formula, (col, row, qualified) =>
-            qualified ? [col, row] : [Math.max(0, col + colDelta), Math.max(0, row + rowDelta)],
+        return rewriteCellRefs(formula, (col, row, { qualified, colAnchored, rowAnchored }) =>
+            qualified
+                ? [col, row]
+                : [colAnchored ? col : Math.max(0, col + colDelta), rowAnchored ? row : Math.max(0, row + rowDelta)],
         );
     }
 

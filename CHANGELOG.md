@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Absolute references. `$A$1`, `A$1` and `$A1` anchor the column, the row, or both, so they stay fixed when a formula is filled or pasted elsewhere.
+
 ### Changed
 
 - Formatting and lint rules now come from the shared `@larrydarko/lint-config` package.

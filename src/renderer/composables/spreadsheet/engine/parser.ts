@@ -257,7 +257,8 @@ export class Parser {
 }
 
 function parseCellRef(ref: string): { col: number; row: number } {
-    const [, letters, digits] = /^([A-Z]+)(\d+)$/.exec(ref) ?? [];
+    // The `$` anchors only matter when a formula is copied; evaluation ignores them.
+    const [, letters, digits] = /^\$?([A-Z]+)\$?(\d+)$/.exec(ref) ?? [];
     if (letters === undefined || digits === undefined) throw new Error(`Invalid cell reference: ${ref}`);
     return { col: columnLetterToIndex(letters), row: parseInt(digits, 10) - 1 };
 }
