@@ -5,7 +5,6 @@
  */
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 type TableReorder = {
     reorderRow: (tableId: string, fromIdx: number, toIdx: number) => void;
@@ -18,8 +17,8 @@ type ReorderDeps = {
     findTable: SpreadsheetHelpers['findTable'];
     pushUndo: () => void;
     recalculate: () => void;
-    remapAllFormulasInTable: (
-        t: SpreadsheetTable,
+    remapReferencesToTable: (
+        tableId: string,
         colMapper: ((col: number) => number) | null,
         rowMapper: ((row: number) => number) | null,
     ) => void;
@@ -68,7 +67,7 @@ export function createTableReorder(state: SpreadsheetCoreState, deps: ReorderDep
         }
 
         const rowMapper = (idx: number): number => deps.remapRowIdx(idx, fromStart, fromEnd, insertAt);
-        deps.remapAllFormulasInTable(table, null, rowMapper);
+        deps.remapReferencesToTable(table.id, null, rowMapper);
         deps.recalculate();
     }
 
@@ -117,7 +116,7 @@ export function createTableReorder(state: SpreadsheetCoreState, deps: ReorderDep
         }
 
         const colMapper = (idx: number): number => deps.remapColIdx(idx, fromStart, fromEnd, insertAt);
-        deps.remapAllFormulasInTable(table, colMapper, null);
+        deps.remapReferencesToTable(table.id, colMapper, null);
         deps.recalculate();
     }
 

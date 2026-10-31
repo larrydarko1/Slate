@@ -366,6 +366,16 @@ describe('tables', () => {
             expect(ss.getDisplayValue(id, 1, 0)).toBe('c2');
         });
 
+        it('keeps a reference from another table on the row it named', () => {
+            ss.renameTable(id, 'Data');
+            ss.addTable();
+            const other = ss.tables.value[1]!.id;
+            ss.setCellValue(other, 0, 0, '=Data::A1');
+            ss.reorderRow(id, 0, 2);
+            expect(ss.getRawValue(other, 0, 0)).toBe('=Data::A3');
+            expect(ss.getDisplayValue(other, 0, 0)).toBe('r0');
+        });
+
         it('ignores a reorder on an unknown table', () => {
             ss.reorderRow('nope', 0, 1);
             expect(ss.getDisplayValue(id, 0, 0)).toBe('r0');

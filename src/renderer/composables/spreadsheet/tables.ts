@@ -41,8 +41,8 @@ type TablesDeps = {
     pushUndo: () => void;
     startUndoBatch: () => void;
     recalculate: () => void;
-    remapAllFormulasInTable: (
-        t: SpreadsheetTable,
+    remapReferencesToTable: (
+        tableId: string,
         colMapper: ((col: number) => number) | null,
         rowMapper: ((row: number) => number) | null,
     ) => void;
@@ -274,7 +274,7 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
         findTable: deps.findTable,
         pushUndo: deps.pushUndo,
         recalculate: deps.recalculate,
-        remapAllFormulasInTable: deps.remapAllFormulasInTable,
+        remapReferencesToTable: deps.remapReferencesToTable,
         remapRowIdx: deps.remapRowIdx,
         remapColIdx: deps.remapColIdx,
     });
@@ -283,7 +283,7 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
         findTable: deps.findTable,
         pushUndo: deps.pushUndo,
         recalculate: deps.recalculate,
-        remapAllFormulasInTable: deps.remapAllFormulasInTable,
+        remapReferencesToTable: deps.remapReferencesToTable,
     });
 
     // ── Bulk selection operations ────────────────────────────────────────────

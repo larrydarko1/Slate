@@ -4,7 +4,7 @@
  * Does NOT own: CRUD (useTables.ts), reordering (useTableReorder.ts).
  */
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
-import type { SpreadsheetTable, Cell, CellValue, MergedRegion } from '@/renderer/types/spreadsheet';
+import type { Cell, CellValue, MergedRegion } from '@/renderer/types/spreadsheet';
 
 type TableSort = { sortColumn: (tableId: string, colIdx: number, direction: 'asc' | 'desc') => void };
 
@@ -12,8 +12,8 @@ type SortDeps = {
     findTable: SpreadsheetHelpers['findTable'];
     pushUndo: () => void;
     recalculate: () => void;
-    remapAllFormulasInTable: (
-        t: SpreadsheetTable,
+    remapReferencesToTable: (
+        tableId: string,
         colMapper: ((col: number) => number) | null,
         rowMapper: ((row: number) => number) | null,
     ) => void;
@@ -75,7 +75,7 @@ export function createTableSort(deps: SortDeps): TableSort {
             .filter((m): m is MergedRegion => m !== null);
 
         const rowMapper = (idx: number): number => rowMap.get(idx) ?? idx;
-        deps.remapAllFormulasInTable(table, null, rowMapper);
+        deps.remapReferencesToTable(table.id, null, rowMapper);
         deps.recalculate();
     }
 

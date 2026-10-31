@@ -107,7 +107,7 @@ export function useSpreadsheet(): SpreadsheetState {
         pushUndo: undoRedo.pushUndo,
         startUndoBatch: undoRedo.startUndoBatch,
         recalculate: formulaEngine.recalculate,
-        remapAllFormulasInTable: formulaEngine.remapAllFormulasInTable,
+        remapReferencesToTable: formulaEngine.remapReferencesToTable,
         remapRowIdx: formulaEngine.remapRowIdx,
         remapColIdx: formulaEngine.remapColIdx,
         rewriteTableNameReferences: formulaEngine.rewriteTableNameReferences,
