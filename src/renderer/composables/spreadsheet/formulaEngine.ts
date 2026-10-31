@@ -22,6 +22,7 @@ export type SpreadsheetFormulaEngine = {
     ) => void;
     shiftReferencesForInsert: (tableId: string, axis: Axis, index: number, count: number) => void;
     shiftReferencesForDelete: (tableId: string, axis: Axis, index: number, count: number) => void;
+    shiftReferencesForMove: (tableId: string, source: CellRect, colDelta: number, rowDelta: number) => void;
     shiftFormulaReferences: (formula: string, colDelta: number, rowDelta: number) => string;
     remapRowIdx: (idx: number, fromStart: number, fromEnd: number, insertAt: number) => number;
     remapColIdx: (idx: number, fromStart: number, fromEnd: number, insertAt: number) => number;
@@ -34,6 +35,9 @@ type FormulaEngineDeps = {
     findTableByName: SpreadsheetHelpers['findTableByName'];
     replaceNameInRef: SpreadsheetHelpers['replaceNameInRef'];
 };
+
+/** A block of cells, both corners inclusive. */
+export type CellRect = { startCol: number; startRow: number; endCol: number; endRow: number };
 
 /** Rows or columns: the two directions a table grows, shrinks and reorders in. */
 type Axis = 'row' | 'col';
@@ -445,6 +449,31 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
         });
     }
 
+    /**
+     * The block `source` moved by (colDelta, rowDelta) within its table, the
+     * way cut and paste moves it. A reference that lay wholly inside the block
+     * follows it; one that named only cells the block now covers becomes
+     * #REF!, since those cells are gone; anything else stays where it was.
+     */
+    function shiftReferencesForMove(tableId: string, source: CellRect, colDelta: number, rowDelta: number): void {
+        const dest: CellRect = {
+            startCol: source.startCol + colDelta,
+            startRow: source.startRow + rowDelta,
+            endCol: source.endCol + colDelta,
+            endRow: source.endRow + rowDelta,
+        };
+        const within = (rect: CellRect, { col, row }: RefEnd): boolean =>
+            col >= rect.startCol && col <= rect.endCol && row >= rect.startRow && row <= rect.endRow;
+        rewriteReferencesTo(tableId, (span) => {
+            const ends = [span.start, span.end ?? span.start];
+            if (ends.every((end) => within(source, end))) {
+                return mapEnds(span, ({ col, row }) => [col + colDelta, row + rowDelta]);
+            }
+            if (ends.every((end) => within(dest, end))) return '#REF!';
+            return null;
+        });
+    }
+
     // ── Reference shifting (for fill & paste) ────────────────────────────────
 
     /**
@@ -507,6 +536,7 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
         remapReferencesToTable,
         shiftReferencesForInsert,
         shiftReferencesForDelete,
+        shiftReferencesForMove,
         shiftFormulaReferences,
         remapRowIdx: remapIndex,
         remapColIdx: remapIndex,

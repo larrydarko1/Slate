@@ -5,6 +5,7 @@ import ContextMenu from '@/renderer/components/ContextMenu.vue';
 import IconExternalLink from '@/renderer/components/icons/IconExternalLink.vue';
 import NoteEditor from '@/renderer/components/table/NoteEditor.vue';
 import NotePopup from '@/renderer/components/table/NotePopup.vue';
+import { useCellMove } from '@/renderer/composables/table/useCellMove';
 import { useFillHandle } from '@/renderer/composables/table/useFillHandle';
 import { useRowColReorder } from '@/renderer/composables/table/useRowColReorder';
 import { useTableCellRendering } from '@/renderer/composables/table/useTableCellRendering';
@@ -92,6 +93,19 @@ const tableStyle = computed((): { left: string; top: string; zIndex: number } =>
 // ── Cell interaction ─────────────────────────────────────────────────────────
 
 let isDragging = false;
+
+/** A plain press: select the cell and start extending the selection as the pointer moves. */
+function startSelectionDrag(ci: number, ri: number): void {
+    ss.selectCell(props.table.id, ci, ri);
+    isDragging = true;
+    document.addEventListener('mouseup', onSelectionMouseUp);
+}
+
+const { moveState, pressSelection, hoverCell, isCellLifted, isCellInMovePreview } = useCellMove(
+    tableRef,
+    ss,
+    startSelectionDrag,
+);
 let isChartDragging = false;
 let chartDragStart: { ci: number; ri: number } | null = null;
 
@@ -134,10 +148,8 @@ function onCellMouseDown(ci: number, ri: number, e: MouseEvent): void {
 
     if (e.shiftKey) {
         ss.extendSelection(props.table.id, ci, ri);
-    } else {
-        ss.selectCell(props.table.id, ci, ri);
-        isDragging = true;
-        document.addEventListener('mouseup', onSelectionMouseUp);
+    } else if (!pressSelection(ci, ri)) {
+        startSelectionDrag(ci, ri);
     }
     void nextTick((): void => tableEl.value?.focus());
 }
@@ -151,6 +163,7 @@ function onCellMouseOver(ci: number, ri: number): void {
         ss.handleChartCellSelection(props.table.id, startCol, startRow, endCol, endRow, true);
         return;
     }
+    if (hoverCell(ci, ri)) return;
     if (isDragging) {
         ss.extendSelection(props.table.id, ci, ri);
     }
@@ -314,7 +327,11 @@ watch(
     <div
         ref="tableEl"
         class="spreadsheet-table"
-        :class="{ 'active': isActiveTable, 'formula-mode': ss.formulaMode.value && ss.isEditing.value }"
+        :class="{
+            'active': isActiveTable,
+            'formula-mode': ss.formulaMode.value && ss.isEditing.value,
+            'moving-cells': moveState?.lifted === true,
+        }"
         :style="tableStyle"
         tabindex="0"
         @mousedown="onTableMouseDown"
@@ -452,7 +469,10 @@ watch(
                             <td
                                 v-if="!ss.isCellHiddenByMerge(table.id, ci, ri)"
                                 class="cell"
-                                :class="cellClasses(ci, ri)"
+                                :class="[
+                                    cellClasses(ci, ri),
+                                    { 'lifted': isCellLifted(ci, ri), 'in-move': isCellInMovePreview(ci, ri) },
+                                ]"
                                 :style="cellTdStyle(ci, ri)"
                                 :colspan="mergedColspan(ci, ri)"
                                 :rowspan="mergedRowspan(ci, ri)"
@@ -586,6 +606,10 @@ watch(
                 background: $accent-color-alpha !important;
             }
         }
+    }
+
+    &.moving-cells .cell {
+        cursor: grabbing;
     }
 }
 
@@ -785,11 +809,16 @@ watch(
         z-index: $z-base;
     }
 
-    &.in-fill {
+    &.in-fill,
+    &.in-move {
         background: $accent-color-alpha;
         outline: 1px dashed $accent-color;
         outline-offset: -1px;
         z-index: $z-base;
+    }
+
+    &.lifted {
+        opacity: 0.4;
     }
 
     &.merged-cell {

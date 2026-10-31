@@ -358,4 +358,123 @@ describe('clipboard', () => {
             expect(ss.getDisplayValue(id, 0, 1)).toBe('');
         });
     });
+
+    describe('moveCells', () => {
+        const block = (startCol: number, startRow: number, endCol: number, endRow: number) => ({
+            tableId: id,
+            startCol,
+            startRow,
+            endCol,
+            endRow,
+        });
+
+        it('carries values and formats over, empties the source, and selects where they landed', () => {
+            ss.setCellValue(id, 0, 0, 'a');
+            ss.setCellValue(id, 0, 1, 'b');
+            ss.setCellFormat(id, 0, 0, { bold: true });
+            expect(ss.moveCells(id, block(0, 0, 0, 1), 2, 3)).toBe(true);
+            expect(ss.getDisplayValue(id, 2, 3)).toBe('a');
+            expect(ss.getDisplayValue(id, 2, 4)).toBe('b');
+            expect(ss.findCell(id, 2, 3)?.format).toEqual({ bold: true });
+            expect(ss.getDisplayValue(id, 0, 0)).toBe('');
+            expect(ss.findCell(id, 0, 0)?.format).toBeUndefined();
+            expect(ss.selectionRange.value).toMatchObject({ startCol: 2, startRow: 3, endCol: 2, endRow: 4 });
+            expect(ss.activeCell.value).toMatchObject({ col: 2, row: 3 });
+        });
+
+        it('keeps a moved formula naming the cells it named', () => {
+            ss.setCellValue(id, 0, 0, '4');
+            ss.setCellValue(id, 1, 0, '=A1*2');
+            ss.moveCells(id, block(1, 0, 1, 0), 3, 2);
+            expect(ss.getRawValue(id, 3, 2)).toBe('=A1*2');
+            expect(ss.getDisplayValue(id, 3, 2)).toBe('8');
+        });
+
+        it('points references to a moved cell at where it went', () => {
+            ss.setCellValue(id, 0, 0, '4');
+            ss.setCellValue(id, 2, 0, '=A1+1');
+            ss.moveCells(id, block(0, 0, 0, 0), 0, 4);
+            expect(ss.getRawValue(id, 2, 0)).toBe('=A5+1');
+            expect(ss.getDisplayValue(id, 2, 0)).toBe('5');
+        });
+
+        it('moves a formula and the cells it reads together, keeping them linked', () => {
+            ss.setCellValue(id, 0, 0, '4');
+            ss.setCellValue(id, 1, 0, '=A1*2');
+            ss.moveCells(id, block(0, 0, 1, 0), 0, 2);
+            expect(ss.getRawValue(id, 1, 2)).toBe('=A3*2');
+            expect(ss.getDisplayValue(id, 1, 2)).toBe('8');
+        });
+
+        it('moves a range that lay inside the block and leaves one that only overlapped it', () => {
+            ss.setCellValue(id, 3, 0, '=SUM(A1:A2)+SUM(A1:A5)');
+            ss.moveCells(id, block(0, 0, 0, 1), 1, 0);
+            expect(ss.getRawValue(id, 3, 0)).toBe('=SUM(B1:B2)+SUM(A1:A5)');
+        });
+
+        it('turns a reference to a cell the block lands on into #REF!', () => {
+            ss.setCellValue(id, 0, 0, '1');
+            ss.setCellValue(id, 0, 5, '2');
+            ss.setCellValue(id, 2, 0, '=A6');
+            ss.moveCells(id, block(0, 0, 0, 0), 0, 5);
+            expect(ss.getRawValue(id, 2, 0)).toBe('=#REF!');
+            expect(ss.getDisplayValue(id, 0, 5)).toBe('1');
+        });
+
+        it('moves a block onto part of itself', () => {
+            for (const r of [0, 1, 2]) ss.setCellValue(id, 0, r, String(r + 1));
+            ss.moveCells(id, block(0, 0, 0, 2), 0, 1);
+            expect([0, 1, 2, 3].map((r) => ss.getDisplayValue(id, 0, r))).toEqual(['', '1', '2', '3']);
+        });
+
+        it('points a reference from another table at the moved cell', () => {
+            ss.renameTable(id, 'Data');
+            ss.addTable();
+            const other = ss.tables.value[1]!.id;
+            ss.setCellValue(id, 0, 0, '9');
+            ss.setCellValue(other, 0, 0, '=Data::A1');
+            ss.moveCells(id, block(0, 0, 0, 0), 1, 1);
+            expect(ss.getRawValue(other, 0, 0)).toBe('=Data::B2');
+        });
+
+        it('grows the table to fit a move past its edge', () => {
+            const table = ss.tables.value[0]!;
+            ss.setCellValue(id, 0, 0, 'x');
+            ss.moveCells(id, block(0, 0, 0, 0), table.columns.length, table.rows.length);
+            expect(ss.getDisplayValue(id, 5, 8)).toBe('x');
+        });
+
+        it('carries a merge inside the block along and drops one it lands on', () => {
+            const table = ss.tables.value[0]!;
+            table.mergedRegions = [
+                { startCol: 0, startRow: 0, endCol: 1, endRow: 0 },
+                { startCol: 0, startRow: 4, endCol: 1, endRow: 4 },
+            ];
+            ss.moveCells(id, block(0, 0, 1, 0), 0, 4);
+            expect(table.mergedRegions).toEqual([{ startCol: 0, startRow: 4, endCol: 1, endRow: 4 }]);
+        });
+
+        it('refuses a move that would cut a merge in two', () => {
+            ss.tables.value[0]!.mergedRegions = [{ startCol: 0, startRow: 0, endCol: 1, endRow: 0 }];
+            ss.setCellValue(id, 0, 0, 'x');
+            expect(ss.moveCells(id, block(0, 0, 0, 0), 0, 3)).toBe(false);
+            expect(ss.getDisplayValue(id, 0, 0)).toBe('x');
+        });
+
+        it('refuses a move to nowhere or off the top-left', () => {
+            expect(ss.moveCells(id, block(1, 1, 1, 1), 1, 1)).toBe(false);
+            expect(ss.moveCells(id, block(1, 1, 1, 1), -1, 0)).toBe(false);
+            expect(ss.moveCells('nope', block(1, 1, 1, 1), 2, 2)).toBe(false);
+        });
+
+        it('undoes in one step', async () => {
+            ss.setCellValue(id, 0, 0, 'x');
+            ss.setCellValue(id, 1, 0, '=A1');
+            await Promise.resolve();
+            ss.moveCells(id, block(0, 0, 0, 0), 0, 3);
+            ss.undo();
+            expect(ss.getDisplayValue(id, 0, 0)).toBe('x');
+            expect(ss.getRawValue(id, 1, 0)).toBe('=A1');
+        });
+    });
 });

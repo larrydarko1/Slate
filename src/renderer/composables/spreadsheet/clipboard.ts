@@ -1,9 +1,10 @@
 /**
  * createClipboard — copy, cut, paste, and fill operations.
- * Owns: internal clipboard buffer, copyCells, cutCells, pasteCells, fillCells.
+ * Owns: internal clipboard buffer, copyCells, cutCells, pasteCells, fillCells, moveCells.
  * Does NOT own: cell access (useCells.ts), formula shifting (useFormulaEngine.ts).
  */
 import { isNumericType, type CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import type { CellRect, SpreadsheetFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { Cell, CellFormat, SelectionRange } from '@/renderer/types/spreadsheet';
@@ -14,6 +15,7 @@ export type SpreadsheetClipboard = {
     cutCells: () => Promise<void>;
     pasteCells: () => Promise<void>;
     fillCells: (tableId: string, source: SelectionRange, target: SelectionRange) => void;
+    moveCells: (tableId: string, source: SelectionRange, toCol: number, toRow: number) => boolean;
 };
 
 type ClipboardDeps = {
@@ -27,6 +29,8 @@ type ClipboardDeps = {
     setCellFormat: (tableId: string, col: number, row: number, fmt: Partial<CellFormat>) => void;
     shiftFormulaReferences: (formula: string, colDelta: number, rowDelta: number) => string;
     batchRecalculation: (run: () => void) => void;
+    shiftReferencesForMove: SpreadsheetFormulaEngine['shiftReferencesForMove'];
+    recalculate: () => void;
 };
 
 type ClipboardCell = {
@@ -56,6 +60,20 @@ function findSeries(cells: (Cell | null)[]): Series | null {
     const step = second - start;
     const steady = values.every((value, i): boolean => Math.abs(value - (start + step * i)) < 1e-9);
     return steady ? { start, step, type } : null;
+}
+
+function overlaps(a: CellRect, b: CellRect): boolean {
+    return a.startCol <= b.endCol && b.startCol <= a.endCol && a.startRow <= b.endRow && b.startRow <= a.endRow;
+}
+
+/** Whether `inner` lies wholly inside `outer`. */
+function contains(outer: CellRect, inner: CellRect): boolean {
+    return (
+        inner.startCol >= outer.startCol &&
+        inner.endCol <= outer.endCol &&
+        inner.startRow >= outer.startRow &&
+        inner.endRow <= outer.endRow
+    );
 }
 
 /** `n` mod `size`, kept non-negative for an `n` below zero. */
@@ -272,5 +290,72 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
         });
     }
 
-    return { copyCells, cutCells, pasteCells, fillCells };
+    /**
+     * Moves the block `source` so its top-left lands on (toCol, toRow), the way
+     * cut and paste would: the cells travel with their formulas, formats and
+     * notes; the formulas keep naming the cells they named; references to the
+     * moved cells follow them; and whatever the block lands on is replaced.
+     *
+     * Refuses (returning false) a move to nowhere, one off the top or left of
+     * the table, and one that would cut a merged region in two. The table grows
+     * to fit a move past its bottom or right edge.
+     */
+    function moveCells(tableId: string, source: SelectionRange, toCol: number, toRow: number): boolean {
+        const table = deps.findTable(tableId);
+        if (table === null || toCol < 0 || toRow < 0) return false;
+        const colDelta = toCol - source.startCol;
+        const rowDelta = toRow - source.startRow;
+        if (colDelta === 0 && rowDelta === 0) return false;
+
+        const dest: CellRect = {
+            startCol: toCol,
+            startRow: toRow,
+            endCol: source.endCol + colDelta,
+            endRow: source.endRow + rowDelta,
+        };
+        const straddles = (m: CellRect, rect: CellRect): boolean => overlaps(m, rect) && !contains(rect, m);
+        if (table.mergedRegions.some((m): boolean => straddles(m, source) || straddles(m, dest))) return false;
+
+        deps.pushUndo();
+        while (table.rows.length <= dest.endRow) table.rows.push(table.columns.map((): Cell => createEmptyCell()));
+        while (table.columns.length <= dest.endCol) {
+            table.columns.push({ id: generateId('col'), width: 120 });
+            for (const row of table.rows) row.push(createEmptyCell());
+        }
+
+        // References first, while every cell is still where they say it is.
+        deps.shiftReferencesForMove(tableId, source, colDelta, rowDelta);
+
+        // Lift the whole block before dropping any of it, so a move onto
+        // itself does not read cells it has already overwritten.
+        const lifted = table.rows.slice(source.startRow, source.endRow + 1).map((row): Cell[] => {
+            const block = row.slice(source.startCol, source.endCol + 1);
+            row.splice(source.startCol, block.length, ...block.map((): Cell => createEmptyCell()));
+            return block;
+        });
+        for (const [i, block] of lifted.entries()) {
+            table.rows[toRow + i]?.splice(toCol, block.length, ...block);
+        }
+
+        // A merge inside the block moves with it; one it lands on is gone.
+        table.mergedRegions = table.mergedRegions
+            .filter((m): boolean => contains(source, m) || !contains(dest, m))
+            .map((m) =>
+                contains(source, m)
+                    ? {
+                          startCol: m.startCol + colDelta,
+                          startRow: m.startRow + rowDelta,
+                          endCol: m.endCol + colDelta,
+                          endRow: m.endRow + rowDelta,
+                      }
+                    : m,
+            );
+
+        state.selectionRange.value = { tableId, ...dest };
+        state.activeCell.value = { tableId, col: toCol, row: toRow };
+        deps.recalculate();
+        return true;
+    }
+
+    return { copyCells, cutCells, pasteCells, fillCells, moveCells };
 }
