@@ -84,6 +84,10 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
 
     function recalculate(): void {
         const evaluating = new Set<string>();
+        // Each formula is evaluated once per pass. Without this, a cell read for
+        // both its value and its type is evaluated twice, and so is everything it
+        // depends on — a chain of n formulas cost 2ⁿ evaluations.
+        const resolved = new Set<string>();
 
         function findCellGlobal(tableId: string, col: number, row: number): Cell | null {
             const found = deps.findTableGlobal(tableId);
@@ -102,6 +106,7 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
             if (cell === null) return null;
 
             if (cell.formula !== undefined) {
+                if (resolved.has(key)) return cell.computed ?? null;
                 evaluating.add(key);
                 try {
                     const result = evaluateFormulaTyped(cell.formula, buildFormulaContext(tableId));
@@ -114,6 +119,7 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                     cell.computedType = 'text';
                 }
                 evaluating.delete(key);
+                resolved.add(key);
                 return cell.computed ?? null;
             }
 

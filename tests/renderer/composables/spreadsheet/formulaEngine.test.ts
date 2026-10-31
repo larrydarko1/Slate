@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
 import { createState } from '@/renderer/composables/spreadsheet/state';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
-import { createDefaultTable, createEmptyCell } from '@/renderer/types/spreadsheet';
+import { createDefaultCanvas, createDefaultTable, createEmptyCell } from '@/renderer/types/spreadsheet';
 
 /**
  * remapFormulaReferences and the index mappers are wiring between the engine and
@@ -54,6 +54,38 @@ describe('formulaEngine', () => {
             ss.setCellValue(id, 0, 0, '=A2');
             ss.setCellValue(id, 0, 1, '=A1');
             expect(ss.getDisplayValue(id, 0, 0)).toMatch(/^#/);
+        });
+
+        it('evaluates a long chain in linear time', () => {
+            // A1 = 1, A2 = A1+1, ... — every formula reads the one above. Counting
+            // cell lookups keeps the test fast even if the cost goes exponential
+            // again: at this length that is thousands of lookups instead of ~100.
+            const length = 12;
+            const state = createState();
+            const canvas = createDefaultCanvas('C');
+            const table = createDefaultTable(0, 0, 'T');
+            table.rows = Array.from({ length }, (_, rowIdx) => [
+                rowIdx === 0
+                    ? { value: 1, cellType: 'integer' as const }
+                    : { value: null, cellType: 'empty' as const, formula: `A${rowIdx}+1` },
+            ]);
+            table.columns = table.columns.slice(0, 1);
+            canvas.tables.push(table);
+            state.canvases.value = [canvas];
+
+            let lookups = 0;
+            const engine = createFormulaEngine(state, {
+                findTableGlobal: (tableId) => {
+                    lookups++;
+                    return tableId === table.id ? { table, canvas } : null;
+                },
+                findTableByName: () => null,
+                replaceNameInRef: (ref) => ref,
+            });
+            engine.recalculate();
+
+            expect(table.rows[length - 1]![0]!.computed).toBe(length);
+            expect(lookups).toBeLessThan(length * 10);
         });
 
         it('reads a cell in another table on the same canvas', () => {
