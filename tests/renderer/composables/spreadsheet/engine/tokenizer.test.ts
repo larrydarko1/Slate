@@ -202,6 +202,20 @@ describe('EOF', () => {
     });
 });
 
+describe('error literals', () => {
+    it('tokenizes #REF! as one error token', () => {
+        expect(tokenTypes('#REF!+1')).toEqual([
+            { type: 'ERROR', value: '#REF!' },
+            { type: 'PLUS', value: '+' },
+            { type: 'NUMBER', value: '1' },
+        ]);
+    });
+
+    it('throws on any other #', () => {
+        expect(() => tokenize('#N/A')).toThrow('Unexpected character: #');
+    });
+});
+
 describe('source offsets', () => {
     it('spans each token in the source, skipping whitespace', () => {
         const spans = tokenize('SUM( A1 :: B2 )').map(({ start, end }) => [start, end]);
