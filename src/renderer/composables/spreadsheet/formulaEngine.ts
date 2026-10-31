@@ -14,6 +14,7 @@ import { columnLetterToIndex, indexToColumnLetter } from '@/renderer/types/sprea
 
 export type SpreadsheetFormulaEngine = {
     recalculate: () => void;
+    batchRecalculation: (run: () => void) => void;
     remapFormulaReferences: (
         formula: string,
         colMapper: ((col: number) => number) | null,
@@ -50,7 +51,14 @@ type RefShape = {
 export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEngineDeps): SpreadsheetFormulaEngine {
     // ── Recalculation ────────────────────────────────────────────────────────
 
+    let batchDepth = 0;
+    let recalcPending = false;
+
     function recalculate(): void {
+        if (batchDepth > 0) {
+            recalcPending = true;
+            return;
+        }
         const evaluating = new Set<string>();
         // Each formula is evaluated once per pass. Without this, a cell read for
         // both its value and its type is evaluated twice, and so is everything it
@@ -195,6 +203,24 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
         // Evaluate formulas across ALL canvases
         for (const cv of state.canvases.value) {
             for (const table of cv.tables) resolveFormulasIn(table);
+        }
+    }
+
+    /**
+     * Runs `run` with recalculation held back, then recalculates once if
+     * anything asked for it. A fill or paste writes cell after cell, and each
+     * write asks for a full pass; without this, filling n rows cost n passes.
+     */
+    function batchRecalculation(run: () => void): void {
+        batchDepth++;
+        try {
+            run();
+        } finally {
+            batchDepth--;
+            if (batchDepth === 0 && recalcPending) {
+                recalcPending = false;
+                recalculate();
+            }
         }
     }
 
@@ -364,6 +390,7 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
 
     return {
         recalculate,
+        batchRecalculation,
         remapFormulaReferences,
         remapAllFormulasInTable,
         shiftFormulaReferences,

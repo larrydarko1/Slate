@@ -88,6 +88,28 @@ describe('formulaEngine', () => {
             expect(lookups).toBeLessThan(length * 10);
         });
 
+        it('holds recalculation back until a batch ends, then runs it once', () => {
+            ss.setCellValue(id, 0, 0, '2');
+            ss.setCellValue(id, 1, 0, '=A1*2');
+            ss.batchRecalculation(() => {
+                ss.setCellValue(id, 0, 0, '3');
+                ss.batchRecalculation(() => ss.setCellValue(id, 0, 0, '5'));
+                expect(ss.getDisplayValue(id, 1, 0)).toBe('4');
+            });
+            expect(ss.getDisplayValue(id, 1, 0)).toBe('10');
+        });
+
+        it('still recalculates when a batch throws', () => {
+            ss.setCellValue(id, 1, 0, '=A1*2');
+            expect(() =>
+                ss.batchRecalculation(() => {
+                    ss.setCellValue(id, 0, 0, '4');
+                    throw new Error('boom');
+                }),
+            ).toThrow('boom');
+            expect(ss.getDisplayValue(id, 1, 0)).toBe('8');
+        });
+
         it('reads a cell in another table on the same canvas', () => {
             ss.addTable();
             const other = ss.tables.value[1]!.id;

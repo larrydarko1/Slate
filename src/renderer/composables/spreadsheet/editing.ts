@@ -20,6 +20,7 @@ type EditingDeps = {
     setCellValue: (tableId: string, col: number, row: number, raw: string) => void;
     getRawValue: (tableId: string, col: number, row: number) => string;
     pushUndo: () => void;
+    batchRecalculation: (run: () => void) => void;
 };
 
 export function createEditing(state: SpreadsheetCoreState, deps: EditingDeps): SpreadsheetEditing {
@@ -67,11 +68,13 @@ export function createEditing(state: SpreadsheetCoreState, deps: EditingDeps): S
         deps.pushUndo();
         const sr = deps.findNormalizedSelection();
         if (sr !== null && (sr.startCol !== sr.endCol || sr.startRow !== sr.endRow)) {
-            for (let rowIdx = sr.startRow; rowIdx <= sr.endRow; rowIdx++) {
-                for (let colIdx = sr.startCol; colIdx <= sr.endCol; colIdx++) {
-                    deps.setCellValue(sr.tableId, colIdx, rowIdx, '');
+            deps.batchRecalculation((): void => {
+                for (let rowIdx = sr.startRow; rowIdx <= sr.endRow; rowIdx++) {
+                    for (let colIdx = sr.startCol; colIdx <= sr.endCol; colIdx++) {
+                        deps.setCellValue(sr.tableId, colIdx, rowIdx, '');
+                    }
                 }
-            }
+            });
         } else {
             const { tableId, col, row } = state.activeCell.value;
             deps.setCellValue(tableId, col, row, '');

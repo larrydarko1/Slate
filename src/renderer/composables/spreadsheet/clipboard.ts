@@ -25,7 +25,7 @@ type ClipboardDeps = {
     getRawValue: (tableId: string, col: number, row: number) => string;
     setCellFormat: (tableId: string, col: number, row: number, fmt: Partial<CellFormat>) => void;
     shiftFormulaReferences: (formula: string, colDelta: number, rowDelta: number) => string;
-    recalculate: () => void;
+    batchRecalculation: (run: () => void) => void;
 };
 
 type ClipboardCell = {
@@ -125,36 +125,38 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
             return `=${deps.shiftFormulaReferences(raw.substring(1), colDelta, rowDelta)}`;
         }
 
-        for (const [rowIdx, dataRow] of data.entries()) {
-            for (const [colIdx, entry] of dataRow.entries()) {
-                deps.setCellValue(
-                    tableId,
-                    startCol + colIdx,
-                    startRow + rowIdx,
-                    shiftIfMoved(entry.raw, colIdx, rowIdx),
-                );
-                if (entry.format !== undefined) {
-                    deps.setCellFormat(tableId, startCol + colIdx, startRow + rowIdx, entry.format);
+        deps.batchRecalculation((): void => {
+            for (const [rowIdx, dataRow] of data.entries()) {
+                for (const [colIdx, entry] of dataRow.entries()) {
+                    deps.setCellValue(
+                        tableId,
+                        startCol + colIdx,
+                        startRow + rowIdx,
+                        shiftIfMoved(entry.raw, colIdx, rowIdx),
+                    );
+                    if (entry.format !== undefined) {
+                        deps.setCellFormat(tableId, startCol + colIdx, startRow + rowIdx, entry.format);
+                    }
                 }
             }
-        }
 
-        if (clipboardIsCut && clipboardSource !== null) {
-            const src = clipboardSource;
-            // Clearing the source of a cut, except where it overlaps the paste
-            // target — those cells were just written.
-            function clearCutRow(rowIdx: number): void {
-                for (let colIdx = src.startCol; colIdx <= src.endCol; colIdx++) {
-                    const destRow = startRow + (rowIdx - src.startRow);
-                    const destCol = startCol + (colIdx - src.startCol);
-                    if (src.tableId === tableId && colIdx === destCol && rowIdx === destRow) continue;
-                    deps.setCellValue(src.tableId, colIdx, rowIdx, '');
+            if (clipboardIsCut && clipboardSource !== null) {
+                const src = clipboardSource;
+                // Clearing the source of a cut, except where it overlaps the paste
+                // target — those cells were just written.
+                function clearCutRow(rowIdx: number): void {
+                    for (let colIdx = src.startCol; colIdx <= src.endCol; colIdx++) {
+                        const destRow = startRow + (rowIdx - src.startRow);
+                        const destCol = startCol + (colIdx - src.startCol);
+                        if (src.tableId === tableId && colIdx === destCol && rowIdx === destRow) continue;
+                        deps.setCellValue(src.tableId, colIdx, rowIdx, '');
+                    }
                 }
+                for (let rowIdx = src.startRow; rowIdx <= src.endRow; rowIdx++) clearCutRow(rowIdx);
+                clipboardIsCut = false;
+                clipboardSource = null;
             }
-            for (let rowIdx = src.startRow; rowIdx <= src.endRow; rowIdx++) clearCutRow(rowIdx);
-            clipboardIsCut = false;
-            clipboardSource = null;
-        }
+        });
 
         state.selectionRange.value = {
             tableId,
@@ -163,8 +165,6 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
             endCol: startCol + Math.max(...data.map((r): number => r.length)) - 1,
             endRow: startRow + data.length - 1,
         };
-
-        deps.recalculate();
     }
 
     function fillCells(tableId: string, source: SelectionRange, target: SelectionRange): void {
@@ -185,36 +185,37 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
             for (const row of table.rows) row.push(createEmptyCell());
         }
 
-        for (let rowIdx = target.startRow; rowIdx <= target.endRow; rowIdx++) {
-            for (let colIdx = target.startCol; colIdx <= target.endCol; colIdx++) {
-                if (
-                    rowIdx >= source.startRow &&
-                    rowIdx <= source.endRow &&
-                    colIdx >= source.startCol &&
-                    colIdx <= source.endCol
-                )
-                    continue;
-                const srcR = source.startRow + ((rowIdx - target.startRow) % srcRows);
-                const srcC = source.startCol + ((colIdx - target.startCol) % srcCols);
-                const srcCell = deps.findCell(tableId, srcC, srcR);
-                if (srcCell === null) continue;
+        deps.batchRecalculation((): void => {
+            for (let rowIdx = target.startRow; rowIdx <= target.endRow; rowIdx++) {
+                for (let colIdx = target.startCol; colIdx <= target.endCol; colIdx++) {
+                    if (
+                        rowIdx >= source.startRow &&
+                        rowIdx <= source.endRow &&
+                        colIdx >= source.startCol &&
+                        colIdx <= source.endCol
+                    )
+                        continue;
+                    const srcR = source.startRow + ((rowIdx - target.startRow) % srcRows);
+                    const srcC = source.startCol + ((colIdx - target.startCol) % srcCols);
+                    const srcCell = deps.findCell(tableId, srcC, srcR);
+                    if (srcCell === null) continue;
 
-                const colDelta = colIdx - srcC;
-                const rowDelta = rowIdx - srcR;
+                    const colDelta = colIdx - srcC;
+                    const rowDelta = rowIdx - srcR;
 
-                if (srcCell.formula !== undefined) {
-                    const shifted = deps.shiftFormulaReferences(srcCell.formula, colDelta, rowDelta);
-                    deps.setCellValue(tableId, colIdx, rowIdx, `=${shifted}`);
-                } else {
-                    const raw = deps.getRawValue(tableId, srcC, srcR);
-                    deps.setCellValue(tableId, colIdx, rowIdx, raw);
-                }
-                if (srcCell.format !== undefined) {
-                    deps.setCellFormat(tableId, colIdx, rowIdx, { ...srcCell.format });
+                    if (srcCell.formula !== undefined) {
+                        const shifted = deps.shiftFormulaReferences(srcCell.formula, colDelta, rowDelta);
+                        deps.setCellValue(tableId, colIdx, rowIdx, `=${shifted}`);
+                    } else {
+                        const raw = deps.getRawValue(tableId, srcC, srcR);
+                        deps.setCellValue(tableId, colIdx, rowIdx, raw);
+                    }
+                    if (srcCell.format !== undefined) {
+                        deps.setCellFormat(tableId, colIdx, rowIdx, { ...srcCell.format });
+                    }
                 }
             }
-        }
-        deps.recalculate();
+        });
     }
 
     return { copyCells, cutCells, pasteCells, fillCells };
