@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
+import { dateToSerial, formatDate } from '@/renderer/composables/spreadsheet/engine/dates';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 
 /**
@@ -256,6 +257,96 @@ describe('clipboard', () => {
                 { tableId: id, startCol: 0, startRow: 0, endCol: 4, endRow: 0 },
             );
             expect([0, 1, 2].map((c) => ss.getDisplayValue(id, c, 0))).toEqual(['b', 'a', 'b']);
+        });
+
+        describe('series', () => {
+            const range = (startCol: number, startRow: number, endCol: number, endRow: number) => ({
+                tableId: id,
+                startCol,
+                startRow,
+                endCol,
+                endRow,
+            });
+            const column = (col: number, rows: number[]) => rows.map((r) => ss.findCell(id, col, r)?.value);
+
+            it('counts a single date on a day at a time', () => {
+                ss.setCellValue(id, 0, 0, '2026-03-30');
+                ss.fillCells(id, range(0, 0, 0, 0), range(0, 0, 0, 3));
+                const start = dateToSerial(2026, 3, 30);
+                expect(column(0, [1, 2, 3])).toEqual([start + 1, start + 2, start + 3]);
+                expect(ss.getCellType(id, 0, 3)).toBe('date');
+                expect(ss.getDisplayValue(id, 0, 2)).toBe(formatDate(dateToSerial(2026, 4, 1)));
+            });
+
+            it('counts a date back when filling up', () => {
+                ss.setCellValue(id, 0, 3, '2026-03-01');
+                ss.fillCells(id, range(0, 3, 0, 3), range(0, 1, 0, 3));
+                expect(ss.findCell(id, 0, 2)?.value).toBe(dateToSerial(2026, 2, 28));
+            });
+
+            it('continues the step between two numbers', () => {
+                ss.setCellValue(id, 0, 0, '1');
+                ss.setCellValue(id, 0, 1, '3');
+                ss.fillCells(id, range(0, 0, 0, 1), range(0, 0, 0, 4));
+                expect(column(0, [2, 3, 4])).toEqual([5, 7, 9]);
+            });
+
+            it('continues weekly dates by the week', () => {
+                ss.setCellValue(id, 0, 0, '2026-03-02');
+                ss.setCellValue(id, 0, 1, '2026-03-09');
+                ss.fillCells(id, range(0, 0, 0, 1), range(0, 0, 0, 2));
+                expect(ss.findCell(id, 0, 2)).toMatchObject({ value: dateToSerial(2026, 3, 16), cellType: 'date' });
+            });
+
+            it('keeps the type of the series, decimals rounded clean', () => {
+                ss.setCellValue(id, 0, 0, '10%');
+                ss.setCellValue(id, 0, 1, '20%');
+                ss.fillCells(id, range(0, 0, 0, 1), range(0, 0, 0, 2));
+                expect(ss.getDisplayValue(id, 0, 2)).toBe('30%');
+                expect(ss.findCell(id, 0, 2)?.value).toBe(0.3);
+            });
+
+            it('fills a series across a row', () => {
+                ss.setCellValue(id, 0, 0, '2026-03-04');
+                ss.fillCells(id, range(0, 0, 0, 0), range(0, 0, 2, 0));
+                expect(ss.findCell(id, 2, 0)?.value).toBe(dateToSerial(2026, 3, 6));
+            });
+
+            it('copies a single number rather than counting it on', () => {
+                ss.setCellValue(id, 0, 0, '5');
+                ss.fillCells(id, range(0, 0, 0, 0), range(0, 0, 0, 2));
+                expect(column(0, [1, 2])).toEqual([5, 5]);
+            });
+
+            it('repeats numbers whose steps differ', () => {
+                for (const [r, v] of ['1', '2', '4'].entries()) ss.setCellValue(id, 0, r, v);
+                ss.fillCells(id, range(0, 0, 0, 2), range(0, 0, 0, 5));
+                expect(column(0, [3, 4, 5])).toEqual([1, 2, 4]);
+            });
+
+            it('repeats a mix of types', () => {
+                ss.setCellValue(id, 0, 0, '1');
+                ss.setCellValue(id, 0, 1, '2.5');
+                ss.fillCells(id, range(0, 0, 0, 1), range(0, 0, 0, 3));
+                expect(column(0, [2, 3])).toEqual([1, 2.5]);
+            });
+
+            it('treats each column of the source as its own series', () => {
+                ss.setCellValue(id, 0, 0, '1');
+                ss.setCellValue(id, 0, 1, '2');
+                ss.setCellValue(id, 1, 0, 'a');
+                ss.setCellValue(id, 1, 1, 'b');
+                ss.fillCells(id, range(0, 0, 1, 1), range(0, 0, 1, 3));
+                expect(column(0, [2, 3])).toEqual([3, 4]);
+                expect(column(1, [2, 3])).toEqual(['a', 'b']);
+            });
+
+            it('replaces a formula that was in the way', () => {
+                ss.setCellValue(id, 0, 0, '2026-03-04');
+                ss.setCellValue(id, 0, 1, '=1+1');
+                ss.fillCells(id, range(0, 0, 0, 0), range(0, 0, 0, 1));
+                expect(ss.getRawValue(id, 0, 1)).toBe(formatDate(dateToSerial(2026, 3, 5)));
+            });
         });
 
         it('ignores an unknown table', () => {
