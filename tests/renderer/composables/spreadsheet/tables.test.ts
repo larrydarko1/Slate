@@ -317,18 +317,51 @@ describe('tables', () => {
             });
         });
 
-        /**
-         * Documents a gap, not a guarantee. `reorderRow` and `sortColumn` remap
-         * every formula in the table through `remapAllFormulasInTable`; insert
-         * and delete do not, so a reference across the insert point keeps its
-         * old coordinates and now reads a different cell.
-         */
-        it('does not re-point a formula across a row insert', () => {
-            ss.setCellValue(id, 0, 3, '9');
-            ss.setCellValue(id, 1, 0, '=A4');
-            ss.insertRowAt(id, 0);
-            expect(ss.getRawValue(id, 1, 1)).toBe('=A4');
-            expect(ss.getDisplayValue(id, 1, 1)).toBe('');
+        describe('keeping references pointed at the same cells', () => {
+            it('re-points a formula across a row insert', () => {
+                ss.setCellValue(id, 0, 3, '9');
+                ss.setCellValue(id, 1, 0, '=A4');
+                ss.insertRowAt(id, 0);
+                expect(ss.getRawValue(id, 1, 1)).toBe('=A5');
+                expect(ss.getDisplayValue(id, 1, 1)).toBe('9');
+            });
+
+            it('re-points a formula across a column insert', () => {
+                ss.setCellValue(id, 1, 0, '9');
+                ss.setCellValue(id, 0, 1, '=B1');
+                ss.insertColumnAt(id, 1);
+                expect(ss.getRawValue(id, 0, 1)).toBe('=C1');
+                expect(ss.getDisplayValue(id, 0, 1)).toBe('9');
+            });
+
+            it('shrinks a sum when a row inside it is deleted', () => {
+                for (const r of [0, 1, 2]) ss.setCellValue(id, 0, r, String(r + 1));
+                ss.setCellValue(id, 1, 0, '=SUM(A1:A3)');
+                ss.deleteRow(id, 1);
+                expect(ss.getRawValue(id, 1, 0)).toBe('=SUM(A1:A2)');
+                expect(ss.getDisplayValue(id, 1, 0)).toBe('4');
+            });
+
+            it('shows #REF! for a reference to a deleted column', () => {
+                ss.setCellValue(id, 1, 0, '5');
+                ss.setCellValue(id, 0, 0, '=B1*2');
+                ss.deleteColumn(id, 1);
+                expect(ss.getRawValue(id, 0, 0)).toBe('=#REF!*2');
+                expect(ss.getDisplayValue(id, 0, 0)).toBe('#REF!');
+            });
+
+            it('re-points a reference from another table', () => {
+                ss.renameTable(id, 'Data');
+                ss.addTable();
+                const other = ss.tables.value[1]!.id;
+                ss.setCellValue(id, 0, 2, '7');
+                ss.setCellValue(other, 0, 0, '=Data::A3');
+                ss.insertRowAt(id, 0);
+                expect(ss.getRawValue(other, 0, 0)).toBe('=Data::A4');
+                ss.deleteRow(id, 3);
+                // The whole reference goes, prefix included: Data::#REF! would not parse.
+                expect(ss.getRawValue(other, 0, 0)).toBe('=#REF!');
+            });
         });
     });
 
@@ -364,6 +397,16 @@ describe('tables', () => {
             ss.reorderColumns(id, 1, 2, 0);
             expect(ss.getDisplayValue(id, 0, 0)).toBe('c1');
             expect(ss.getDisplayValue(id, 1, 0)).toBe('c2');
+        });
+
+        it('keeps a reference from another table on the row it named', () => {
+            ss.renameTable(id, 'Data');
+            ss.addTable();
+            const other = ss.tables.value[1]!.id;
+            ss.setCellValue(other, 0, 0, '=Data::A1');
+            ss.reorderRow(id, 0, 2);
+            expect(ss.getRawValue(other, 0, 0)).toBe('=Data::A3');
+            expect(ss.getDisplayValue(other, 0, 0)).toBe('r0');
         });
 
         it('ignores a reorder on an unknown table', () => {

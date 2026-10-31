@@ -40,6 +40,19 @@ function gridContext(grid: CellValue[][], types?: CellDataType[][]): FormulaCont
     };
 }
 
+// ── Error literals ───────────────────────────────────────────────────────────
+
+describe('#REF!', () => {
+    it('evaluates to itself', () => {
+        expect(evaluateFormula('#REF!', emptyCtx)).toBe('#REF!');
+    });
+
+    it('propagates through arithmetic and functions', () => {
+        expect(evaluateFormula('#REF!*2', emptyCtx)).toBe('#REF!');
+        expect(evaluateFormula('SUM(1,#REF!)', emptyCtx)).toBe('#REF!');
+    });
+});
+
 // ── Arithmetic ───────────────────────────────────────────────────────────────
 
 describe('arithmetic', () => {

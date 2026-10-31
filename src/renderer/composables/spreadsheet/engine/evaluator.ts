@@ -23,6 +23,8 @@ export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
             return { value: node.value, type: 'text' };
         case 'boolean':
             return { value: node.value, type: 'boolean' };
+        case 'error':
+            return { value: node.value, type: 'text' };
         case 'cell_ref':
             return { value: ctx.getCellValue(node.col, node.row), type: ctx.getCellType(node.col, node.row) };
         case 'external_cell_ref': {

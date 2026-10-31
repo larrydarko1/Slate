@@ -10,6 +10,7 @@ export type TokenType =
     | 'NUMBER'
     | 'STRING'
     | 'BOOLEAN'
+    | 'ERROR'
     | 'CELL_REF'
     | 'IDENTIFIER'
     | 'QUOTED_NAME'
@@ -86,6 +87,13 @@ export function tokenize(src: string): Token[] {
             while (pos < src.length && at(pos) !== '"') text += at(pos++);
             pos++; // closing "
             return { type: 'STRING', value: text };
+        }
+
+        // #REF!, which stands where a reference used to point at cells that were
+        // deleted. It is the only error a formula is ever rewritten to contain.
+        if (src.startsWith('#REF!', pos)) {
+            pos += '#REF!'.length;
+            return { type: 'ERROR', value: '#REF!' };
         }
 
         // single-quoted name (for table/canvas references like 'Table 1')

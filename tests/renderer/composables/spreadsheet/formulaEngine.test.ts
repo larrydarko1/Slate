@@ -1,14 +1,20 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import { createFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
+import { createHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import { createState } from '@/renderer/composables/spreadsheet/state';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
-import { createDefaultCanvas, createDefaultTable, createEmptyCell } from '@/renderer/types/spreadsheet';
+import {
+    createDefaultCanvas,
+    createDefaultChart,
+    createDefaultTable,
+    type SpreadsheetTable,
+} from '@/renderer/types/spreadsheet';
 
 /**
- * remapFormulaReferences and the index mappers are wiring between the engine and
- * the reorder/sort modules, not part of the orchestrator's public surface — so
- * this half of the suite builds the engine directly.
+ * The reference rewrites and the index mappers are wiring between the engine and
+ * the table modules, not part of the orchestrator's public surface — so this
+ * half of the suite builds the engine directly.
  */
 function bareEngine(): ReturnType<typeof createFormulaEngine> {
     return createFormulaEngine(createState(), {
@@ -215,22 +221,6 @@ describe('formulaEngine', () => {
             expect(ss.shiftFormulaReferences('IF(A1,TRUE,FALSE)', 1, 0)).toBe('IF(B1,TRUE,FALSE)');
         });
 
-        it('remaps through a mapper pair', () => {
-            expect(
-                bareEngine().remapFormulaReferences(
-                    'A1+B2',
-                    (col) => col + 1,
-                    (row) => row + 10,
-                ),
-            ).toBe('B11+C12');
-        });
-
-        it('leaves an axis alone when its mapper is null', () => {
-            const engine = bareEngine();
-            expect(engine.remapFormulaReferences('A1', null, (row) => row + 1)).toBe('A2');
-            expect(engine.remapFormulaReferences('A1', (col) => col + 1, null)).toBe('B1');
-        });
-
         it('leaves a table whose name looks like a reference alone', () => {
             expect(bareEngine().shiftFormulaReferences('Q1::A1+A1', 0, 1)).toBe('Q1::A2+A2');
         });
@@ -239,28 +229,12 @@ describe('formulaEngine', () => {
             expect(bareEngine().shiftFormulaReferences('my_table1::A1+A1', 0, 1)).toBe('my_table1::A2+A2');
         });
 
-        it('leaves a reference into another table alone on a reorder, range end included', () => {
-            expect(bareEngine().remapFormulaReferences('SUM(T::A1:A3)+A1', null, (row) => row + 1)).toBe(
-                'SUM(T::A1:A3)+A2',
-            );
-        });
-
         it('copies spacing and lowercase text through untouched', () => {
             expect(bareEngine().shiftFormulaReferences('sum( a1 , "a1" )', 0, 1)).toBe('sum( A2 , "a1" )');
         });
 
         it('keeps an anchored axis in place and the anchors in the text', () => {
             expect(bareEngine().shiftFormulaReferences('$A$1+$A1+A$1+A1', 1, 1)).toBe('$A$1+$A2+B$1+B2');
-        });
-
-        it('moves an anchored reference on a reorder', () => {
-            expect(
-                bareEngine().remapFormulaReferences(
-                    '$A$1',
-                    (col) => col + 1,
-                    (row) => row + 1,
-                ),
-            ).toBe('$B$2');
         });
 
         it('returns a formula that does not tokenize unchanged', () => {
@@ -293,20 +267,127 @@ describe('formulaEngine', () => {
         });
     });
 
-    describe('remapping a whole table', () => {
-        it('rewrites every formula in place', () => {
-            const engine = bareEngine();
-            const table = createDefaultTable(0, 0, 'T');
-            table.rows = [
-                [
-                    { value: null, cellType: 'empty', formula: 'A1' },
-                    { value: 1, cellType: 'integer' },
-                ],
-                [{ value: null, cellType: 'empty', formula: 'B2' }, createEmptyCell()],
-            ];
-            engine.remapAllFormulasInTable(table, (col) => col + 1, null);
-            expect(table.rows[0]![0]!.formula).toBe('B1');
-            expect(table.rows[1]![0]!.formula).toBe('C2');
+    describe('rewriting references to one table', () => {
+        /**
+         * Tables T and Other on canvas C, with an engine wired to the real name
+         * lookup — what decides whether `Other::A1` points into T or not.
+         */
+        function workbook() {
+            const state = createState();
+            const canvas = createDefaultCanvas('C');
+            const t = createDefaultTable(0, 0, 'T');
+            const other = createDefaultTable(0, 0, 'Other');
+            canvas.tables.push(t, other);
+            state.canvases.value = [canvas];
+            const helpers = createHelpers(state);
+            const engine = createFormulaEngine(state, {
+                findTableGlobal: helpers.findTableGlobal,
+                findTableByName: helpers.findTableByName,
+                replaceNameInRef: helpers.replaceNameInRef,
+            });
+            const put = (table: SpreadsheetTable, formula: string): void => {
+                table.rows[0]![4] = { value: null, cellType: 'empty', formula };
+            };
+            const read = (table: SpreadsheetTable): string | undefined => table.rows[0]![4]!.formula;
+            return { state, canvas, engine, t, other, put, read };
+        }
+
+        it("remaps the table's own references and references to it from elsewhere", () => {
+            const { engine, t, other, put, read } = workbook();
+            put(t, 'A1+B2+Other::A1');
+            put(other, 'T::A1+A1');
+            engine.remapReferencesToTable(
+                t.id,
+                (col) => col + 1,
+                (row) => row + 10,
+            );
+            expect(read(t)).toBe('B11+C12+Other::A1');
+            expect(read(other)).toBe('T::B11+A1');
+        });
+
+        it('leaves an axis alone when its mapper is null', () => {
+            const { engine, t, put, read } = workbook();
+            put(t, 'A1');
+            engine.remapReferencesToTable(t.id, null, (row) => row + 1);
+            expect(read(t)).toBe('A2');
+            engine.remapReferencesToTable(t.id, (col) => col + 1, null);
+            expect(read(t)).toBe('B2');
+        });
+
+        it('moves an anchored reference, since the cell itself moved', () => {
+            const { engine, t, put, read } = workbook();
+            put(t, '$A$1');
+            engine.remapReferencesToTable(
+                t.id,
+                (col) => col + 1,
+                (row) => row + 1,
+            );
+            expect(read(t)).toBe('$B$2');
+        });
+
+        it('leaves a reference into another table exactly as written', () => {
+            const { engine, t, put, read } = workbook();
+            put(t, 'SUM(other::a1:a3)+a1');
+            engine.remapReferencesToTable(t.id, null, (row) => row + 1);
+            expect(read(t)).toBe('SUM(other::a1:a3)+A2');
+        });
+
+        it('rewrites chart data sources', () => {
+            const { engine, canvas, t } = workbook();
+            const chart = createDefaultChart(0, 0);
+            chart.dataSource = {
+                labelRef: { refString: 'T::A1:A3' },
+                seriesRefs: [{ refString: 'T::B1:B3,Other::B1' }],
+                useHeader: true,
+            };
+            canvas.charts.push(chart);
+            engine.shiftReferencesForInsert(t.id, 'row', 0, 1);
+            expect(chart.dataSource.labelRef?.refString).toBe('T::A2:A4');
+            expect(chart.dataSource.seriesRefs[0]?.refString).toBe('T::B2:B4,Other::B1');
+        });
+
+        it('pushes references at or past an insert along, growing a range across it', () => {
+            const { engine, t, put, read } = workbook();
+            put(t, 'A1+A3+SUM(A1:A3)+SUM(A1:A2)+$A$3');
+            engine.shiftReferencesForInsert(t.id, 'row', 2, 2);
+            expect(read(t)).toBe('A1+A5+SUM(A1:A5)+SUM(A1:A2)+$A$5');
+        });
+
+        it('shifts columns on a column insert', () => {
+            const { engine, t, put, read } = workbook();
+            put(t, 'A1+B1+C1');
+            engine.shiftReferencesForInsert(t.id, 'col', 1, 1);
+            expect(read(t)).toBe('A1+C1+D1');
+        });
+
+        it('pulls references past a delete back and turns deleted cells into #REF!', () => {
+            const { engine, t, put, read } = workbook();
+            put(t, 'A1+A2+A3*2');
+            engine.shiftReferencesForDelete(t.id, 'row', 1, 1);
+            expect(read(t)).toBe('A1+#REF!+A2*2');
+        });
+
+        it('shrinks a range that loses some of its lines, from either end', () => {
+            const { engine, t, put, read } = workbook();
+            put(t, 'SUM(A1:A5)+SUM(A2:A5)+SUM(A1:A2)+SUM(A5:A1)');
+            engine.shiftReferencesForDelete(t.id, 'row', 1, 2);
+            expect(read(t)).toBe('SUM(A1:A3)+SUM(A2:A3)+SUM(A1:A1)+SUM(A3:A1)');
+        });
+
+        it('turns a range lying wholly inside the delete into #REF!, prefix and all', () => {
+            const { engine, t, other, put, read } = workbook();
+            put(t, 'SUM(B2:C3)');
+            put(other, "SUM('T'::B2:B3)+1");
+            engine.shiftReferencesForDelete(t.id, 'row', 1, 2);
+            expect(read(t)).toBe('SUM(#REF!)');
+            expect(read(other)).toBe('SUM(#REF!)+1');
+        });
+
+        it('deletes columns by the same rules', () => {
+            const { engine, t, put, read } = workbook();
+            put(t, 'A1+B1+C1+SUM(A1:C1)');
+            engine.shiftReferencesForDelete(t.id, 'col', 1, 1);
+            expect(read(t)).toBe('A1+#REF!+B1+SUM(A1:B1)');
         });
     });
 });

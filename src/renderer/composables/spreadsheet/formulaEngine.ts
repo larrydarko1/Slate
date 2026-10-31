@@ -15,16 +15,13 @@ import { columnLetterToIndex, indexToColumnLetter } from '@/renderer/types/sprea
 export type SpreadsheetFormulaEngine = {
     recalculate: () => void;
     batchRecalculation: (run: () => void) => void;
-    remapFormulaReferences: (
-        formula: string,
-        colMapper: ((col: number) => number) | null,
-        rowMapper: ((row: number) => number) | null,
-    ) => string;
-    remapAllFormulasInTable: (
-        t: SpreadsheetTable,
+    remapReferencesToTable: (
+        tableId: string,
         colMapper: ((col: number) => number) | null,
         rowMapper: ((row: number) => number) | null,
     ) => void;
+    shiftReferencesForInsert: (tableId: string, axis: Axis, index: number, count: number) => void;
+    shiftReferencesForDelete: (tableId: string, axis: Axis, index: number, count: number) => void;
     shiftFormulaReferences: (formula: string, colDelta: number, rowDelta: number) => string;
     remapRowIdx: (idx: number, fromStart: number, fromEnd: number, insertAt: number) => number;
     remapColIdx: (idx: number, fromStart: number, fromEnd: number, insertAt: number) => number;
@@ -38,13 +35,77 @@ type FormulaEngineDeps = {
     replaceNameInRef: SpreadsheetHelpers['replaceNameInRef'];
 };
 
-/** What `rewriteCellRefs` tells its callback about each reference besides its cell. */
-type RefShape = {
-    /** It follows a `name::` prefix, so it points into another table. */
-    qualified: boolean;
-    colAnchored: boolean;
-    rowAnchored: boolean;
+/** Rows or columns: the two directions a table grows, shrinks and reorders in. */
+type Axis = 'row' | 'col';
+
+/** One end of a cell reference: the cell it names and which axes a `$` anchors. */
+type RefEnd = { col: number; row: number; colAnchored: boolean; rowAnchored: boolean };
+
+/**
+ * A whole reference as `rewriteCellRefs` hands it to its callback: one cell
+ * (`end` is null) or a range, and the `name::` prefix it was written with, if
+ * any. `target` null means the formula's own table.
+ */
+type CellSpan = {
+    start: RefEnd;
+    end: RefEnd | null;
+    target: { canvasName: string | null; tableName: string } | null;
 };
+
+/**
+ * What a reference should become: the cells it names instead, as [col, row]
+ * per end; `'#REF!'` when those cells are gone; or null to leave it exactly as
+ * written.
+ */
+type RefRewrite = { start: [number, number]; end: [number, number] | null } | '#REF!' | null;
+
+/** Moves each end of `span` through `move`, keeping a single cell single. */
+function mapEnds(span: CellSpan, move: (end: RefEnd) => [number, number]): RefRewrite {
+    return { start: move(span.start), end: span.end === null ? null : move(span.end) };
+}
+
+/** The tokens that can name a table or canvas in a `name::` prefix. */
+const NAME_TOKENS = new Set<Token['type']>(['CELL_REF', 'IDENTIFIER', 'QUOTED_NAME']);
+
+/** The parts of a reference token like `$A12`, or null for a ref-shaped name like `MY_TABLE1`. */
+function readRefEnd(text: string): RefEnd | null {
+    const [, colAnchor, letters, rowAnchor, digits] = /^(\$?)([A-Z]+)(\$?)(\d+)$/.exec(text) ?? [];
+    if (letters === undefined || digits === undefined) return null;
+    return {
+        col: columnLetterToIndex(letters),
+        row: parseInt(digits, 10) - 1,
+        colAnchored: colAnchor === '$',
+        rowAnchored: rowAnchor === '$',
+    };
+}
+
+/** `end` written at `[col, row]`, with the anchors it had. */
+function writeRefEnd(end: RefEnd, [col, row]: [number, number]): string {
+    return `${end.colAnchored ? '$' : ''}${indexToColumnLetter(col)}${end.rowAnchored ? '$' : ''}${row + 1}`;
+}
+
+/** Passes every formula in `table` through `rewrite`. */
+function rewriteFormulasInTable(table: SpreadsheetTable, rewrite: (formula: string) => string): void {
+    for (const row of table.rows) {
+        for (const cell of row) {
+            if (cell.formula === undefined || cell.formula.length === 0) continue;
+            const updated = rewrite(cell.formula);
+            // Only write on a real change — every assignment wakes the
+            // reactive graph and triggers a recalculation.
+            if (updated !== cell.formula) cell.formula = updated;
+        }
+    }
+}
+
+/** Passes every reference in `chart`'s data source through `rewrite`. */
+function rewriteRefsInChart(chart: ChartObject, rewrite: (ref: string) => string): void {
+    if (chart.dataSource === null) return;
+    for (const ref of [chart.dataSource.labelRef, ...chart.dataSource.seriesRefs]) {
+        if (ref === null) continue;
+        const updated = rewrite(ref.refString);
+        if (updated !== ref.refString) ref.refString = updated;
+    }
+}
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
 
@@ -227,21 +288,18 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
     // ── Reference remapping (for reorder) ────────────────────────────────────
 
     /**
-     * Walk a formula and hand every cell reference to `move`, which says where
-     * it should point instead. Everything else is copied through byte for byte.
+     * Walk a formula and hand every reference to `move`, which says what it
+     * should become. Everything else is copied through byte for byte, and so is
+     * a reference `move` leaves alone.
      *
      * The walk runs on the formula's tokens, so a reference here is exactly what
      * the evaluator reads as one. A ref-shaped name before `::` (a table called
      * Q1) is a name, not a reference, and a ref-shaped word before `(` is a call.
-     * `move` also learns whether the reference points into another table and
-     * which of its axes a `$` anchors; the anchors are written back as they were.
-     * A formula that does not tokenize is returned as it is: there is nothing
-     * reliable to move in it.
+     * A range arrives whole, with its `name::` prefix, so `move` can shrink it or
+     * replace the lot with #REF!. A formula that does not tokenize is returned
+     * as it is: there is nothing reliable to move in it.
      */
-    function rewriteCellRefs(
-        formula: string,
-        move: (col: number, row: number, ref: RefShape) => [number, number],
-    ): string {
+    function rewriteCellRefs(formula: string, move: (span: CellSpan) => RefRewrite): string {
         let tokens: Token[];
         try {
             tokens = tokenize(formula);
@@ -251,62 +309,140 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
 
         let result = '';
         let copiedTo = 0;
-        // Whether the reference being read follows a `name::` prefix. A range's
-        // end (the B2 of T::A1:B2) belongs to the same table as its start.
-        let qualified = false;
-        for (const [i, tok] of tokens.entries()) {
-            const nextType = tokens[i + 1]?.type;
-            const prevType = tokens[i - 1]?.type;
-            if (tok.type !== 'CELL_REF' || nextType === 'DOUBLE_COLON' || nextType === 'LPAREN') {
-                if (tok.type !== 'COLON' && tok.type !== 'DOUBLE_COLON') qualified = false;
+        let i = 0;
+        while (i < tokens.length) {
+            const first = tokens[i];
+            // Up to two `name::` prefixes: table::, or canvas::table::.
+            const names: string[] = [];
+            let j = i;
+            for (let tok = tokens[j]; tok !== undefined && NAME_TOKENS.has(tok.type); tok = tokens[j]) {
+                if (tokens[j + 1]?.type !== 'DOUBLE_COLON') break;
+                names.push(tok.value);
+                j += 2;
+            }
+            const startTok = tokens[j];
+            if (first === undefined || startTok?.type !== 'CELL_REF' || tokens[j + 1]?.type === 'LPAREN') {
+                i = j + 1;
                 continue;
             }
-            if (prevType === 'DOUBLE_COLON') qualified = true;
-            else if (prevType !== 'COLON') qualified = false;
+            const endTok =
+                tokens[j + 1]?.type === 'COLON' && tokens[j + 2]?.type === 'CELL_REF' ? tokens[j + 2] : undefined;
+            i = j + (endTok === undefined ? 1 : 3);
 
-            const [, colAnchor = '', letters = '', rowAnchor = '', digits = ''] =
-                /^(\$?)([A-Z]+)(\$?)(\d+)$/.exec(tok.value) ?? [];
-            if (letters === '') continue;
-            const [col, row] = move(columnLetterToIndex(letters), parseInt(digits, 10) - 1, {
-                qualified,
-                colAnchored: colAnchor !== '',
-                rowAnchored: rowAnchor !== '',
-            });
-            result +=
-                formula.substring(copiedTo, tok.start) + colAnchor + indexToColumnLetter(col) + rowAnchor + (row + 1);
-            copiedTo = tok.end;
+            const start = readRefEnd(startTok.value);
+            const end = endTok === undefined ? null : readRefEnd(endTok.value);
+            if (start === null || (endTok !== undefined && end === null) || names.length > 2) continue;
+            const tableName = names[names.length - 1];
+            const canvasName = names.length === 2 ? (names[0] ?? null) : null;
+            const target = tableName === undefined ? null : { canvasName, tableName };
+
+            const moved = move({ start, end, target });
+            if (moved === null) continue;
+            if (moved === '#REF!') {
+                result += `${formula.substring(copiedTo, first.start)}#REF!`;
+                copiedTo = (endTok ?? startTok).end;
+                continue;
+            }
+            result += formula.substring(copiedTo, startTok.start) + writeRefEnd(start, moved.start);
+            copiedTo = startTok.end;
+            if (endTok !== undefined && end !== null && moved.end !== null) {
+                result += formula.substring(copiedTo, endTok.start) + writeRefEnd(end, moved.end);
+                copiedTo = endTok.end;
+            }
         }
         return result + formula.substring(copiedTo);
     }
 
-    /** Reorder: each axis moves to wherever its mapper sends it, or stays put. */
-    function remapFormulaReferences(
-        formula: string,
-        colMapper: ((col: number) => number) | null,
-        rowMapper: ((row: number) => number) | null,
-    ): string {
-        // A reference into another table is that table's to move, not this one's.
-        // Anchors do not apply: a reorder moves the cell itself, wherever it is
-        // referenced from.
-        return rewriteCellRefs(formula, (col, row, { qualified }) =>
-            qualified
-                ? [col, row]
-                : [colMapper !== null ? colMapper(col) : col, rowMapper !== null ? rowMapper(row) : row],
-        );
+    /**
+     * Runs `move` over every reference into `tableId` anywhere in the workbook:
+     * the table's own unqualified references, any `name::` reference in another
+     * table that resolves to it, and chart data sources. A reference into any
+     * other table is left as written.
+     */
+    function rewriteReferencesTo(tableId: string, move: (span: CellSpan) => RefRewrite): void {
+        for (const cv of state.canvases.value) {
+            const pointsHere = (span: CellSpan, ownTableId: string | null): boolean => {
+                if (span.target === null) return ownTableId === tableId;
+                const { canvasName, tableName } = span.target;
+                return deps.findTableByName(tableName, { canvasName, sourceCanvasId: cv.id })?.id === tableId;
+            };
+            const rewrite =
+                (ownTableId: string | null) =>
+                (text: string): string =>
+                    rewriteCellRefs(text, (span): RefRewrite => (pointsHere(span, ownTableId) ? move(span) : null));
+
+            for (const table of cv.tables) rewriteFormulasInTable(table, rewrite(table.id));
+            // A chart's references are always qualified, so it has no own table.
+            for (const chart of cv.charts) rewriteRefsInChart(chart, rewrite(null));
+        }
     }
 
-    function remapAllFormulasInTable(
-        t: SpreadsheetTable,
+    /**
+     * Reorder and sort: every reference into the table follows its cell to
+     * wherever the mappers send it. Anchors do not apply: the cell itself moved.
+     */
+    function remapReferencesToTable(
+        tableId: string,
         colMapper: ((col: number) => number) | null,
         rowMapper: ((row: number) => number) | null,
     ): void {
-        for (const row of t.rows) {
-            for (const cell of row) {
-                if (cell.formula !== undefined) {
-                    cell.formula = remapFormulaReferences(cell.formula, colMapper, rowMapper);
-                }
-            }
-        }
+        rewriteReferencesTo(tableId, (span) =>
+            mapEnds(span, ({ col, row }) => [
+                colMapper !== null ? colMapper(col) : col,
+                rowMapper !== null ? rowMapper(row) : row,
+            ]),
+        );
+    }
+
+    // ── Reference shifting (for insert & delete) ─────────────────────────────
+
+    /** The position of `end` along `axis`, and `end` moved to `to` along it. */
+    const along = (end: RefEnd, axis: Axis): number => (axis === 'row' ? end.row : end.col);
+    const movedAlong = (end: RefEnd, axis: Axis, to: number): [number, number] =>
+        axis === 'row' ? [end.col, to] : [to, end.row];
+
+    /**
+     * `count` rows or columns were inserted at `index`: every reference at or
+     * past it moves along by `count`. A range that straddles the insert grows to
+     * take the new lines in; one that ends just before it does not.
+     */
+    function shiftReferencesForInsert(tableId: string, axis: Axis, index: number, count: number): void {
+        rewriteReferencesTo(tableId, (span) =>
+            mapEnds(span, (end) => {
+                const at = along(end, axis);
+                return movedAlong(end, axis, at >= index ? at + count : at);
+            }),
+        );
+    }
+
+    /**
+     * `count` rows or columns starting at `index` were deleted. A reference
+     * past them moves back by `count`; one that only named deleted cells becomes
+     * #REF!. A range that loses some of its lines shrinks to the ones left: an
+     * end inside the deleted block lands on the nearest surviving line inside
+     * the range.
+     */
+    function shiftReferencesForDelete(tableId: string, axis: Axis, index: number, count: number): void {
+        const last = index + count - 1;
+        const survive = (at: number, side: 'low' | 'high'): number => {
+            if (at > last) return at - count;
+            if (at < index) return at;
+            return side === 'low' ? index : index - 1;
+        };
+        rewriteReferencesTo(tableId, (span) => {
+            const end = span.end ?? span.start;
+            const startIsLow = along(span.start, axis) <= along(end, axis);
+            const low = Math.min(along(span.start, axis), along(end, axis));
+            const high = Math.max(along(span.start, axis), along(end, axis));
+            if (low >= index && high <= last) return '#REF!';
+            const [newStart, newEnd] = startIsLow
+                ? [survive(low, 'low'), survive(high, 'high')]
+                : [survive(high, 'high'), survive(low, 'low')];
+            return {
+                start: movedAlong(span.start, axis, newStart),
+                end: span.end === null ? null : movedAlong(span.end, axis, newEnd),
+            };
+        });
     }
 
     // ── Reference shifting (for fill & paste) ────────────────────────────────
@@ -318,10 +454,12 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
      * Sales the same way `=B2` walks down this table.
      */
     function shiftFormulaReferences(formula: string, colDelta: number, rowDelta: number): string {
-        return rewriteCellRefs(formula, (col, row, { colAnchored, rowAnchored }) => [
-            colAnchored ? col : Math.max(0, col + colDelta),
-            rowAnchored ? row : Math.max(0, row + rowDelta),
-        ]);
+        return rewriteCellRefs(formula, (span) =>
+            mapEnds(span, ({ col, row, colAnchored, rowAnchored }) => [
+                colAnchored ? col : Math.max(0, col + colDelta),
+                rowAnchored ? row : Math.max(0, row + rowDelta),
+            ]),
+        );
     }
 
     // ── Index remapping helpers ──────────────────────────────────────────────
@@ -346,32 +484,6 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
 
     // ── Name-reference rewriting ─────────────────────────────────────────────
 
-    function rewriteFormulasInTable(table: SpreadsheetTable, oldName: string, newName: string): void {
-        for (const row of table.rows) {
-            for (const cell of row) {
-                if (cell.formula === undefined || cell.formula.length === 0) continue;
-                const updated = deps.replaceNameInRef(cell.formula, oldName, newName);
-                // Only write on a real change — every assignment wakes the
-                // reactive graph and triggers a recalculation.
-                if (updated !== cell.formula) cell.formula = updated;
-            }
-        }
-    }
-
-    function rewriteRefsInChart(chart: ChartObject, oldName: string, newName: string): void {
-        if (chart.dataSource === null) return;
-        if (chart.dataSource.labelRef !== null) {
-            chart.dataSource.labelRef.refString = deps.replaceNameInRef(
-                chart.dataSource.labelRef.refString,
-                oldName,
-                newName,
-            );
-        }
-        for (const sref of chart.dataSource.seriesRefs) {
-            sref.refString = deps.replaceNameInRef(sref.refString, oldName, newName);
-        }
-    }
-
     /**
      * Rewrites every `name::` reference in the workbook — in cell formulas and
      * in chart data sources alike.
@@ -383,16 +495,18 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
      */
     function rewriteNameReferences(oldName: string, newName: string): void {
         for (const cv of state.canvases.value) {
-            for (const table of cv.tables) rewriteFormulasInTable(table, oldName, newName);
-            for (const chart of cv.charts) rewriteRefsInChart(chart, oldName, newName);
+            const rename = (text: string): string => deps.replaceNameInRef(text, oldName, newName);
+            for (const table of cv.tables) rewriteFormulasInTable(table, rename);
+            for (const chart of cv.charts) rewriteRefsInChart(chart, rename);
         }
     }
 
     return {
         recalculate,
         batchRecalculation,
-        remapFormulaReferences,
-        remapAllFormulasInTable,
+        remapReferencesToTable,
+        shiftReferencesForInsert,
+        shiftReferencesForDelete,
         shiftFormulaReferences,
         remapRowIdx: remapIndex,
         remapColIdx: remapIndex,

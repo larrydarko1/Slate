@@ -10,6 +10,7 @@ export type ASTNode =
     | { type: 'number'; value: number }
     | { type: 'string'; value: string }
     | { type: 'boolean'; value: boolean }
+    | { type: 'error'; value: string }
     | { type: 'cell_ref'; col: number; row: number }
     | { type: 'range'; sc: number; sr: number; ec: number; er: number }
     | { type: 'external_cell_ref'; canvasName: string | null; tableName: string; col: number; row: number }
@@ -197,6 +198,10 @@ export class Parser {
             case 'BOOLEAN':
                 this.advance();
                 return { type: 'boolean', value: tok.value === 'TRUE' };
+
+            case 'ERROR':
+                this.advance();
+                return { type: 'error', value: tok.value };
 
             case 'CELL_REF': {
                 this.advance();

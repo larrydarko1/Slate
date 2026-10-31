@@ -30,6 +30,12 @@ describe('literals', () => {
     });
 });
 
+describe('error literals', () => {
+    it('parses #REF!', () => {
+        expect(parse('#REF!')).toEqual({ type: 'error', value: '#REF!' });
+    });
+});
+
 describe('cell references', () => {
     it('parses a single cell reference', () => {
         expect(parse('A1')).toEqual({ type: 'cell_ref', col: 0, row: 0 });
