@@ -183,8 +183,10 @@ describe('formulaEngine', () => {
             expect(ss.shiftFormulaReferences('"A1"&A1', 1, 0)).toBe('"A1"&B1');
         });
 
-        it('leaves a qualified reference to another table alone', () => {
-            expect(ss.shiftFormulaReferences('Other::A1+A1', 1, 0)).toBe('Other::A1+B1');
+        it('shifts a reference into another table the same way', () => {
+            expect(ss.shiftFormulaReferences("Other::A1+'My Canvas'::'T 2'::A1:A2+A1", 1, 0)).toBe(
+                "Other::B1+'My Canvas'::'T 2'::B1:B2+B1",
+            );
         });
 
         it('leaves a boolean literal alone', () => {
@@ -208,15 +210,17 @@ describe('formulaEngine', () => {
         });
 
         it('leaves a table whose name looks like a reference alone', () => {
-            expect(bareEngine().shiftFormulaReferences('Q1::A1+A1', 0, 1)).toBe('Q1::A1+A2');
+            expect(bareEngine().shiftFormulaReferences('Q1::A1+A1', 0, 1)).toBe('Q1::A2+A2');
         });
 
         it('leaves an underscored table name alone', () => {
-            expect(bareEngine().shiftFormulaReferences('my_table1::A1+A1', 0, 1)).toBe('my_table1::A1+A2');
+            expect(bareEngine().shiftFormulaReferences('my_table1::A1+A1', 0, 1)).toBe('my_table1::A2+A2');
         });
 
-        it('leaves the end of a qualified range alone', () => {
-            expect(bareEngine().shiftFormulaReferences('SUM(T::A1:A3)+B1', 0, 1)).toBe('SUM(T::A1:A3)+B2');
+        it('leaves a reference into another table alone on a reorder, range end included', () => {
+            expect(bareEngine().remapFormulaReferences('SUM(T::A1:A3)+A1', null, (row) => row + 1)).toBe(
+                'SUM(T::A1:A3)+A2',
+            );
         });
 
         it('copies spacing and lowercase text through untouched', () => {

@@ -220,6 +220,22 @@ describe('clipboard', () => {
             expect(ss.getDisplayValue(id, 2, 1)).toBe('20');
         });
 
+        it('walks a reference into another table down with the fill', () => {
+            ss.addTable();
+            const salesId = ss.tables.value[1]!.id;
+            ss.renameTable(salesId, 'Sales');
+            ss.setCellValue(salesId, 1, 1, '3');
+            ss.setCellValue(salesId, 1, 2, '4');
+            ss.setCellValue(id, 0, 0, '=Sales::B2*2');
+            ss.fillCells(
+                id,
+                { tableId: id, startCol: 0, startRow: 0, endCol: 0, endRow: 0 },
+                { tableId: id, startCol: 0, startRow: 1, endCol: 0, endRow: 1 },
+            );
+            expect(ss.getRawValue(id, 0, 1)).toBe('=Sales::B3*2');
+            expect(ss.getDisplayValue(id, 0, 1)).toBe('8');
+        });
+
         it('ignores an unknown table', () => {
             ss.fillCells(
                 'nope',

@@ -287,14 +287,15 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
 
     /**
      * Fill and paste: each axis slides by a fixed delta, clamped at the origin.
-     * An axis anchored with `$` stays where it is.
+     * An axis anchored with `$` stays where it is. A reference into another
+     * table slides too: filling `=Sales::B2` down a column should walk down
+     * Sales the same way `=B2` walks down this table.
      */
     function shiftFormulaReferences(formula: string, colDelta: number, rowDelta: number): string {
-        return rewriteCellRefs(formula, (col, row, { qualified, colAnchored, rowAnchored }) =>
-            qualified
-                ? [col, row]
-                : [colAnchored ? col : Math.max(0, col + colDelta), rowAnchored ? row : Math.max(0, row + rowDelta)],
-        );
+        return rewriteCellRefs(formula, (col, row, { colAnchored, rowAnchored }) => [
+            colAnchored ? col : Math.max(0, col + colDelta),
+            rowAnchored ? row : Math.max(0, row + rowDelta),
+        ]);
     }
 
     // ── Index remapping helpers ──────────────────────────────────────────────
