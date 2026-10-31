@@ -10,13 +10,15 @@
  *  - Cross-canvas references: 'Canvas 1'::'Table 1'::A1
  *  - Functions: SUM, AVERAGE, MIN, MAX, COUNT, COUNTA, ROUND, ABS, SQRT,
  *               POWER, MOD, INT, CEILING, FLOOR, IF, AND, OR, NOT, CONCAT,
- *               UPPER, LOWER, LEN, TRIM, LEFT, RIGHT, MID, PI, NOW, TODAY
+ *               UPPER, LOWER, LEN, TRIM, LEFT, RIGHT, MID, PI, NOW, TODAY,
+ *               DATE, YEAR, MONTH, DAY
  *
  * Type-aware evaluation:
  *  - Tracks CellDataType through operations
  *  - First operand sets target type for arithmetic
  *  - Text in arithmetic → #N/A
  *  - Mixed currency → first cell's currency wins
+ *  - Date ± number → date; date − date → whole days
  */
 
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';

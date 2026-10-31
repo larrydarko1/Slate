@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { dateToSerial } from '@/renderer/composables/spreadsheet/engine/dates';
 import { evaluate } from '@/renderer/composables/spreadsheet/engine/evaluator';
 import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
 import type { ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
@@ -1055,10 +1056,10 @@ describe('constants', () => {
         expect(r.type).toBe('text');
     });
 
-    it('TODAY returns a string', () => {
+    it('TODAY returns today as a date', () => {
+        const now = new Date();
         const r = evaluate({ type: 'function', name: 'TODAY', args: [] }, emptyCtx);
-        expect(typeof r.value).toBe('string');
-        expect(r.type).toBe('text');
+        expect(r).toEqual({ value: dateToSerial(now.getFullYear(), now.getMonth() + 1, now.getDate()), type: 'date' });
     });
 });
 

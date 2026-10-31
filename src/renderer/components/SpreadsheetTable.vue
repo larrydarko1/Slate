@@ -835,7 +835,8 @@ watch(
 
     &.type-integer,
     &.type-float,
-    &.type-percent {
+    &.type-percent,
+    &.type-date {
         font-feature-settings: 'tnum' 1;
     }
 

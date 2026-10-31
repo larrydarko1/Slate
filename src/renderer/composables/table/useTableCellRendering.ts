@@ -97,6 +97,7 @@ export function useTableCellRendering(
             'type-float': cellType === 'float',
             'type-percent': cellType === 'percent',
             'type-currency': cellType === 'currency_eur' || cellType === 'currency_usd',
+            'type-date': cellType === 'date',
             'type-text': cellType === 'text',
             'type-boolean': cellType === 'boolean',
             'type-url': cellType === 'url',

@@ -10,6 +10,7 @@ import {
     getTypeLabel,
     type CellDataType,
 } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { dateToSerial, formatDate } from '@/renderer/composables/spreadsheet/engine/dates';
 
 describe('detectType', () => {
     // Empty / null
@@ -97,6 +98,18 @@ describe('detectType', () => {
     });
 
     // Text (fallback)
+    it('detects an ISO date as its serial', () => {
+        expect(detectType('2026-03-04')).toEqual({
+            type: 'date',
+            numericValue: dateToSerial(2026, 3, 4),
+            rawInput: '2026-03-04',
+        });
+    });
+
+    it('leaves a date that does not exist as text', () => {
+        expect(detectType('2026-02-30').type).toBe('text');
+    });
+
     it.each(['hello', 'abc123', 'not a number', '=SUM(A1)'])('detects text "%s"', (input) => {
         const result = detectType(input);
         expect(result.type).toBe('text');
@@ -107,7 +120,7 @@ describe('detectType', () => {
 // ── isNumericType ────────────────────────────────────────────────────────────
 
 describe('isNumericType', () => {
-    it.each(['integer', 'float', 'percent', 'currency_eur', 'currency_usd'] as CellDataType[])(
+    it.each(['integer', 'float', 'percent', 'currency_eur', 'currency_usd', 'date'] as CellDataType[])(
         'returns true for %s',
         (t) => {
             expect(isNumericType(t)).toBe(true);
@@ -122,6 +135,11 @@ describe('isNumericType', () => {
 // ── resolveType ──────────────────────────────────────────────────────────────
 
 describe('resolveType', () => {
+    it('keeps a date moved by a number a date, whichever side it is on', () => {
+        expect(resolveType('date', 'integer')).toBe('date');
+        expect(resolveType('float', 'date')).toBe('date');
+    });
+
     it('takes the other type when one is empty', () => {
         expect(resolveType('empty', 'integer')).toBe('integer');
         expect(resolveType('float', 'empty')).toBe('float');
@@ -237,6 +255,11 @@ describe('formatCellDisplay', () => {
         expect(formatCellDisplay(42, 'integer')).toBe('42');
         expect(formatCellDisplay(0.5, 'percent')).toBe('50%');
     });
+
+    it('writes a date serial as a date', () => {
+        const serial = dateToSerial(2026, 3, 4);
+        expect(formatCellDisplay(serial, 'date')).toBe(formatDate(serial));
+    });
 });
 
 // ── getTypeAlignment ─────────────────────────────────────────────────────────
@@ -245,6 +268,7 @@ describe('getTypeAlignment', () => {
     it('right-aligns numeric types', () => {
         expect(getTypeAlignment('integer')).toBe('right');
         expect(getTypeAlignment('currency_usd')).toBe('right');
+        expect(getTypeAlignment('date')).toBe('right');
     });
 
     it('centers booleans', () => {
@@ -265,5 +289,6 @@ describe('getTypeLabel', () => {
         expect(getTypeLabel('currency_eur')).toBe('Euro (€)');
         expect(getTypeLabel('percent')).toBe('Percent (%)');
         expect(getTypeLabel('empty')).toBe('Empty');
+        expect(getTypeLabel('date')).toBe('Date');
     });
 });

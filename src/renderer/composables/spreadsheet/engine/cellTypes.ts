@@ -4,8 +4,10 @@
  * Does NOT own: formula parsing (parser.ts), evaluation (evaluator.ts).
  */
 
+import { formatDate, parseDate } from '@/renderer/composables/spreadsheet/engine/dates';
+
 export type CellDataType =
-    'integer' | 'float' | 'percent' | 'currency_eur' | 'currency_usd' | 'text' | 'boolean' | 'url' | 'empty';
+    'integer' | 'float' | 'percent' | 'currency_eur' | 'currency_usd' | 'date' | 'text' | 'boolean' | 'url' | 'empty';
 
 type TypedValue = {
     type: CellDataType;
@@ -92,6 +94,13 @@ export function detectType(raw: string): TypedValue {
         }
     }
 
+    // Date (2026-03-04, or 04/03/2026 in the locale's day/month order), held
+    // as its serial number
+    const serial = parseDate(trimmed);
+    if (serial !== null) {
+        return { type: 'date', numericValue: serial, rawInput: trimmed };
+    }
+
     // URL (http:// or https://)
     if (URL_PATTERN.test(trimmed)) {
         return { type: 'url', numericValue: null, rawInput: trimmed };
@@ -102,10 +111,18 @@ export function detectType(raw: string): TypedValue {
 }
 
 /**
- * Returns true if the type is numeric (can participate in arithmetic).
+ * Returns true if the type is numeric (can participate in arithmetic). A date
+ * is: it is a count of days, so a date plus 7 is a week later.
  */
 export function isNumericType(t: CellDataType): boolean {
-    return t === 'integer' || t === 'float' || t === 'percent' || t === 'currency_eur' || t === 'currency_usd';
+    return (
+        t === 'integer' ||
+        t === 'float' ||
+        t === 'percent' ||
+        t === 'currency_eur' ||
+        t === 'currency_usd' ||
+        t === 'date'
+    );
 }
 
 /**
@@ -138,6 +155,10 @@ export function resolveType(first: CellDataType, second: CellDataType): CellData
         // If one is currency, the first one's currency wins
         if (isCurrencyType(first)) return first;
         if (isCurrencyType(second)) return second;
+
+        // A date moved by a number of days is still a date. The one exception,
+        // date minus date, is a day count; the evaluator handles it.
+        if (first === 'date' || second === 'date') return 'date';
 
         // float vs integer → float
         if (first === 'float' || second === 'float') return 'float';
@@ -205,6 +226,7 @@ export function getTypeAlignment(type: CellDataType): 'left' | 'right' | 'center
         case 'percent':
         case 'currency_eur':
         case 'currency_usd':
+        case 'date':
             return 'right';
         case 'boolean':
             return 'center';
@@ -230,6 +252,8 @@ export function getTypeLabel(type: CellDataType): string {
             return 'Euro (€)';
         case 'currency_usd':
             return 'Dollar ($)';
+        case 'date':
+            return 'Date';
         case 'text':
             return 'Text';
         case 'boolean':
@@ -301,6 +325,9 @@ function formatValue(value: number | null, type: CellDataType, decimalPlaces?: n
 
         case 'boolean':
             return value !== 0 ? 'TRUE' : 'FALSE';
+
+        case 'date':
+            return formatDate(value);
 
         default:
             return value.toString();

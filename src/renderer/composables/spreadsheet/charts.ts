@@ -4,10 +4,11 @@
  * chart data selection mode, ref building/resolving/highlighting.
  * Does NOT own: cell access (useCells.ts), formula engine (useFormulaEngine.ts).
  */
+import { formatCellDisplay } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import { chartRefColor } from '@/renderer/composables/spreadsheet/state';
-import type { ChartObject, SpreadsheetTable, CellValue } from '@/renderer/types/spreadsheet';
+import type { Cell, ChartObject, SpreadsheetTable, CellValue } from '@/renderer/types/spreadsheet';
 import { createDefaultChart, indexToColumnLetter, columnLetterToIndex } from '@/renderer/types/spreadsheet';
 
 export type SpreadsheetCharts = {
@@ -31,6 +32,7 @@ export type SpreadsheetCharts = {
         refString: string,
     ) => { tableId: string; startCol: number; startRow: number; endCol: number; endRow: number } | null;
     getChartRefValues: (refString: string) => CellValue[];
+    getChartRefLabels: (refString: string) => string[];
     getChartDataHighlights: () => { tableId: string; col: number; row: number; color: string }[];
     addChartSeries: () => void;
     removeChartSeries: (index: number) => void;
@@ -266,7 +268,8 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
         return refs;
     }
 
-    function getValuesFromSingleRef(ref: string): CellValue[] {
+    /** The cells one reference covers, row by row; undefined past the table's edge. */
+    function cellsFromSingleRef(ref: string): (Cell | undefined)[] {
         const resolved = resolveChartRef(ref.trim());
         if (resolved === null) return [];
 
@@ -274,32 +277,40 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
         if (info === null) return [];
         const table = info.table;
 
-        const values: CellValue[] = [];
+        const cells: (Cell | undefined)[] = [];
         for (let rowIdx = resolved.startRow; rowIdx <= resolved.endRow; rowIdx++) {
             for (let colIdx = resolved.startCol; colIdx <= resolved.endCol; colIdx++) {
-                const cell = table.rows[rowIdx]?.[colIdx];
-                if (cell === undefined) {
-                    values.push(null);
-                    continue;
-                }
-                if (cell.formula !== undefined) {
-                    values.push(cell.computed ?? null);
-                } else {
-                    values.push(cell.value);
-                }
+                cells.push(table.rows[rowIdx]?.[colIdx]);
             }
         }
-        return values;
+        return cells;
+    }
+
+    function cellsFromRefString(refString: string): (Cell | undefined)[] {
+        if (refString === '') return [];
+        return splitChartRefs(refString).flatMap(cellsFromSingleRef);
+    }
+
+    function chartCellValue(cell: Cell | undefined): CellValue {
+        if (cell === undefined) return null;
+        return cell.formula !== undefined ? (cell.computed ?? null) : cell.value;
     }
 
     function getChartRefValues(refString: string): CellValue[] {
-        if (refString === '') return [];
-        const refs = splitChartRefs(refString);
-        const values: CellValue[] = [];
-        for (const ref of refs) {
-            values.push(...getValuesFromSingleRef(ref));
-        }
-        return values;
+        return cellsFromRefString(refString).map(chartCellValue);
+    }
+
+    /**
+     * The cells a reference covers as the table shows them: a date as a date,
+     * a price with its currency. What a chart writes for its labels.
+     */
+    function getChartRefLabels(refString: string): string[] {
+        return cellsFromRefString(refString).map((cell): string => {
+            const value = chartCellValue(cell);
+            if (cell === undefined || value === null) return '';
+            const type = cell.formula !== undefined ? (cell.computedType ?? cell.cellType) : cell.cellType;
+            return formatCellDisplay(value, type, cell.format?.decimalPlaces);
+        });
     }
 
     function highlightsFromResolved(
@@ -424,6 +435,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
         handleChartCellSelection,
         resolveChartRef,
         getChartRefValues,
+        getChartRefLabels,
         getChartDataHighlights,
         addChartSeries,
         removeChartSeries,
