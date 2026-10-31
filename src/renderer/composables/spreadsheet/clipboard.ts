@@ -33,6 +33,11 @@ type ClipboardCell = {
     format?: CellFormat;
 };
 
+/** `n` mod `size`, kept non-negative for an `n` below zero. */
+function wrap(n: number, size: number): number {
+    return ((n % size) + size) % size;
+}
+
 export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps): SpreadsheetClipboard {
     let clipboardData: ClipboardCell[][] | null = null;
     let clipboardIsCut = false;
@@ -195,8 +200,10 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
                         colIdx <= source.endCol
                     )
                         continue;
-                    const srcR = source.startRow + ((rowIdx - target.startRow) % srcRows);
-                    const srcC = source.startCol + ((colIdx - target.startCol) % srcCols);
+                    // Counted from the source, not the target, so a fill up or left
+                    // runs the pattern backwards from the cell next to the source.
+                    const srcR = source.startRow + wrap(rowIdx - source.startRow, srcRows);
+                    const srcC = source.startCol + wrap(colIdx - source.startCol, srcCols);
                     const srcCell = deps.findCell(tableId, srcC, srcR);
                     if (srcCell === null) continue;
 
