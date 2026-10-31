@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Formatting and lint rules now come from the shared `@larrydarko/lint-config` package.
 
+### Fixed
+
+- Recalculation no longer slows down exponentially as chains of dependent formulas get longer. A chain of 25 formulas used to freeze the app.
+
 ## [2.0.1] - 2026-08-28
 
 ### Removed
