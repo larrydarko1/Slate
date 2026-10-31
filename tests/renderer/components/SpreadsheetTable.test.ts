@@ -2,6 +2,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import SpreadsheetTable from '@/renderer/components/SpreadsheetTable.vue';
+import { HOLD_TO_LIFT_MS } from '@/renderer/composables/table/useCellMove';
 import { useSpreadsheet, SPREADSHEET_KEY, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 
 describe('SpreadsheetTable', () => {
@@ -99,6 +100,30 @@ describe('SpreadsheetTable', () => {
             await wrapper.findAll('.cell')[0]!.trigger('mousedown');
             await wrapper.findAll('.cell')[6]!.trigger('mouseover', { buttons: 1 });
             expect(ss.selectionRange.value).toMatchObject({ endCol: 1, endRow: 1 });
+        });
+
+        it('starts a new selection when dragging straight out of the current one', async () => {
+            ss.selectCell(id, 0, 0);
+            await wrapper.findAll('.cell')[0]!.trigger('mousedown');
+            await wrapper.findAll('.cell')[6]!.trigger('mouseover', { buttons: 1 });
+            expect(ss.selectionRange.value).toMatchObject({ startCol: 0, startRow: 0, endCol: 1, endRow: 1 });
+        });
+    });
+
+    describe('moving cells', () => {
+        it('moves the selection when it is held, dragged and let go', async () => {
+            vi.useFakeTimers();
+            ss.setCellValue(id, 0, 0, 'moved');
+            ss.selectCell(id, 0, 0);
+            await wrapper.findAll('.cell')[0]!.trigger('mousedown');
+            vi.advanceTimersByTime(HOLD_TO_LIFT_MS);
+            await wrapper.findAll('.cell')[6]!.trigger('mouseover');
+            expect(wrapper.findAll('.cell')[6]!.classes()).toContain('in-move');
+            expect(wrapper.find('.spreadsheet-table').classes()).toContain('moving-cells');
+            document.dispatchEvent(new MouseEvent('mouseup'));
+            vi.useRealTimers();
+            expect(ss.getDisplayValue(id, 1, 1)).toBe('moved');
+            expect(ss.getDisplayValue(id, 0, 0)).toBe('');
         });
     });
 
