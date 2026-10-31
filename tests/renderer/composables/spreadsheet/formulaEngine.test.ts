@@ -206,6 +206,26 @@ describe('formulaEngine', () => {
             expect(engine.remapFormulaReferences('A1', null, (row) => row + 1)).toBe('A2');
             expect(engine.remapFormulaReferences('A1', (col) => col + 1, null)).toBe('B1');
         });
+
+        it('leaves a table whose name looks like a reference alone', () => {
+            expect(bareEngine().shiftFormulaReferences('Q1::A1+A1', 0, 1)).toBe('Q1::A1+A2');
+        });
+
+        it('leaves an underscored table name alone', () => {
+            expect(bareEngine().shiftFormulaReferences('my_table1::A1+A1', 0, 1)).toBe('my_table1::A1+A2');
+        });
+
+        it('leaves the end of a qualified range alone', () => {
+            expect(bareEngine().shiftFormulaReferences('SUM(T::A1:A3)+B1', 0, 1)).toBe('SUM(T::A1:A3)+B2');
+        });
+
+        it('copies spacing and lowercase text through untouched', () => {
+            expect(bareEngine().shiftFormulaReferences('sum( a1 , "a1" )', 0, 1)).toBe('sum( A2 , "a1" )');
+        });
+
+        it('returns a formula that does not tokenize unchanged', () => {
+            expect(bareEngine().shiftFormulaReferences('A1 @ B1', 0, 1)).toBe('A1 @ B1');
+        });
     });
 
     describe('index remapping', () => {

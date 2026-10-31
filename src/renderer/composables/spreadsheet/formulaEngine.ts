@@ -6,6 +6,7 @@
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
 import { evaluateFormulaTyped } from '@/renderer/composables/spreadsheet/engine/formula';
+import { tokenize, type Token } from '@/renderer/composables/spreadsheet/engine/tokenizer';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { SpreadsheetTable, Cell, CellValue, ChartObject } from '@/renderer/types/spreadsheet';
@@ -35,47 +36,6 @@ type FormulaEngineDeps = {
     findTableByName: SpreadsheetHelpers['findTableByName'];
     replaceNameInRef: SpreadsheetHelpers['replaceNameInRef'];
 };
-
-// ─── Shared keyword list ─────────────────────────────────────────────────────
-const FORMULA_KEYWORDS = [
-    'TRUE',
-    'FALSE',
-    'IF',
-    'AND',
-    'OR',
-    'NOT',
-    'SUM',
-    'AVERAGE',
-    'MIN',
-    'MAX',
-    'COUNT',
-    'COUNTA',
-    'ROUND',
-    'ABS',
-    'SQRT',
-    'POWER',
-    'MOD',
-    'INT',
-    'CONCAT',
-    'UPPER',
-    'LOWER',
-    'LEN',
-    'TRIM',
-    'LEFT',
-    'RIGHT',
-    'MID',
-    'PI',
-    'NOW',
-    'TODAY',
-    'SUMIF',
-    'COUNTIF',
-    'VLOOKUP',
-    'HLOOKUP',
-    'INDEX',
-    'MATCH',
-    'CEILING',
-    'FLOOR',
-];
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
 
@@ -233,49 +193,53 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
     // ── Reference remapping (for reorder) ────────────────────────────────────
 
     /**
-     * Walk a formula and hand every plain cell reference to `move`, which says
-     * where it should point instead. Everything else is copied through byte for
-     * byte.
+     * Walk a formula and hand every cell reference to `move`, which says where
+     * it should point instead. Everything else is copied through byte for byte.
      *
-     * Three things that look like a reference are not one: a name followed by
-     * `(` is a function call, a word in FORMULA_KEYWORDS is a literal such as
-     * TRUE, and anything straight after `::` names a cell in another table,
-     * which this table's edit has no business moving. Quoted spans are skipped
-     * whole so a name like 'Q1 2024' never gets read as a reference.
+     * The walk runs on the formula's tokens, so a reference here is exactly what
+     * the evaluator reads as one. A ref-shaped name before `::` (a table called
+     * Q1) is a name, not a reference, and a ref-shaped word before `(` is a call.
+     * `qualified` tells `move` whether the reference points into another table.
+     * A formula that does not tokenize is returned as it is: there is nothing
+     * reliable to move in it.
      */
-    function rewriteCellRefs(formula: string, move: (col: number, row: number) => [number, number]): string {
-        let result = '';
-        let pos = 0;
-        while (pos < formula.length) {
-            if (formula[pos] === '"' || formula[pos] === "'") {
-                const quote = formula[pos];
-                let end = pos + 1;
-                while (end < formula.length && formula[end] !== quote) end++;
-                result += formula.substring(pos, end + 1);
-                pos = end + 1;
-                continue;
-            }
-
-            const cellRefMatch = /^([A-Za-z]+)(\d+)/.exec(formula.substring(pos));
-            if (cellRefMatch === null) {
-                result += formula[pos];
-                pos++;
-                continue;
-            }
-
-            const letters = (cellRefMatch[1] ?? '').toUpperCase();
-            const isFunction = /^\s*\(/.test(formula.substring(pos + cellRefMatch[0].length));
-            const qualified = result.length >= 2 && result.endsWith('::');
-
-            if (isFunction || FORMULA_KEYWORDS.includes(letters) || qualified) {
-                result += cellRefMatch[0];
-            } else {
-                const [col, row] = move(columnLetterToIndex(letters), parseInt(cellRefMatch[2] ?? '', 10) - 1);
-                result += indexToColumnLetter(col) + (row + 1);
-            }
-            pos += cellRefMatch[0].length;
+    function rewriteCellRefs(
+        formula: string,
+        move: (col: number, row: number, qualified: boolean) => [number, number],
+    ): string {
+        let tokens: Token[];
+        try {
+            tokens = tokenize(formula);
+        } catch {
+            return formula;
         }
-        return result;
+
+        let result = '';
+        let copiedTo = 0;
+        // Whether the reference being read follows a `name::` prefix. A range's
+        // end (the B2 of T::A1:B2) belongs to the same table as its start.
+        let qualified = false;
+        for (const [i, tok] of tokens.entries()) {
+            const nextType = tokens[i + 1]?.type;
+            const prevType = tokens[i - 1]?.type;
+            if (tok.type !== 'CELL_REF' || nextType === 'DOUBLE_COLON' || nextType === 'LPAREN') {
+                if (tok.type !== 'COLON' && tok.type !== 'DOUBLE_COLON') qualified = false;
+                continue;
+            }
+            if (prevType === 'DOUBLE_COLON') qualified = true;
+            else if (prevType !== 'COLON') qualified = false;
+
+            const refMatch = /^([A-Z]+)(\d+)$/.exec(tok.value);
+            if (refMatch === null) continue;
+            const [col, row] = move(
+                columnLetterToIndex(refMatch[1] ?? ''),
+                parseInt(refMatch[2] ?? '', 10) - 1,
+                qualified,
+            );
+            result += formula.substring(copiedTo, tok.start) + indexToColumnLetter(col) + (row + 1);
+            copiedTo = tok.end;
+        }
+        return result + formula.substring(copiedTo);
     }
 
     /** Reorder: each axis moves to wherever its mapper sends it, or stays put. */
@@ -284,10 +248,12 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
         colMapper: ((col: number) => number) | null,
         rowMapper: ((row: number) => number) | null,
     ): string {
-        return rewriteCellRefs(formula, (col, row) => [
-            colMapper !== null ? colMapper(col) : col,
-            rowMapper !== null ? rowMapper(row) : row,
-        ]);
+        // A reference into another table is that table's to move, not this one's.
+        return rewriteCellRefs(formula, (col, row, qualified) =>
+            qualified
+                ? [col, row]
+                : [colMapper !== null ? colMapper(col) : col, rowMapper !== null ? rowMapper(row) : row],
+        );
     }
 
     function remapAllFormulasInTable(
@@ -308,7 +274,9 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
 
     /** Fill and paste: each axis slides by a fixed delta, clamped at the origin. */
     function shiftFormulaReferences(formula: string, colDelta: number, rowDelta: number): string {
-        return rewriteCellRefs(formula, (col, row) => [Math.max(0, col + colDelta), Math.max(0, row + rowDelta)]);
+        return rewriteCellRefs(formula, (col, row, qualified) =>
+            qualified ? [col, row] : [Math.max(0, col + colDelta), Math.max(0, row + rowDelta)],
+        );
     }
 
     // ── Index remapping helpers ──────────────────────────────────────────────

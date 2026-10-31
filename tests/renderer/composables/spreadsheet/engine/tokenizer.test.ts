@@ -183,7 +183,30 @@ describe('EOF', () => {
 
     it('returns only EOF for empty input', () => {
         const tokens = tokenize('');
-        expect(tokens).toEqual([{ type: 'EOF', value: '' }]);
+        expect(tokens).toEqual([{ type: 'EOF', value: '', start: 0, end: 0 }]);
+    });
+});
+
+describe('source offsets', () => {
+    it('spans each token in the source, skipping whitespace', () => {
+        const spans = tokenize('SUM( A1 :: B2 )').map(({ start, end }) => [start, end]);
+        expect(spans).toEqual([
+            [0, 3],
+            [3, 4],
+            [5, 7],
+            [8, 10],
+            [11, 13],
+            [14, 15],
+            [15, 15],
+        ]);
+    });
+
+    it('spans a quoted name including its quotes', () => {
+        expect(tokenize("'My Table'::A1")[0]).toMatchObject({ start: 0, end: 10 });
+    });
+
+    it('stops an unclosed string at the end of the source', () => {
+        expect(tokenize('"abc')[0]).toMatchObject({ start: 0, end: 4 });
     });
 });
 
