@@ -4,7 +4,12 @@
  * Does NOT own: editing state (useEditing.ts), selection (useSelection.ts).
  */
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
-import { detectType, formatCellDisplay, getTypeAlignment } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import {
+    detectType,
+    formatCellDisplay,
+    getTypeAlignment,
+    isNumericType,
+} from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { formatDate } from '@/renderer/composables/spreadsheet/engine/dates';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
@@ -19,6 +24,7 @@ export type SpreadsheetCells = {
     getCellType: (tableId: string, col: number, row: number) => CellDataType;
     getCellAlignment: (tableId: string, col: number, row: number) => 'left' | 'right' | 'center';
     setCellType: (tableId: string, col: number, row: number, newType: CellDataType) => void;
+    setSelectionType: (newType: CellDataType) => void;
     setCellFormat: (tableId: string, col: number, row: number, fmt: CellFormatUpdate) => void;
     setSelectionFormat: (fmt: CellFormatUpdate) => void;
     findActiveCellFormat: () => CellFormat | null;
@@ -135,25 +141,20 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
         const cell = findCell(tableId, col, row);
         if (cell === null) return;
         deps.pushUndo();
+        retype(cell, newType);
+        deps.recalculate();
+    }
 
-        cell.cellType = newType;
-        if (cell.formula !== undefined) {
-            cell.computedType = newType;
-        }
-
-        if (cell.value !== null && cell.formula === undefined) {
-            if (typeof cell.value === 'number') {
-                if (newType === 'integer') {
-                    cell.value = Math.round(cell.value);
-                }
-            } else if (typeof cell.value === 'string' && newType !== 'text') {
-                const detected = detectType(cell.value);
-                if (detected.numericValue !== null) {
-                    cell.value = detected.numericValue;
-                }
+    function setSelectionType(newType: CellDataType): void {
+        const sr = deps.findNormalizedSelection();
+        if (sr === null) return;
+        deps.pushUndo();
+        for (let rowIdx = sr.startRow; rowIdx <= sr.endRow; rowIdx++) {
+            for (let colIdx = sr.startCol; colIdx <= sr.endCol; colIdx++) {
+                const cell = findCell(sr.tableId, colIdx, rowIdx);
+                if (cell !== null) retype(cell, newType);
             }
         }
-
         deps.recalculate();
     }
 
@@ -220,6 +221,7 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
         getCellType,
         getCellAlignment,
         setCellType,
+        setSelectionType,
         setCellFormat,
         setSelectionFormat,
         findActiveCellFormat,
@@ -228,4 +230,32 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
         removeCellNote,
         cellHasNote,
     };
+}
+
+/**
+ * Gives `cell` a new type, converting its value to fit. An empty cell is left
+ * alone: typing into it detects a type of its own. So is text with no number
+ * or date in it given a numeric type, so a header row caught in a selection
+ * stays text.
+ */
+function retype(cell: Cell, newType: CellDataType): void {
+    if (cell.formula !== undefined) {
+        cell.cellType = newType;
+        cell.computedType = newType;
+        return;
+    }
+    if (cell.value === null) return;
+
+    if (typeof cell.value === 'string' && newType !== 'text') {
+        const detected = detectType(cell.value);
+        if (detected.numericValue !== null && isNumericType(detected.type)) {
+            cell.value = detected.numericValue;
+        } else if (isNumericType(newType)) {
+            return;
+        }
+    }
+    if (typeof cell.value === 'number' && newType === 'integer') {
+        cell.value = Math.round(cell.value);
+    }
+    cell.cellType = newType;
 }

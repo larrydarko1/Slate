@@ -55,7 +55,7 @@ function toggleTypeMenu(): void {
 
 function setType(t: CellDataType): void {
     if (ss.activeCell.value === null) return;
-    ss.setCellType(ss.activeCell.value.tableId, ss.activeCell.value.col, ss.activeCell.value.row, t);
+    ss.setSelectionType(t);
     typeMenuOpen.value = false;
 }
 
