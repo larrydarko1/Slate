@@ -84,6 +84,17 @@ describe('useCellMove', () => {
         expect(move.moveState.value).toBeNull();
     });
 
+    it('lifts and previews the whole of a merge the selection only partly covers', () => {
+        table.value.mergedRegions = [{ startCol: 0, startRow: 2, endCol: 1, endRow: 3 }];
+        ss.selectCell(id, 0, 2);
+        lift(0, 2);
+        expect(move.isCellLifted(1, 3)).toBe(true);
+        move.hoverCell(3, 5);
+        expect(move.isCellInMovePreview(4, 6)).toBe(true);
+        release();
+        expect(table.value.mergedRegions).toEqual([{ startCol: 3, startRow: 5, endCol: 4, endRow: 6 }]);
+    });
+
     it('puts the block back on Escape', () => {
         lift(0, 0);
         move.hoverCell(3, 3);

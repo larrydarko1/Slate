@@ -11,6 +11,7 @@
 import { ref, type Ref } from 'vue';
 
 import type { CellRect } from '@/renderer/composables/spreadsheet/formulaEngine';
+import { growToMerges } from '@/renderer/composables/spreadsheet/merge';
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
@@ -79,9 +80,9 @@ export function useCellMove(
         const sr = ss.findNormalizedSelection();
         if (sr?.tableId !== table.value.id || !ss.isInSelection(table.value.id, ci, ri)) return false;
 
-        const { startCol, startRow, endCol, endRow } = sr;
+        // The same block moveCells will move: the selection grown to whole merges.
         moveState.value = {
-            source: { startCol, startRow, endCol, endRow },
+            source: growToMerges(sr, table.value.mergedRegions),
             grab: { col: ci, row: ri },
             hover: { col: ci, row: ri },
             lifted: false,
