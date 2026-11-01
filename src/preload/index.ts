@@ -14,6 +14,8 @@ import type { ElectronAPI } from '@/schemas/electron';
 import type { ConfirmDialogOptions } from '@/schemas/file';
 import type { LogEntry } from '@/schemas/log';
 
+const DATE_LOCALE_ARG = '--date-locale=';
+
 const api: ElectronAPI = {
     // ── Logging ──────────────────────────────────────────────────────────────
     log: {
@@ -36,6 +38,10 @@ const api: ElectronAPI = {
 
     // ── External URLs ────────────────────────────────────────────────────────
     openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
+
+    // ── System locale ────────────────────────────────────────────────────────
+    // Handed over by main as a launch argument, so it is there before any cell is read.
+    dateLocale: process.argv.find((arg) => arg.startsWith(DATE_LOCALE_ARG))?.slice(DATE_LOCALE_ARG.length) ?? '',
 };
 
 contextBridge.exposeInMainWorld('electronAPI', api);

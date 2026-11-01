@@ -35,11 +35,20 @@ export function todaySerial(now: Date = new Date()): number {
     return dateToSerial(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
+// The system locale, set at startup. Unset, Intl's own default stands in: in
+// Electron that follows the UI language and not the region.
+let systemLocale: string | undefined;
+
+/** Sets the locale dates are read and written in; '' goes back to Intl's default. */
+export function setDateLocale(locale: string): void {
+    systemLocale = locale === '' ? undefined : locale;
+}
+
 /**
  * The order the system locale writes numeric dates in, read off a formatted
  * sample date rather than kept in a table of locales.
  */
-export function localeDateOrder(locale?: string): DateOrder {
+export function localeDateOrder(locale: string | undefined = systemLocale): DateOrder {
     const parts = new Intl.DateTimeFormat(locale, { year: 'numeric', month: '2-digit', day: '2-digit' })
         .formatToParts(new Date(Date.UTC(2000, 0, 31)))
         .filter((part) => part.type === 'year' || part.type === 'month' || part.type === 'day')

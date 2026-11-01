@@ -16,6 +16,7 @@ import { pathToFileURL } from 'url';
 import { app, BrowserWindow, ipcMain, Menu, screen } from 'electron';
 
 import { config } from '@/main/lib/config';
+import { regionalLocale } from '@/main/lib/locale';
 import { log } from '@/main/lib/logger';
 import * as fileService from '@/main/services/file';
 import * as logService from '@/main/services/log';
@@ -53,6 +54,8 @@ function createWindow(): void {
             contextIsolation: true,
             sandbox: true,
             spellcheck: true,
+            // Read by the preload: the renderer cannot see the system's region.
+            additionalArguments: [`--date-locale=${regionalLocale(app.getSystemLocale())}`],
         },
         backgroundColor: '#1a1a1a',
         title: '',
