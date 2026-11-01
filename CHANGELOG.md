@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Inserting or deleting a row or column now updates every formula and chart that points into the table. References past the change move with their cells, a range grows or shrinks to match, and a reference to a deleted cell becomes `#REF!`. Before, references kept their old coordinates and silently read different cells.
 - Reordering or sorting rows and columns now updates references from other tables and from charts as well, so they keep pointing at the same cells.
 - Filling or pasting a formula no longer rewrites a table name that looks like a cell reference: `Q1::A1` used to become `Q2::A1`. The same went for the end of a cross-table range and for names with underscores, such as `my_table1`.
+- Shift-clicking cells no longer highlights the text of every column in between, and dragging a selection to move it no longer fails midway. Cells were open to the browser's own text selection, which ran across the table and turned the drag into a text drag.
 
 ## [2.0.1] - 2026-08-28
 
