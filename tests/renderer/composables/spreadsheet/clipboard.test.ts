@@ -454,10 +454,48 @@ describe('clipboard', () => {
             expect(table.mergedRegions).toEqual([{ startCol: 0, startRow: 4, endCol: 1, endRow: 4 }]);
         });
 
-        it('refuses a move that would cut a merge in two', () => {
+        it('takes in the whole of a merge the block only partly covers', () => {
+            const table = ss.tables.value[0]!;
+            table.mergedRegions = [{ startCol: 0, startRow: 0, endCol: 1, endRow: 1 }];
+            ss.setCellValue(id, 0, 0, 'x');
+            ss.setCellValue(id, 2, 0, 'y');
+            expect(ss.moveCells(id, block(0, 0, 0, 0), 0, 3)).toBe(true);
+            expect(ss.getDisplayValue(id, 0, 3)).toBe('x');
+            expect(ss.getDisplayValue(id, 0, 0)).toBe('');
+            expect(ss.getDisplayValue(id, 2, 0)).toBe('y');
+            expect(table.mergedRegions).toEqual([{ startCol: 0, startRow: 3, endCol: 1, endRow: 4 }]);
+            expect(ss.selectionRange.value).toMatchObject({ startCol: 0, startRow: 3, endCol: 1, endRow: 4 });
+        });
+
+        it('takes in a merge that a merge it took in reaches', () => {
+            const table = ss.tables.value[0]!;
+            // A2:B2 takes in A1:A2, which grows the block into row 1 and so takes in B1:C1.
+            table.mergedRegions = [
+                { startCol: 0, startRow: 0, endCol: 0, endRow: 1 },
+                { startCol: 1, startRow: 0, endCol: 2, endRow: 0 },
+            ];
+            ss.moveCells(id, block(0, 1, 1, 1), 0, 5);
+            expect(table.mergedRegions).toEqual([
+                { startCol: 0, startRow: 4, endCol: 0, endRow: 5 },
+                { startCol: 1, startRow: 4, endCol: 2, endRow: 4 },
+            ]);
+        });
+
+        it('unmerges a merge the block lands partly on', () => {
+            const table = ss.tables.value[0]!;
+            table.mergedRegions = [{ startCol: 0, startRow: 4, endCol: 1, endRow: 5 }];
+            ss.setCellValue(id, 0, 4, 'merged');
+            ss.setCellValue(id, 3, 0, 'x');
+            ss.moveCells(id, block(3, 0, 3, 0), 1, 5);
+            expect(table.mergedRegions).toEqual([]);
+            expect(ss.getDisplayValue(id, 1, 5)).toBe('x');
+            expect(ss.getDisplayValue(id, 0, 4)).toBe('merged');
+        });
+
+        it('refuses a move whose merges would push it off the top-left', () => {
             ss.tables.value[0]!.mergedRegions = [{ startCol: 0, startRow: 0, endCol: 1, endRow: 0 }];
             ss.setCellValue(id, 0, 0, 'x');
-            expect(ss.moveCells(id, block(0, 0, 0, 0), 0, 3)).toBe(false);
+            expect(ss.moveCells(id, block(1, 0, 1, 0), 0, 2)).toBe(false);
             expect(ss.getDisplayValue(id, 0, 0)).toBe('x');
         });
 

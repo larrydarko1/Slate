@@ -6,6 +6,7 @@
 import { isNumericType, type CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { CellRect, SpreadsheetFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
+import { growToMerges } from '@/renderer/composables/spreadsheet/merge';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { Cell, CellFormat, SelectionRange } from '@/renderer/types/spreadsheet';
 import { generateId, createEmptyCell } from '@/renderer/types/spreadsheet';
@@ -296,25 +297,28 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
      * notes; the formulas keep naming the cells they named; references to the
      * moved cells follow them; and whatever the block lands on is replaced.
      *
-     * Refuses (returning false) a move to nowhere, one off the top or left of
-     * the table, and one that would cut a merged region in two. The table grows
-     * to fit a move past its bottom or right edge.
+     * A merge the block only partly covers moves whole: the block grows to
+     * take it in, keeping the same offset. A merge it lands on, even partly, is
+     * unmerged.
+     *
+     * Refuses (returning false) a move to nowhere and one off the top or left
+     * of the table. The table grows to fit a move past its bottom or right edge.
      */
     function moveCells(tableId: string, source: SelectionRange, toCol: number, toRow: number): boolean {
         const table = deps.findTable(tableId);
-        if (table === null || toCol < 0 || toRow < 0) return false;
+        if (table === null) return false;
         const colDelta = toCol - source.startCol;
         const rowDelta = toRow - source.startRow;
         if (colDelta === 0 && rowDelta === 0) return false;
 
+        const moved = growToMerges(source, table.mergedRegions);
         const dest: CellRect = {
-            startCol: toCol,
-            startRow: toRow,
-            endCol: source.endCol + colDelta,
-            endRow: source.endRow + rowDelta,
+            startCol: moved.startCol + colDelta,
+            startRow: moved.startRow + rowDelta,
+            endCol: moved.endCol + colDelta,
+            endRow: moved.endRow + rowDelta,
         };
-        const straddles = (m: CellRect, rect: CellRect): boolean => overlaps(m, rect) && !contains(rect, m);
-        if (table.mergedRegions.some((m): boolean => straddles(m, source) || straddles(m, dest))) return false;
+        if (dest.startCol < 0 || dest.startRow < 0) return false;
 
         deps.pushUndo();
         while (table.rows.length <= dest.endRow) table.rows.push(table.columns.map((): Cell => createEmptyCell()));
@@ -324,24 +328,24 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
         }
 
         // References first, while every cell is still where they say it is.
-        deps.shiftReferencesForMove(tableId, source, colDelta, rowDelta);
+        deps.shiftReferencesForMove(tableId, moved, colDelta, rowDelta);
 
         // Lift the whole block before dropping any of it, so a move onto
         // itself does not read cells it has already overwritten.
-        const lifted = table.rows.slice(source.startRow, source.endRow + 1).map((row): Cell[] => {
-            const block = row.slice(source.startCol, source.endCol + 1);
-            row.splice(source.startCol, block.length, ...block.map((): Cell => createEmptyCell()));
+        const lifted = table.rows.slice(moved.startRow, moved.endRow + 1).map((row): Cell[] => {
+            const block = row.slice(moved.startCol, moved.endCol + 1);
+            row.splice(moved.startCol, block.length, ...block.map((): Cell => createEmptyCell()));
             return block;
         });
         for (const [i, block] of lifted.entries()) {
-            table.rows[toRow + i]?.splice(toCol, block.length, ...block);
+            table.rows[dest.startRow + i]?.splice(dest.startCol, block.length, ...block);
         }
 
-        // A merge inside the block moves with it; one it lands on is gone.
+        // A merge inside the block moves with it; one it lands on is unmerged.
         table.mergedRegions = table.mergedRegions
-            .filter((m): boolean => contains(source, m) || !contains(dest, m))
+            .filter((m): boolean => contains(moved, m) || !overlaps(dest, m))
             .map((m) =>
-                contains(source, m)
+                contains(moved, m)
                     ? {
                           startCol: m.startCol + colDelta,
                           startRow: m.startRow + rowDelta,
@@ -352,7 +356,7 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
             );
 
         state.selectionRange.value = { tableId, ...dest };
-        state.activeCell.value = { tableId, col: toCol, row: toRow };
+        state.activeCell.value = { tableId, col: dest.startCol, row: dest.startRow };
         deps.recalculate();
         return true;
     }

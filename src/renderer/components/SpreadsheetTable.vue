@@ -792,6 +792,11 @@ watch(
     cursor: cell;
     overflow: hidden;
 
+    // Cell selection is the app's own. Native text selection would spread a
+    // shift-click across every column in between, and dragging that text
+    // starts a browser drag that swallows the mouse events moving cells needs.
+    user-select: none;
+
     &.header-row {
         background: $bg-secondary;
         font-weight: $font-weight-semibold;
@@ -923,6 +928,7 @@ watch(
     color: $text-primary;
     background: $bg-primary;
     z-index: $z-raised;
+    user-select: text;
 }
 
 /* ––––– Note indicator ––––– */

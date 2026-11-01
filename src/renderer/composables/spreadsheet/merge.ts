@@ -1,8 +1,9 @@
 /**
  * createMerge — cell merge and unmerge operations.
- * Owns: findMergedRegionAt, findMergeOrigin, isCellHiddenByMerge, merge/unmerge.
+ * Owns: findMergedRegionAt, findMergeOrigin, isCellHiddenByMerge, merge/unmerge, growToMerges.
  * Does NOT own: cell access (useCells.ts), selection (helpers.ts).
  */
+import type { CellRect } from '@/renderer/composables/spreadsheet/formulaEngine';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { MergedRegion } from '@/renderer/types/spreadsheet';
@@ -24,6 +25,40 @@ type MergeDeps = {
     findNormalizedSelection: SpreadsheetHelpers['findNormalizedSelection'];
     pushUndo: () => void;
 };
+
+/**
+ * The smallest rect holding `rect` and every merge it touches. Taking in one
+ * merge can reach another, so it grows until no merge sticks out of it.
+ */
+export function growToMerges(rect: CellRect, merges: readonly MergedRegion[]): CellRect {
+    const { startCol, startRow, endCol, endRow } = rect;
+    const grown: CellRect = { startCol, startRow, endCol, endRow };
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (const merge of merges) {
+            const touches =
+                merge.startCol <= grown.endCol &&
+                grown.startCol <= merge.endCol &&
+                merge.startRow <= grown.endRow &&
+                grown.startRow <= merge.endRow;
+            if (!touches) continue;
+            if (
+                merge.startCol < grown.startCol ||
+                merge.startRow < grown.startRow ||
+                merge.endCol > grown.endCol ||
+                merge.endRow > grown.endRow
+            ) {
+                grown.startCol = Math.min(grown.startCol, merge.startCol);
+                grown.startRow = Math.min(grown.startRow, merge.startRow);
+                grown.endCol = Math.max(grown.endCol, merge.endCol);
+                grown.endRow = Math.max(grown.endRow, merge.endRow);
+                changed = true;
+            }
+        }
+    }
+    return grown;
+}
 
 export function createMerge(_state: SpreadsheetCoreState, deps: MergeDeps): SpreadsheetMerge {
     function findMergedRegionAt(tableId: string, col: number, row: number): MergedRegion | null {

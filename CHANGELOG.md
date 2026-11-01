@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Move cells by dragging, the way Numbers does it. Press and hold a selection until it lifts, drag it, and let go where it should land; Escape puts it back. Moved formulas keep pointing at the cells they used, references to the moved cells follow them (from other tables and charts too), and a reference to a cell the block lands on becomes `#REF!`.
+- Move cells by dragging, the way Numbers does it. Press and hold a selection until it lifts, drag it, and let go where it should land; Escape puts it back. Moved formulas keep pointing at the cells they used, references to the moved cells follow them (from other tables and charts too), and a reference to a cell the block lands on becomes `#REF!`. Merged cells move whole: a selection that covers part of one takes in all of it, and a merged cell the block lands on is unmerged.
 - A date cell type. Type `2026-03-04`, or a date written in your system's day/month order such as `04/03/2026`, and the cell holds a date: shown in that same order, right-aligned, and usable in arithmetic. A date plus 7 is a week later, and one date minus another is the number of days between them. Files that contain date cells cannot be opened by earlier versions of Slate.
 - The fill handle continues series. Drag a single date and it counts on a day per cell, or back when filling up or left. Two or more numbers or dates with a constant step carry on that step, so 1 and 3 continue 5, 7, 9 and two dates a week apart continue weekly. A single number, or values with no steady step, still repeat as before.
 - `DATE(year, month, day)`, `YEAR`, `MONTH` and `DAY` formula functions. `TODAY()` now returns a date rather than text.
@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Inserting or deleting a row or column now updates every formula and chart that points into the table. References past the change move with their cells, a range grows or shrinks to match, and a reference to a deleted cell becomes `#REF!`. Before, references kept their old coordinates and silently read different cells.
 - Reordering or sorting rows and columns now updates references from other tables and from charts as well, so they keep pointing at the same cells.
 - Filling or pasting a formula no longer rewrites a table name that looks like a cell reference: `Q1::A1` used to become `Q2::A1`. The same went for the end of a cross-table range and for names with underscores, such as `my_table1`.
+- Shift-clicking cells no longer highlights the text of every column in between, and dragging a selection to move it no longer fails midway. Cells were open to the browser's own text selection, which ran across the table and turned the drag into a text drag.
 
 ## [2.0.1] - 2026-08-28
 
