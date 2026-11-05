@@ -180,6 +180,80 @@ describe('cells', () => {
             ss.setCellType(id, 99, 99, 'text');
             expect(ss.getCellType(id, 0, 0)).toBe('empty');
         });
+
+        it('reads a date out of text retyped as a date', () => {
+            ss.setCellValue(id, 0, 0, '2026-03-04');
+            ss.setCellType(id, 0, 0, 'text');
+            ss.setCellType(id, 0, 0, 'date');
+            expect(ss.findCell(id, 0, 0)).toMatchObject({ value: dateToSerial(2026, 3, 4), cellType: 'date' });
+        });
+
+        it('leaves text with no number in it as text when given a numeric type', () => {
+            ss.setCellValue(id, 0, 0, 'Due');
+            ss.setCellType(id, 0, 0, 'date');
+            expect(ss.findCell(id, 0, 0)).toMatchObject({ value: 'Due', cellType: 'text' });
+        });
+
+        it('leaves an empty cell empty', () => {
+            ss.setCellType(id, 0, 0, 'date');
+            expect(ss.getCellType(id, 0, 0)).toBe('empty');
+        });
+    });
+
+    describe('setSelectionType', () => {
+        it('retypes every cell in the selection', () => {
+            ss.setCellValue(id, 0, 0, '46085');
+            ss.setCellValue(id, 0, 1, '46086');
+            ss.setCellValue(id, 1, 0, '7');
+            ss.setCellValue(id, 0, 2, '46087');
+            ss.selectCell(id, 0, 0);
+            ss.extendSelection(id, 0, 1);
+            ss.setSelectionType('date');
+            expect(ss.getCellType(id, 0, 0)).toBe('date');
+            expect(ss.getCellType(id, 0, 1)).toBe('date');
+            expect(ss.getCellType(id, 1, 0)).toBe('integer');
+            expect(ss.getCellType(id, 0, 2)).toBe('integer');
+        });
+
+        it('retypes the active cell when nothing is ranged', () => {
+            ss.setCellValue(id, 0, 0, '5');
+            ss.selectCell(id, 0, 0);
+            ss.setSelectionType('percent');
+            expect(ss.getCellType(id, 0, 0)).toBe('percent');
+        });
+
+        it('keeps a header row as text while the dates under it become dates', () => {
+            ss.setCellValue(id, 0, 0, 'Due');
+            ss.setCellValue(id, 0, 1, '2026-03-04');
+            ss.setCellType(id, 0, 1, 'text');
+            ss.setCellValue(id, 0, 2, '5');
+            ss.selectCell(id, 0, 0);
+            ss.extendSelection(id, 0, 2);
+            ss.setSelectionType('date');
+            expect(ss.findCell(id, 0, 0)).toMatchObject({ value: 'Due', cellType: 'text' });
+            expect(ss.findCell(id, 0, 1)).toMatchObject({ value: dateToSerial(2026, 3, 4), cellType: 'date' });
+            expect(ss.findCell(id, 0, 2)).toMatchObject({ value: 5, cellType: 'date' });
+        });
+
+        it('recalculates formulas that read the retyped cells', () => {
+            ss.setCellValue(id, 0, 0, '46085');
+            ss.setCellValue(id, 1, 0, '=A1+7');
+            ss.selectCell(id, 0, 0);
+            ss.setSelectionType('date');
+            expect(ss.getCellType(id, 1, 0)).toBe('date');
+        });
+
+        it('undoes in one step', async () => {
+            ss.setCellValue(id, 0, 0, '1');
+            ss.setCellValue(id, 0, 1, '2');
+            await Promise.resolve();
+            ss.selectCell(id, 0, 0);
+            ss.extendSelection(id, 0, 1);
+            ss.setSelectionType('currency_usd');
+            ss.undo();
+            expect(ss.getCellType(id, 0, 0)).toBe('integer');
+            expect(ss.getCellType(id, 0, 1)).toBe('integer');
+        });
     });
 
     describe('formats', () => {

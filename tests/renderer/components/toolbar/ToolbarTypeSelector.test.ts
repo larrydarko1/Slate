@@ -50,6 +50,19 @@ describe('ToolbarTypeSelector', () => {
         expect(ss.getCellType(id, 0, 0)).toBe('percent');
     });
 
+    it('applies the type to every selected cell', async () => {
+        ss.setCellValue(id, 0, 0, '46085');
+        ss.setCellValue(id, 0, 1, '46086');
+        ss.selectCell(id, 0, 0);
+        ss.extendSelection(id, 0, 1);
+        await wrapper.vm.$nextTick();
+        await wrapper.find('.type-selector-btn').trigger('click');
+        const date = wrapper.findAll('.type-option').find((i) => /date/i.test(i.text()));
+        await date?.trigger('click');
+        expect(ss.getCellType(id, 0, 0)).toBe('date');
+        expect(ss.getCellType(id, 0, 1)).toBe('date');
+    });
+
     it('shows the current type on the button', async () => {
         ss.setCellValue(id, 0, 0, '5');
         ss.selectCell(id, 0, 0);

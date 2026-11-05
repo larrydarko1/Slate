@@ -17,6 +17,7 @@ export function stubElectronApi(overrides: Partial<ElectronAPI> = {}): ElectronA
         readFile: vi.fn().mockResolvedValue({ success: true, content: '{}' }),
         onOpenFile: vi.fn().mockReturnValue(() => {}),
         openExternal: vi.fn().mockResolvedValue({ success: true }),
+        dateLocale: '',
         ...overrides,
     };
     window.electronAPI = api;

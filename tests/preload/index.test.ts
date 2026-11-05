@@ -34,6 +34,9 @@ const loadBridge = async (): Promise<[number, string, ElectronAPI]> => {
     return [calls.length, ...exposed];
 };
 
+// Main hands the date locale over as a launch argument, before the preload runs.
+process.argv.push('--date-locale=en-MT');
+
 const [exposeCount, namespace, api] = await loadBridge();
 
 describe('preload bridge', () => {
@@ -45,6 +48,7 @@ describe('preload bridge', () => {
     it('exposes exactly the documented surface — nothing more', () => {
         expect(Object.keys(api).sort()).toEqual(
             [
+                'dateLocale',
                 'log',
                 'onOpenFile',
                 'openExternal',
@@ -55,6 +59,10 @@ describe('preload bridge', () => {
                 'writeFile',
             ].sort(),
         );
+    });
+
+    it('hands over the date locale main launched it with', () => {
+        expect(api.dateLocale).toBe('en-MT');
     });
 
     describe('logging', () => {

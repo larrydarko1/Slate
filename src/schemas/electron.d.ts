@@ -32,6 +32,12 @@ export type ElectronAPI = {
     onOpenFile: (callback: (filePath: string) => void) => () => void;
 
     openExternal: (url: string) => Promise<ShellOpenResult>;
+
+    /**
+     * The locale dates are read and written in: the system's language with its
+     * region, such as en-MT, or '' when the system did not give one.
+     */
+    dateLocale: string;
 };
 
 declare global {

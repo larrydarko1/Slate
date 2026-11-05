@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect } from 'vitest';
 
 import {
     dateToSerial,
@@ -6,6 +6,7 @@ import {
     localeDateOrder,
     parseDate,
     serialToDate,
+    setDateLocale,
     todaySerial,
 } from '@/renderer/composables/spreadsheet/engine/dates';
 
@@ -42,6 +43,27 @@ describe('localeDateOrder', () => {
         ['ja-JP', 'YMD'],
     ])('reads %s as %s', (locale, order) => {
         expect(localeDateOrder(locale)).toBe(order);
+    });
+});
+
+describe('setDateLocale', () => {
+    afterEach(() => {
+        setDateLocale('');
+    });
+
+    it('reads and writes dates in the system locale it is given', () => {
+        setDateLocale('en-MT');
+        expect(localeDateOrder()).toBe('DMY');
+        expect(parseDate('12/11/2026')).toBe(dateToSerial(2026, 11, 12));
+        expect(parseDate('13/11/2026')).toBe(dateToSerial(2026, 11, 13));
+        expect(formatDate(dateToSerial(2026, 11, 13))).toBe('13/11/2026');
+    });
+
+    it('goes back to the default order when cleared', () => {
+        const fallback = localeDateOrder();
+        setDateLocale('ja-JP');
+        setDateLocale('');
+        expect(localeDateOrder()).toBe(fallback);
     });
 });
 
