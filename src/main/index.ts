@@ -22,6 +22,9 @@ import * as logService from '@/main/services/log';
 import * as shellService from '@/main/services/shell';
 
 let mainWindow: BrowserWindow | null = null;
+// False between creating a window and its first paint: a file sent then would
+// reach a renderer not yet listening for it, so it waits in fileToOpen instead.
+let mainWindowReady = false;
 let fileToOpen: string | null = null;
 
 // The file a .slate double-click asked for, if the OS named one at launch.
@@ -141,6 +144,7 @@ function createWindow(): void {
     }
 
     win.once('ready-to-show', () => {
+        mainWindowReady = true;
         win.show();
         if (fileToOpen !== null) {
             win.webContents.send('file:opened', fileToOpen);
@@ -150,7 +154,25 @@ function createWindow(): void {
 
     win.on('closed', () => {
         mainWindow = null;
+        mainWindowReady = false;
     });
+}
+
+/**
+ * Shows a file the OS asked Slate to open. Before the app is ready the file
+ * waits for the first window; after it, a missing window — the last one closed
+ * while macOS kept the app in the Dock — is recreated rather than leaving the
+ * file to wait for a Dock click.
+ */
+function openFile(filePath: string): void {
+    if (mainWindow === null || !mainWindowReady) {
+        fileToOpen = filePath;
+        if (mainWindow === null && app.isReady()) createWindow();
+        return;
+    }
+    mainWindow.webContents.send('file:opened', filePath);
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
 }
 
 // ─── macOS: Handle open-file event ───────────────────────────────────────────
@@ -159,13 +181,7 @@ function createWindow(): void {
 
 app.on('open-file', (event, filePath) => {
     event.preventDefault();
-    if (mainWindow !== null) {
-        mainWindow.webContents.send('file:opened', filePath);
-        if (mainWindow.isMinimized()) mainWindow.restore();
-        mainWindow.focus();
-    } else {
-        fileToOpen = filePath;
-    }
+    openFile(filePath);
 });
 
 // ─── Linux: Check CLI args for .slate file ───────────────────────────────────
@@ -179,15 +195,12 @@ if (!gotLock) {
 } else {
     app.on('second-instance', (_event, argv) => {
         const file = argv.find((arg) => arg.endsWith('.slate') && existsSync(arg));
-        if (file !== undefined && mainWindow !== null) {
-            mainWindow.webContents.send('file:opened', file);
-            if (mainWindow.isMinimized()) mainWindow.restore();
-            mainWindow.focus();
-        }
+        if (file !== undefined) openFile(file);
     });
 
     void app.whenReady().then(() => {
-        createWindow();
+        // An open-file landing between `ready` and this callback has already made one.
+        if (mainWindow === null) createWindow();
         app.on('activate', () => {
             if (BrowserWindow.getAllWindows().length === 0) {
                 createWindow();
