@@ -108,7 +108,19 @@ export function register(ipc: IpcMain, getWindows: () => BrowserWindow[]): void 
             } catch {
                 /* tmp already gone */
             }
-            return ipcFailure('file file:write', err);
+            if (!isPermissionError(err)) return ipcFailure('file file:write', err);
+
+            // macOS privacy protection (TCC) on Desktop, Documents and Downloads can
+            // grant consent for the one file the user opened or picked without
+            // granting the folder, so the sibling .tmp cannot be created or renamed.
+            // Writing in place loses crash atomicity, but it is the only write the
+            // user has allowed — and refusing to save at all loses more.
+            try {
+                writeFileSync(filePath, content, 'utf8');
+                return { success: true };
+            } catch (directErr) {
+                return ipcFailure('file file:write', directErr);
+            }
         }
     });
 
@@ -122,6 +134,10 @@ export function register(ipc: IpcMain, getWindows: () => BrowserWindow[]): void 
             return ipcFailure('file file:read', err);
         }
     });
+}
+
+function isPermissionError(error: unknown): boolean {
+    return error instanceof Error && 'code' in error && (error.code === 'EPERM' || error.code === 'EACCES');
 }
 
 /**
