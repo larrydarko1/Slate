@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- On macOS, opening a `.slate` file after closing Slate's last window now brings the window back with the file in it. Before, Slate stayed in the Dock without a window, and the file only appeared after clicking the Dock icon.
+- On macOS, saving a file kept in Desktop, Documents or Downloads no longer fails with "Slate does not have permission to use that file", and no longer leaves a `.slate.tmp` file beside it. macOS can allow Slate to change the file you opened without allowing it to create new files in that folder, and the safe-save temporary file needs the latter. Slate now saves directly to the file when that happens. A crash in the middle of that save can leave the file incomplete, which the temporary file otherwise prevents. A `.slate.tmp` left behind by an earlier failed save holds that save's contents and can be deleted.
 - Dates are read and shown in the day/month order of your system's region, not its language. On a Mac set to English (US) with a European region, `13/11/2026` was not recognised as a date and `12/11/2026` was read as 11 December. Dates entered that way before this fix are still held as the wrong day, and now show as such (11/12/2026), so they can be found and retyped.
 - Choosing a type from the toolbar now applies it to every selected cell in one step, and one undo puts them all back. Before, only the active cell changed. Text that holds a number or date converts to it; other text, such as a header row in the selection, stays text, and empty cells are left alone.
 - Recalculation no longer slows down exponentially as chains of dependent formulas get longer. A chain of 25 formulas used to freeze the app.
