@@ -188,6 +188,43 @@ describe('file service', () => {
             expect(unlinkSync).toHaveBeenCalledWith('/tmp/a.slate.tmp');
         });
 
+        it('writes in place when the folder refuses the temp file but the file itself is allowed', async () => {
+            renameSync.mockImplementation(() => {
+                throw Object.assign(new Error('EPERM: operation not permitted, rename'), { code: 'EPERM' });
+            });
+            await expect(call('file:write', '/tmp/a.slate', '{}')).resolves.toEqual({ success: true });
+            expect(unlinkSync).toHaveBeenCalledWith('/tmp/a.slate.tmp');
+            expect(writeFileSync).toHaveBeenLastCalledWith('/tmp/a.slate', '{}', 'utf8');
+        });
+
+        it('writes in place when a leftover temp file cannot be opened', async () => {
+            writeFileSync.mockImplementationOnce(() => {
+                throw Object.assign(new Error('EPERM: operation not permitted, open'), { code: 'EPERM' });
+            });
+            await expect(call('file:write', '/tmp/a.slate', '{}')).resolves.toEqual({ success: true });
+            expect(renameSync).not.toHaveBeenCalled();
+            expect(writeFileSync).toHaveBeenLastCalledWith('/tmp/a.slate', '{}', 'utf8');
+        });
+
+        it('reports access denied when the file itself is refused too', async () => {
+            writeFileSync.mockImplementation(() => {
+                throw Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
+            });
+            await expect(call('file:write', '/tmp/a.slate', '{}')).resolves.toEqual({
+                success: false,
+                error: 'ACCESS_DENIED',
+            });
+            expect(writeFileSync).toHaveBeenCalledTimes(2);
+        });
+
+        it('does not fall back to writing in place for failures other than permission', async () => {
+            writeFileSync.mockImplementation(() => {
+                throw Object.assign(new Error('ENOSPC'), { code: 'ENOSPC' });
+            });
+            await call('file:write', '/tmp/a.slate', '{}');
+            expect(writeFileSync).toHaveBeenCalledTimes(1);
+        });
+
         it('survives the temp file already being gone', async () => {
             writeFileSync.mockImplementation(() => {
                 throw new Error('disk full');
