@@ -23,18 +23,13 @@ defineEmits<{ remove: [] }>();
 const ss = injectSpreadsheet();
 const tableRef = toRef(props, 'table');
 
-// DOM refs
 const tableEl = useTemplateRef<HTMLElement>('tableEl');
 const nameInputRef = useTemplateRef<HTMLInputElement>('nameInputRef');
 const cellInputRef = useTemplateRef<HTMLInputElement[]>('cellInputRef');
 const ctxMenu = useTemplateRef<ContextMenuApi>('ctxMenu');
 
-// ── Name editing ─────────────────────────────────────────────────────────────
-
 const editingName = ref(false);
 const localName = ref(props.table.name);
-
-// ── Composable wiring ────────────────────────────────────────────────────────
 
 const { startDrag, startColResize, startAddRowDrag, startAddColDrag } = useTableStructure(tableRef, ss, editingName);
 const { isSelectionCorner, isCellInFillPreview, startFillDrag, fillToEnd } = useFillHandle(tableRef, ss, tableEl);
@@ -82,24 +77,13 @@ const { onColumnContextMenu, onRowContextMenu, onCellContextMenu } = useTableCon
     openNoteEditor,
 );
 
-// ── Table position ───────────────────────────────────────────────────────────
-
 const tableStyle = computed((): { left: string; top: string; zIndex: number } => ({
     left: `${props.table.x}px`,
     top: `${props.table.y}px`,
     zIndex: props.table.zIndex,
 }));
 
-// ── Cell interaction ─────────────────────────────────────────────────────────
-
 let isDragging = false;
-
-/** A plain press: select the cell and start extending the selection as the pointer moves. */
-function startSelectionDrag(ci: number, ri: number): void {
-    ss.selectCell(props.table.id, ci, ri);
-    isDragging = true;
-    document.addEventListener('mouseup', onSelectionMouseUp);
-}
 
 const { moveState, pressSelection, hoverCell, isCellLifted, isCellInMovePreview } = useCellMove(
     tableRef,
@@ -108,6 +92,13 @@ const { moveState, pressSelection, hoverCell, isCellLifted, isCellInMovePreview 
 );
 let isChartDragging = false;
 let chartDragStart: { ci: number; ri: number } | null = null;
+
+/** A plain press: select the cell and start extending the selection as the pointer moves. */
+function startSelectionDrag(ci: number, ri: number): void {
+    ss.selectCell(props.table.id, ci, ri);
+    isDragging = true;
+    document.addEventListener('mouseup', onSelectionMouseUp);
+}
 
 function startNameEdit(): void {
     localName.value = props.table.name;
@@ -195,8 +186,6 @@ function onTableMouseDown(): void {
     ss.bringToFront(props.table.id);
 }
 
-// ── Cell editing ─────────────────────────────────────────────────────────────
-
 function onCellDblClick(ci: number, ri: number): void {
     ss.selectCell(props.table.id, ci, ri);
     ss.startEditing();
@@ -234,8 +223,6 @@ function onCellEditBlur(): void {
         if (ss.isEditing.value) ss.commitEdit();
     }, 100);
 }
-
-// ── Keyboard navigation ─────────────────────────────────────────────────────
 
 function onKeyDown(e: KeyboardEvent): void {
     if (ss.isEditing.value) return;
@@ -307,8 +294,6 @@ function onKeyDown(e: KeyboardEvent): void {
             }
     }
 }
-
-// ── Focus management ─────────────────────────────────────────────────────────
 
 watch(
     (): { tableId: string; col: number; row: number } | null => ss.activeCell.value,
