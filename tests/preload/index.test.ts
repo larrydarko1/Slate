@@ -27,15 +27,14 @@ vi.mock('electron', () => ({
  * captured here too, since Vitest clears every mock's history before each test.
  */
 const loadBridge = async (): Promise<[number, string, ElectronAPI]> => {
+    // Main hands the date locale over as a launch argument, before the preload runs.
+    process.argv.push('--date-locale=en-MT');
     await import('@/preload/index');
     const { calls } = exposeInMainWorld.mock;
     const exposed = calls[0];
     if (exposed === undefined) throw new Error('The preload exposed nothing');
     return [calls.length, ...exposed];
 };
-
-// Main hands the date locale over as a launch argument, before the preload runs.
-process.argv.push('--date-locale=en-MT');
 
 const [exposeCount, namespace, api] = await loadBridge();
 
