@@ -5,7 +5,8 @@ import type { IpcMain } from '@/main/lib/ipc';
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown;
 
-vi.mock('@/main/lib/logger', () => ({ log: { warn: vi.fn() } }));
+const warn = vi.fn();
+vi.mock('@/main/lib/logger', () => ({ log: { warn: (...a: unknown[]): unknown => warn(...a) } }));
 
 const showSaveDialog = vi.fn();
 const showOpenDialog = vi.fn();
@@ -26,7 +27,10 @@ vi.mock('fs/promises', () => ({ default: { readFile: (...a: unknown[]): unknown 
 const writeFileSync = vi.fn();
 const renameSync = vi.fn();
 const unlinkSync = vi.fn();
+const closeSync = vi.fn();
+const opendirSync = vi.fn();
 const fsMock = {
+    opendirSync: (...a: unknown[]): unknown => opendirSync(...a),
     writeFileSync: (...a: unknown[]): unknown => writeFileSync(...a),
     renameSync: (...a: unknown[]): unknown => renameSync(...a),
     unlinkSync: (...a: unknown[]): unknown => unlinkSync(...a),
@@ -46,8 +50,20 @@ describe('file service', () => {
     }
 
     beforeEach(() => {
-        const mocks = [showSaveDialog, showOpenDialog, showMessageBox, writeFileSync, renameSync, unlinkSync, readFile];
+        const mocks = [
+            showSaveDialog,
+            showOpenDialog,
+            showMessageBox,
+            writeFileSync,
+            renameSync,
+            unlinkSync,
+            opendirSync,
+            closeSync,
+            readFile,
+            warn,
+        ];
         for (const fn of mocks) fn.mockReset();
+        opendirSync.mockReturnValue({ closeSync });
         handlers = new Map();
         windows = [new electron.BrowserWindow()];
         const ipc: IpcMain = {
@@ -188,6 +204,49 @@ describe('file service', () => {
             expect(unlinkSync).toHaveBeenCalledWith('/tmp/a.slate.tmp');
         });
 
+        it('writes in place without a temp file when macOS refuses to list the folder', async () => {
+            opendirSync.mockImplementation(() => {
+                throw Object.assign(new Error('EPERM: operation not permitted, opendir'), { code: 'EPERM' });
+            });
+            await expect(call('file:write', '/Users/me/Desktop/a.slate', '{}')).resolves.toEqual({ success: true });
+            expect(opendirSync).toHaveBeenCalledWith('/Users/me/Desktop');
+            expect(writeFileSync).toHaveBeenCalledTimes(1);
+            expect(writeFileSync).toHaveBeenCalledWith('/Users/me/Desktop/a.slate', '{}', 'utf8');
+            expect(renameSync).not.toHaveBeenCalled();
+        });
+
+        it('closes the folder it checked before writing the temp file', async () => {
+            await call('file:write', '/tmp/a.slate', '{}');
+            expect(closeSync).toHaveBeenCalledTimes(1);
+            expect(writeFileSync).toHaveBeenCalledWith('/tmp/a.slate.tmp', '{}', 'utf8');
+        });
+
+        it('leaves other folder errors to the write itself to report', async () => {
+            opendirSync.mockImplementation(() => {
+                throw Object.assign(new Error('ENOENT: no such file or directory'), { code: 'ENOENT' });
+            });
+            writeFileSync.mockImplementation(() => {
+                throw Object.assign(new Error('ENOENT: no such file or directory'), { code: 'ENOENT' });
+            });
+            await expect(call('file:write', '/gone/a.slate', '{}')).resolves.toMatchObject({ success: false });
+            expect(writeFileSync).toHaveBeenCalledWith('/gone/a.slate.tmp', '{}', 'utf8');
+        });
+
+        it('logs a temp file it could not remove', async () => {
+            renameSync.mockImplementation(() => {
+                throw Object.assign(new Error('EPERM: operation not permitted, rename'), { code: 'EPERM' });
+            });
+            unlinkSync.mockImplementation(() => {
+                throw Object.assign(new Error('EPERM: operation not permitted, unlink'), { code: 'EPERM' });
+            });
+            await expect(call('file:write', '/tmp/a.slate', '{}')).resolves.toEqual({ success: true });
+            expect(warn).toHaveBeenCalledWith(
+                'Could not remove temp file',
+                { tmpPath: '/tmp/a.slate.tmp' },
+                expect.objectContaining({ code: 'EPERM' }),
+            );
+        });
+
         it('writes in place when the folder refuses the temp file but the file itself is allowed', async () => {
             renameSync.mockImplementation(() => {
                 throw Object.assign(new Error('EPERM: operation not permitted, rename'), { code: 'EPERM' });
@@ -230,9 +289,10 @@ describe('file service', () => {
                 throw new Error('disk full');
             });
             unlinkSync.mockImplementation(() => {
-                throw new Error('ENOENT');
+                throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
             });
             await expect(call('file:write', '/tmp/a.slate', '{}')).resolves.toMatchObject({ success: false });
+            expect(warn).not.toHaveBeenCalledWith('Could not remove temp file', expect.anything(), expect.anything());
         });
 
         it('rejects arguments of the wrong shape', async () => {

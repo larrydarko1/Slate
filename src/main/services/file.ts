@@ -4,13 +4,15 @@
  * Does NOT own: the wire vocabulary (@/schemas/file), window lifecycle
  * (main/index.ts), spreadsheet serialization (renderer).
  */
-import { renameSync, unlinkSync, writeFileSync } from 'fs';
+import { opendirSync, renameSync, unlinkSync, writeFileSync } from 'fs';
 import fs from 'fs/promises';
+import path from 'path';
 
 import { type BrowserWindow, dialog } from 'electron';
 
 import { ipcFailure } from '@/main/lib/errors';
 import type { IpcMain } from '@/main/lib/ipc';
+import { log } from '@/main/lib/logger';
 import {
     type FileReadResult,
     type FileWriteResult,
@@ -98,29 +100,22 @@ export function register(ipc: IpcMain, getWindows: () => BrowserWindow[]): void 
         const { filePath, content } = parsed.data;
         const tmpPath = `${filePath}.tmp`;
 
+        // macOS privacy protection (TCC) on Desktop, Documents and Downloads can
+        // grant consent for the one file the user opened or picked without granting
+        // the folder. Slate may then create the sibling .tmp but never rename, reopen
+        // or delete it, so it would stay beside the file until the user bins it.
+        // Writing in place loses crash atomicity, but it is the only write the user
+        // has allowed — and refusing to save at all loses more.
+        if (folderRefusesAccess(path.dirname(filePath))) return writeInPlace(filePath, content);
+
         try {
             writeFileSync(tmpPath, content, 'utf8');
             renameSync(tmpPath, filePath);
             return { success: true };
         } catch (err) {
-            try {
-                unlinkSync(tmpPath);
-            } catch {
-                /* tmp already gone */
-            }
+            removeTemp(tmpPath);
             if (!isPermissionError(err)) return ipcFailure('file file:write', err);
-
-            // macOS privacy protection (TCC) on Desktop, Documents and Downloads can
-            // grant consent for the one file the user opened or picked without
-            // granting the folder, so the sibling .tmp cannot be created or renamed.
-            // Writing in place loses crash atomicity, but it is the only write the
-            // user has allowed — and refusing to save at all loses more.
-            try {
-                writeFileSync(filePath, content, 'utf8');
-                return { success: true };
-            } catch (directErr) {
-                return ipcFailure('file file:write', directErr);
-            }
+            return writeInPlace(filePath, content);
         }
     });
 
@@ -134,6 +129,36 @@ export function register(ipc: IpcMain, getWindows: () => BrowserWindow[]): void 
             return ipcFailure('file file:read', err);
         }
     });
+}
+
+// Listing is what TCC refuses without a folder grant, and unlike a probe file it
+// leaves nothing behind.
+function folderRefusesAccess(dir: string): boolean {
+    try {
+        opendirSync(dir).closeSync();
+        return false;
+    } catch (err) {
+        return isPermissionError(err);
+    }
+}
+
+function writeInPlace(filePath: string, content: string): FileWriteResult {
+    try {
+        writeFileSync(filePath, content, 'utf8');
+        return { success: true };
+    } catch (err) {
+        return ipcFailure('file file:write', err);
+    }
+}
+
+function removeTemp(tmpPath: string): void {
+    try {
+        unlinkSync(tmpPath);
+    } catch (err) {
+        if (!(err instanceof Error && 'code' in err && err.code === 'ENOENT')) {
+            log.warn('Could not remove temp file', { tmpPath }, err);
+        }
+    }
 }
 
 function isPermissionError(error: unknown): boolean {
