@@ -3,10 +3,9 @@
  * Owns: findMergedRegionAt, findMergeOrigin, isCellHiddenByMerge, merge/unmerge, growToMerges.
  * Does NOT own: cell access (useCells.ts), selection (helpers.ts).
  */
-import type { CellRect } from '@/renderer/composables/spreadsheet/formulaEngine';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-import type { MergedRegion } from '@/renderer/types/spreadsheet';
+import type { CellRect, MergedRegion } from '@/renderer/types/spreadsheet';
 import { createEmptyCell } from '@/renderer/types/spreadsheet';
 
 export type SpreadsheetMerge = {

@@ -10,12 +10,9 @@
  */
 import { ref, type Ref } from 'vue';
 
-import type { CellRect } from '@/renderer/composables/spreadsheet/formulaEngine';
 import { growToMerges } from '@/renderer/composables/spreadsheet/merge';
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
-import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
-
-export const HOLD_TO_LIFT_MS = 300;
+import type { CellRect, SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 type CellPos = { col: number; row: number };
 
@@ -34,6 +31,8 @@ type CellMove = {
     isCellLifted: (ci: number, ri: number) => boolean;
     isCellInMovePreview: (ci: number, ri: number) => boolean;
 };
+
+const HOLD_TO_LIFT_MS = 300;
 
 /**
  * `onAbandon` is called with the pressed cell when the pointer leaves it before

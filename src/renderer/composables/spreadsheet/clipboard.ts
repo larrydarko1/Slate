@@ -4,11 +4,11 @@
  * Does NOT own: cell access (useCells.ts), formula shifting (useFormulaEngine.ts).
  */
 import { isNumericType, type CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
-import type { CellRect, SpreadsheetFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
+import type { SpreadsheetFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import { growToMerges } from '@/renderer/composables/spreadsheet/merge';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-import type { Cell, CellFormat, SelectionRange } from '@/renderer/types/spreadsheet';
+import type { Cell, CellFormat, CellRect, SelectionRange } from '@/renderer/types/spreadsheet';
 import { generateId, createEmptyCell } from '@/renderer/types/spreadsheet';
 
 export type SpreadsheetClipboard = {
@@ -41,46 +41,6 @@ type ClipboardCell = {
 
 /** A run of numbers or dates rising by a constant step, the way a fill continues it. */
 type Series = { start: number; step: number; type: CellDataType };
-
-/**
- * The series `cells` form, if any: two or more plain numbers or dates of one
- * type with a constant step, or a single date, which counts on a day at a time.
- * Anything else, a single number included, is null and gets copied as it is.
- */
-function findSeries(cells: (Cell | null)[]): Series | null {
-    const type = cells[0]?.cellType;
-    if (type === undefined || !isNumericType(type)) return null;
-    const values: number[] = [];
-    for (const cell of cells) {
-        if (cell === null || cell.formula !== undefined || cell.cellType !== type || typeof cell.value !== 'number')
-            return null;
-        values.push(cell.value);
-    }
-    const [start = 0, second] = values;
-    if (second === undefined) return type === 'date' ? { start, step: 1, type } : null;
-    const step = second - start;
-    const steady = values.every((value, i): boolean => Math.abs(value - (start + step * i)) < 1e-9);
-    return steady ? { start, step, type } : null;
-}
-
-function overlaps(a: CellRect, b: CellRect): boolean {
-    return a.startCol <= b.endCol && b.startCol <= a.endCol && a.startRow <= b.endRow && b.startRow <= a.endRow;
-}
-
-/** Whether `inner` lies wholly inside `outer`. */
-function contains(outer: CellRect, inner: CellRect): boolean {
-    return (
-        inner.startCol >= outer.startCol &&
-        inner.endCol <= outer.endCol &&
-        inner.startRow >= outer.startRow &&
-        inner.endRow <= outer.endRow
-    );
-}
-
-/** `n` mod `size`, kept non-negative for an `n` below zero. */
-function wrap(n: number, size: number): number {
-    return ((n % size) + size) % size;
-}
 
 export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps): SpreadsheetClipboard {
     let clipboardData: ClipboardCell[][] | null = null;
@@ -362,4 +322,44 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
     }
 
     return { copyCells, cutCells, pasteCells, fillCells, moveCells };
+}
+
+/**
+ * The series `cells` form, if any: two or more plain numbers or dates of one
+ * type with a constant step, or a single date, which counts on a day at a time.
+ * Anything else, a single number included, is null and gets copied as it is.
+ */
+function findSeries(cells: (Cell | null)[]): Series | null {
+    const type = cells[0]?.cellType;
+    if (type === undefined || !isNumericType(type)) return null;
+    const values: number[] = [];
+    for (const cell of cells) {
+        if (cell === null || cell.formula !== undefined || cell.cellType !== type || typeof cell.value !== 'number')
+            return null;
+        values.push(cell.value);
+    }
+    const [start = 0, second] = values;
+    if (second === undefined) return type === 'date' ? { start, step: 1, type } : null;
+    const step = second - start;
+    const steady = values.every((value, i): boolean => Math.abs(value - (start + step * i)) < 1e-9);
+    return steady ? { start, step, type } : null;
+}
+
+function overlaps(a: CellRect, b: CellRect): boolean {
+    return a.startCol <= b.endCol && b.startCol <= a.endCol && a.startRow <= b.endRow && b.startRow <= a.endRow;
+}
+
+/** Whether `inner` lies wholly inside `outer`. */
+function contains(outer: CellRect, inner: CellRect): boolean {
+    return (
+        inner.startCol >= outer.startCol &&
+        inner.endCol <= outer.endCol &&
+        inner.startRow >= outer.startRow &&
+        inner.endRow <= outer.endRow
+    );
+}
+
+/** `n` mod `size`, kept non-negative for an `n` below zero. */
+function wrap(n: number, size: number): number {
+    return ((n % size) + size) % size;
 }

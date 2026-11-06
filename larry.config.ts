@@ -13,7 +13,7 @@ const LENGTH_BASELINE: Record<string, number> = {
     // own inline SVG. Splitting means pulling the SVGs out, not the logic.
     'src/renderer/components/Toolbar.vue': 859,
     // 265 lines of script and a 261-line template: neither half is over on its own.
-    'src/renderer/components/SpreadsheetTable.vue': 526,
+    'src/renderer/components/SpreadsheetTable.vue': 524,
 };
 
 export default defineConfig({

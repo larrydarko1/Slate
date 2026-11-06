@@ -2,7 +2,6 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import SpreadsheetTable from '@/renderer/components/SpreadsheetTable.vue';
-import { HOLD_TO_LIFT_MS } from '@/renderer/composables/table/useCellMove';
 import { useSpreadsheet, SPREADSHEET_KEY, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 
 describe('SpreadsheetTable', () => {
@@ -116,7 +115,7 @@ describe('SpreadsheetTable', () => {
             ss.setCellValue(id, 0, 0, 'moved');
             ss.selectCell(id, 0, 0);
             await wrapper.findAll('.cell')[0]!.trigger('mousedown');
-            vi.advanceTimersByTime(HOLD_TO_LIFT_MS);
+            vi.advanceTimersByTime(300);
             await wrapper.findAll('.cell')[6]!.trigger('mouseover');
             expect(wrapper.findAll('.cell')[6]!.classes()).toContain('in-move');
             expect(wrapper.find('.spreadsheet-table').classes()).toContain('moving-cells');

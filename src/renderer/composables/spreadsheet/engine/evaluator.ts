@@ -1,20 +1,17 @@
 /**
  * evaluator — type-aware AST evaluator for the Slate formula engine.
- * Owns: evaluate, evaluateVal, evalFunction, type coercion helpers.
- *  Does NOT own: tokenization (tokenizer.ts), parsing (parser.ts), public API (formula.ts).
+ * Owns: evaluate, evaluateVal, evalFunction, the built-in functions.
+ * Does NOT own: binary operators and number coercion (operators.ts), tokenization (tokenizer.ts),
+ * parsing (parser.ts), public API (formula.ts).
  */
 
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
-import { resolveType, resolveTypeList, isNumericType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { resolveTypeList, isNumericType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { dateToSerial, parseDate, serialToDate, todaySerial } from '@/renderer/composables/spreadsheet/engine/dates';
 import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
+import { applyOperator, toNumber, type TypedCellValue } from '@/renderer/composables/spreadsheet/engine/operators';
 import type { ASTNode } from '@/renderer/composables/spreadsheet/engine/parser';
 import type { CellValue } from '@/renderer/types/spreadsheet';
-
-type TypedCellValue = {
-    value: CellValue;
-    type: CellDataType;
-};
 
 export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
     switch (node.type) {
@@ -66,96 +63,12 @@ export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
             const left = evaluate(node.left, ctx);
             const right = evaluate(node.right, ctx);
 
-            // Propagate error values (e.g. #REF!, #CIRCULAR!, #ERROR!)
-            if (typeof left.value === 'string' && left.value.startsWith('#')) return left;
-            if (typeof right.value === 'string' && right.value.startsWith('#')) return right;
-
-            // Comparison operators
-            if (['=', '<>', '<', '>', '<=', '>='].includes(node.op)) {
-                switch (node.op) {
-                    case '=':
-                        return { value: left.value === right.value, type: 'boolean' };
-                    case '<>':
-                        return { value: left.value !== right.value, type: 'boolean' };
-                    case '<':
-                        return { value: toNumber(left.value) < toNumber(right.value), type: 'boolean' };
-                    case '>':
-                        return { value: toNumber(left.value) > toNumber(right.value), type: 'boolean' };
-                    case '<=':
-                        return { value: toNumber(left.value) <= toNumber(right.value), type: 'boolean' };
-                    case '>=':
-                        return { value: toNumber(left.value) >= toNumber(right.value), type: 'boolean' };
-                }
-            }
-
-            // Arithmetic: check type compatibility
-            const resolvedType = resolveType(left.type, right.type);
-
-            // Text in arithmetic → #N/A
-            if (resolvedType === null) {
-                // One is text and the other is numeric
-                if (
-                    (left.type === 'text' && left.value !== null && left.value !== '') ||
-                    (right.type === 'text' && right.value !== null && right.value !== '')
-                ) {
-                    return { value: '#N/A', type: 'text' };
-                }
-                // Both empty or compatible, fall through
-            }
-
-            const lNum = toNumber(left.value);
-            const rNum = toNumber(right.value);
-
-            switch (node.op) {
-                case '+':
-                    return { value: lNum + rNum, type: resolvedType ?? 'float' };
-                case '-':
-                    // Two dates apart is a number of days, not a date.
-                    if (left.type === 'date' && right.type === 'date') return { value: lNum - rNum, type: 'integer' };
-                    return { value: lNum - rNum, type: resolvedType ?? 'float' };
-                case '*': {
-                    // Multiplying currency by a plain integer/float keeps the currency —
-                    // whichever side carries it. Neither side carrying it falls through to
-                    // the type both operands agreed on.
-                    const scalesLeft = isNumericType(left.type) && (right.type === 'integer' || right.type === 'float');
-                    const scalesRight = isNumericType(right.type) && (left.type === 'integer' || left.type === 'float');
-                    let multType: CellDataType;
-                    if (scalesLeft) multType = left.type;
-                    else if (scalesRight) multType = right.type;
-                    else multType = resolvedType ?? 'float';
-                    return { value: lNum * rNum, type: multType };
-                }
-                case '/': {
-                    if (rNum === 0) return { value: '#DIV/0!', type: 'text' };
-                    // Dividing currency by number keeps currency; currency / currency → float
-                    let divType = resolvedType ?? 'float';
-                    if (
-                        (left.type === 'currency_eur' || left.type === 'currency_usd') &&
-                        (right.type === 'currency_eur' || right.type === 'currency_usd')
-                    ) {
-                        divType = 'float'; // currency / currency = ratio
-                    }
-                    return { value: lNum / rNum, type: divType };
-                }
-                case '^':
-                    return { value: Math.pow(lNum, rNum), type: 'float' };
-                default:
-                    return { value: '#OP!', type: 'text' };
-            }
+            return applyOperator(node.op, left, right);
         }
 
         case 'function':
             return evalFunction(node.name, node.args, ctx);
     }
-}
-
-/** Coerce to a number. Reached only after the type layer has approved the operation. */
-function toNumber(v: CellValue): number {
-    if (v === null || v === '') return 0;
-    if (typeof v === 'boolean') return v ? 1 : 0;
-    if (typeof v === 'number') return v;
-    const parsed = Number(v);
-    return isNaN(parsed) ? 0 : parsed;
 }
 
 function isError(v: CellValue): boolean {

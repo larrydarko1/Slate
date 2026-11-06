@@ -9,11 +9,16 @@
  * shifts by a day across a daylight-saving change.
  */
 
+/** The order the day, month and year of a numeric date are written in. */
+type DateOrder = 'DMY' | 'MDY' | 'YMD';
+
 const MS_PER_DAY = 86_400_000;
 const EPOCH_MS = Date.UTC(1899, 11, 30);
+const NUMERIC_DATE = /^(\d{1,4})\s?[/.-]\s?(\d{1,2})\s?[/.-]\s?(\d{1,4})\.?$/;
 
-/** The order the day, month and year of a numeric date are written in. */
-export type DateOrder = 'DMY' | 'MDY' | 'YMD';
+// The system locale, set at startup. Unset, Intl's own default stands in: in
+// Electron that follows the UI language and not the region.
+let systemLocale: string | undefined;
 
 /**
  * The serial for a calendar date. Out-of-range parts roll over the way
@@ -35,29 +40,10 @@ export function todaySerial(now: Date = new Date()): number {
     return dateToSerial(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
-// The system locale, set at startup. Unset, Intl's own default stands in: in
-// Electron that follows the UI language and not the region.
-let systemLocale: string | undefined;
-
 /** Sets the locale dates are read and written in; '' goes back to Intl's default. */
 export function setDateLocale(locale: string): void {
     systemLocale = locale === '' ? undefined : locale;
 }
-
-/**
- * The order the system locale writes numeric dates in, read off a formatted
- * sample date rather than kept in a table of locales.
- */
-export function localeDateOrder(locale: string | undefined = systemLocale): DateOrder {
-    const parts = new Intl.DateTimeFormat(locale, { year: 'numeric', month: '2-digit', day: '2-digit' })
-        .formatToParts(new Date(Date.UTC(2000, 0, 31)))
-        .filter((part) => part.type === 'year' || part.type === 'month' || part.type === 'day')
-        .map((part) => part.type[0]?.toUpperCase() ?? '')
-        .join('');
-    return parts === 'DMY' || parts === 'MDY' || parts === 'YMD' ? parts : 'YMD';
-}
-
-const NUMERIC_DATE = /^(\d{1,4})\s?[/.-]\s?(\d{1,2})\s?[/.-]\s?(\d{1,4})\.?$/;
 
 /**
  * Reads a typed date as a serial, or null if `text` is not one. ISO dates
@@ -102,4 +88,17 @@ export function formatDate(serial: number, order: DateOrder = localeDateOrder())
         case 'MDY':
             return `${mm}/${dd}/${yyyy}`;
     }
+}
+
+/**
+ * The order the system locale writes numeric dates in, read off a formatted
+ * sample date rather than kept in a table of locales.
+ */
+function localeDateOrder(): DateOrder {
+    const parts = new Intl.DateTimeFormat(systemLocale, { year: 'numeric', month: '2-digit', day: '2-digit' })
+        .formatToParts(new Date(Date.UTC(2000, 0, 31)))
+        .filter((part) => part.type === 'year' || part.type === 'month' || part.type === 'day')
+        .map((part) => part.type[0]?.toUpperCase() ?? '')
+        .join('');
+    return parts === 'DMY' || parts === 'MDY' || parts === 'YMD' ? parts : 'YMD';
 }
