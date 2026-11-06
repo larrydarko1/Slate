@@ -10,10 +10,9 @@
  */
 import { ref, type Ref } from 'vue';
 
-import type { CellRect } from '@/renderer/composables/spreadsheet/formulaEngine';
 import { growToMerges } from '@/renderer/composables/spreadsheet/merge';
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
-import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+import type { CellRect, SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
 export const HOLD_TO_LIFT_MS = 300;
 

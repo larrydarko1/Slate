@@ -4,11 +4,11 @@
  * Does NOT own: cell access (useCells.ts), formula shifting (useFormulaEngine.ts).
  */
 import { isNumericType, type CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
-import type { CellRect, SpreadsheetFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
+import type { SpreadsheetFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import { growToMerges } from '@/renderer/composables/spreadsheet/merge';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-import type { Cell, CellFormat, SelectionRange } from '@/renderer/types/spreadsheet';
+import type { Cell, CellFormat, CellRect, SelectionRange } from '@/renderer/types/spreadsheet';
 import { generateId, createEmptyCell } from '@/renderer/types/spreadsheet';
 
 export type SpreadsheetClipboard = {

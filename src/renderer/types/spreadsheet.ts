@@ -47,6 +47,9 @@ export type MergedRegion = {
     endRow: number;
 };
 
+/** A block of cells, both corners inclusive. */
+export type CellRect = { startCol: number; startRow: number; endCol: number; endRow: number };
+
 export type SelectionRange = {
     tableId: string;
     startCol: number;
