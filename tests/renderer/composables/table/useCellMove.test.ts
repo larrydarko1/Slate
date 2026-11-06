@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ref, type Ref } from 'vue';
 
-import { HOLD_TO_LIFT_MS, useCellMove } from '@/renderer/composables/table/useCellMove';
+import { useCellMove } from '@/renderer/composables/table/useCellMove';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 
@@ -36,7 +36,7 @@ describe('useCellMove', () => {
     /** Press (ci, ri) and hold it long enough to lift the selection. */
     function lift(ci: number, ri: number): void {
         expect(move.pressSelection(ci, ri)).toBe(true);
-        vi.advanceTimersByTime(HOLD_TO_LIFT_MS);
+        vi.advanceTimersByTime(300);
     }
 
     it('ignores a press off the selection', () => {
@@ -61,7 +61,7 @@ describe('useCellMove', () => {
         expect(move.hoverCell(0, 1)).toBe(true);
         expect(move.hoverCell(1, 1)).toBe(false);
         expect(abandoned).toEqual([[0, 1]]);
-        vi.advanceTimersByTime(HOLD_TO_LIFT_MS);
+        vi.advanceTimersByTime(300);
         expect(move.moveState.value).toBeNull();
     });
 

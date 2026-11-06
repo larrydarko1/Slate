@@ -3,7 +3,6 @@ import { afterEach, describe, it, expect } from 'vitest';
 import {
     dateToSerial,
     formatDate,
-    localeDateOrder,
     parseDate,
     serialToDate,
     setDateLocale,
@@ -35,35 +34,35 @@ describe('serial numbers', () => {
     });
 });
 
-describe('localeDateOrder', () => {
-    it.each([
-        ['en-US', 'MDY'],
-        ['it-IT', 'DMY'],
-        ['de-DE', 'DMY'],
-        ['ja-JP', 'YMD'],
-    ])('reads %s as %s', (locale, order) => {
-        expect(localeDateOrder(locale)).toBe(order);
-    });
-});
-
 describe('setDateLocale', () => {
+    const march4 = dateToSerial(2026, 3, 4);
+
     afterEach(() => {
         setDateLocale('');
     });
 
+    it.each([
+        ['en-US', '03/04/2026'],
+        ['it-IT', '04/03/2026'],
+        ['de-DE', '04/03/2026'],
+        ['ja-JP', '2026-03-04'],
+    ])('writes dates the way %s does', (locale, written) => {
+        setDateLocale(locale);
+        expect(formatDate(march4)).toBe(written);
+    });
+
     it('reads and writes dates in the system locale it is given', () => {
         setDateLocale('en-MT');
-        expect(localeDateOrder()).toBe('DMY');
         expect(parseDate('12/11/2026')).toBe(dateToSerial(2026, 11, 12));
         expect(parseDate('13/11/2026')).toBe(dateToSerial(2026, 11, 13));
         expect(formatDate(dateToSerial(2026, 11, 13))).toBe('13/11/2026');
     });
 
     it('goes back to the default order when cleared', () => {
-        const fallback = localeDateOrder();
+        const fallback = formatDate(march4);
         setDateLocale('ja-JP');
         setDateLocale('');
-        expect(localeDateOrder()).toBe(fallback);
+        expect(formatDate(march4)).toBe(fallback);
     });
 });
 
