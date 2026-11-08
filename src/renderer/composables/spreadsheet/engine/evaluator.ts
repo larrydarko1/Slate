@@ -6,7 +6,12 @@
  */
 
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
-import { resolveTypeList, isNumericType, toFormulaType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import {
+    resolveTypeList,
+    isNumericType,
+    toArithmeticType,
+    toFormulaType,
+} from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { dateToSerial, parseDate, serialToDate, todaySerial } from '@/renderer/composables/spreadsheet/engine/dates';
 import type { FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
 import { applyOperator, toNumber, type TypedCellValue } from '@/renderer/composables/spreadsheet/engine/operators';
@@ -46,7 +51,7 @@ export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
             // Propagate error values
             if (typeof operand.value === 'string' && operand.value.startsWith('#')) return operand;
             if (node.op === '-') {
-                return { value: -toNumber(operand.value), type: operand.type };
+                return { value: -toNumber(operand.value), type: toArithmeticType(operand.type) };
             }
             return operand;
         }

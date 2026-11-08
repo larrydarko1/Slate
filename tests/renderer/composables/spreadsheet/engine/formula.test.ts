@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { formatCellDisplay, type CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { dateToSerial } from '@/renderer/composables/spreadsheet/engine/dates';
 import { evaluateFormulaTyped, type FormulaContext } from '@/renderer/composables/spreadsheet/engine/formula';
 import type { CellValue } from '@/renderer/types/spreadsheet';
@@ -400,5 +400,54 @@ describe('nested formulas', () => {
     it('evaluates complex expression', () => {
         const ctx = gridContext([[10, 20, 30]]);
         expect(evaluateFormula('SUM(A1:C1) * 2 + ABS(-10)', ctx)).toBe(130);
+    });
+});
+
+// ── Arithmetic on TRUE/FALSE ─────────────────────────────────────────────────
+
+describe('arithmetic on TRUE/FALSE', () => {
+    /** What the cell shows: the value formatted under the type the formula gave it. */
+    const shown = (formulaBody: string, ctx: FormulaContext): string => {
+        const result = evaluateFormulaTyped(formulaBody, ctx);
+        return formatCellDisplay(result.value, result.type);
+    };
+
+    // The engine hands a formula true for a ticked box and false for any other
+    const checklist = gridContext([[true], [false], [true]], [['checkbox'], ['checkbox'], ['checkbox']]);
+
+    it('counts the ticked boxes in a SUM', () => {
+        expect(shown('SUM(A1:A3)', checklist)).toBe('2');
+    });
+
+    it('counts a single ticked box as 1', () => {
+        expect(shown('SUM(A1)', checklist)).toBe('1');
+    });
+
+    it('gives the share of ticked boxes in an AVERAGE', () => {
+        expect(evaluateFormula('AVERAGE(A1:A3)', checklist)).toBeCloseTo(2 / 3);
+        expect(evaluateFormulaTyped('AVERAGE(A1:A3)', checklist).type).toBe('float');
+    });
+
+    it('adds TRUE values as numbers', () => {
+        expect(shown('TRUE + TRUE', emptyCtx)).toBe('2');
+        expect(shown('A1 + A3', checklist)).toBe('2');
+    });
+
+    it('negates TRUE as a number', () => {
+        expect(shown('-TRUE', emptyCtx)).toBe('-1');
+    });
+
+    it('sums typed TRUE values, which are stored as 1', () => {
+        const typed = gridContext([[1, 1, 0]], [['boolean', 'boolean', 'boolean']]);
+        expect(shown('SUM(A1:C1)', typed)).toBe('2');
+    });
+
+    it('still shows a referenced box as TRUE or FALSE', () => {
+        expect(shown('A1', checklist)).toBe('TRUE');
+        expect(shown('A2', checklist)).toBe('FALSE');
+    });
+
+    it('still gives TRUE or FALSE from a comparison', () => {
+        expect(shown('SUM(A1:A3) > 1', checklist)).toBe('TRUE');
     });
 });

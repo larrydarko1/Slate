@@ -176,8 +176,8 @@ describe('resolveType', () => {
         expect(resolveType('float', 'boolean')).toBe('float');
     });
 
-    it('keeps both booleans as boolean', () => {
-        expect(resolveType('boolean', 'boolean')).toBe('boolean');
+    it('counts two booleans as a whole number', () => {
+        expect(resolveType('boolean', 'boolean')).toBe('integer');
     });
 });
 
@@ -198,6 +198,11 @@ describe('resolveTypeList', () => {
 
     it('promotes through a list of compatible types', () => {
         expect(resolveTypeList(['integer', 'float', 'integer'])).toBe('float');
+    });
+
+    it('counts a list of booleans, even a single one, as a whole number', () => {
+        expect(resolveTypeList(['boolean', 'boolean'])).toBe('integer');
+        expect(resolveTypeList(['empty', 'boolean'])).toBe('integer');
     });
 });
 
