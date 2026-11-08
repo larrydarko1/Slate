@@ -321,6 +321,16 @@ describe('clipboard', () => {
                 expect(ss.findCell(id, 0, 2)?.value).toBe(dateToSerial(2026, 2, 28));
             });
 
+            it('repeats star ratings rather than counting past five', () => {
+                for (const [row, raw] of ['4', '5'].entries()) {
+                    ss.setCellValue(id, 0, row, raw);
+                    ss.setCellType(id, 0, row, 'rating');
+                }
+                ss.fillCells(id, range(0, 0, 0, 1), range(0, 0, 0, 3));
+                expect(column(0, [2, 3])).toEqual([4, 5]);
+                expect(ss.getCellType(id, 0, 3)).toBe('rating');
+            });
+
             it('continues the step between two numbers', () => {
                 ss.setCellValue(id, 0, 0, '1');
                 ss.setCellValue(id, 0, 1, '3');

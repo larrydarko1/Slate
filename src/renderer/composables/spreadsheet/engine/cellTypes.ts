@@ -16,6 +16,7 @@ export type CellDataType =
     | 'text'
     | 'boolean'
     | 'checkbox'
+    | 'rating'
     | 'url'
     | 'empty';
 
@@ -24,6 +25,9 @@ type TypedValue = {
     numericValue: number | null; // underlying number (null for text/empty)
     rawInput: string; // what the user originally typed
 };
+
+/** Decimals a number shows until the cell is given its own with the toolbar buttons. */
+export const DEFAULT_DECIMAL_PLACES = 2;
 
 // Currency regex patterns
 const CURRENCY_USD_PATTERNS = [
@@ -136,12 +140,14 @@ export function isNumericType(t: CellDataType): boolean {
 }
 
 /**
- * A checkbox is how a TRUE/FALSE cell is shown, so formulas read it as one.
- * Without this, `=A1` on a checkbox would inherit the box and draw one
- * nobody can click.
+ * A control is only how a value is shown: a checkbox is a TRUE/FALSE and a
+ * star rating a whole number, so formulas read them as those. Without this,
+ * `=A1` on a checkbox would inherit the box and draw one nobody can click.
  */
 export function toFormulaType(t: CellDataType): CellDataType {
-    return t === 'checkbox' ? 'boolean' : t;
+    if (t === 'checkbox') return 'boolean';
+    if (t === 'rating') return 'integer';
+    return t;
 }
 
 /**
@@ -261,6 +267,7 @@ export function getTypeAlignment(type: CellDataType): 'left' | 'right' | 'center
             return 'right';
         case 'boolean':
         case 'checkbox':
+        case 'rating':
             return 'center';
         case 'text':
         case 'url':
@@ -292,6 +299,8 @@ export function getTypeLabel(type: CellDataType): string {
             return 'Boolean';
         case 'checkbox':
             return 'Checkbox';
+        case 'rating':
+            return 'Star rating';
         case 'url':
             return 'URL';
         case 'empty':
@@ -321,13 +330,14 @@ function formatValue(value: number | null, type: CellDataType, decimalPlaces?: n
             if (decimalPlaces !== undefined) {
                 return value.toFixed(decimalPlaces);
             }
-            // Show up to 10 significant decimal places, trim trailing zeros
-            if (Number.isInteger(value)) return value.toFixed(1);
-            return parseFloat(value.toFixed(10)).toString();
+            const rounded = parseFloat(value.toFixed(DEFAULT_DECIMAL_PLACES));
+            // A decimal keeps its point even when it rounds to a whole number
+            if (Number.isInteger(rounded)) return rounded.toFixed(1);
+            return rounded.toString();
         }
 
         case 'currency_usd': {
-            const dp = decimalPlaces ?? 2;
+            const dp = decimalPlaces ?? DEFAULT_DECIMAL_PLACES;
             const abs = Math.abs(value);
             const formatted = abs.toLocaleString('en-US', {
                 minimumFractionDigits: dp,
@@ -337,7 +347,7 @@ function formatValue(value: number | null, type: CellDataType, decimalPlaces?: n
         }
 
         case 'currency_eur': {
-            const dp = decimalPlaces ?? 2;
+            const dp = decimalPlaces ?? DEFAULT_DECIMAL_PLACES;
             const abs = Math.abs(value);
             const formatted = abs.toLocaleString('de-DE', {
                 minimumFractionDigits: dp,
@@ -351,10 +361,7 @@ function formatValue(value: number | null, type: CellDataType, decimalPlaces?: n
             if (decimalPlaces !== undefined) {
                 return `${pct.toFixed(decimalPlaces)}%`;
             }
-            if (Number.isInteger(pct) || Math.abs(pct - Math.round(pct)) < 1e-9) {
-                return `${Math.round(pct)}%`;
-            }
-            return `${parseFloat(pct.toFixed(10))}%`;
+            return `${parseFloat(pct.toFixed(DEFAULT_DECIMAL_PLACES))}%`;
         }
 
         case 'boolean':

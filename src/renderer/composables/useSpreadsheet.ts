@@ -10,6 +10,7 @@ import { createCanvases, type SpreadsheetCanvases } from '@/renderer/composables
 import { createCells, type SpreadsheetCells } from '@/renderer/composables/spreadsheet/cells';
 import { createCharts, type SpreadsheetCharts } from '@/renderer/composables/spreadsheet/charts';
 import { createClipboard, type SpreadsheetClipboard } from '@/renderer/composables/spreadsheet/clipboard';
+import { createControls, type SpreadsheetControls } from '@/renderer/composables/spreadsheet/controls';
 import { createEditing, type SpreadsheetEditing } from '@/renderer/composables/spreadsheet/editing';
 import { createFileOps, type SpreadsheetFileOps } from '@/renderer/composables/spreadsheet/fileOps';
 import { createFormulaEngine, type SpreadsheetFormulaEngine } from '@/renderer/composables/spreadsheet/formulaEngine';
@@ -33,6 +34,7 @@ export type SpreadsheetState = Omit<SpreadsheetCoreState, 'counters'> &
     SpreadsheetCanvases &
     SpreadsheetTables &
     SpreadsheetCells &
+    SpreadsheetControls &
     SpreadsheetSelection &
     SpreadsheetEditing &
     SpreadsheetMerge &
@@ -74,6 +76,12 @@ export function useSpreadsheet(): SpreadsheetState {
     // ── Core domain layer ────────────────────────────────────────────────────
     const cells = createCells(state, {
         findTable: helpers.findTable,
+        findNormalizedSelection: helpers.findNormalizedSelection,
+        pushUndo: undoRedo.pushUndo,
+        recalculate: formulaEngine.recalculate,
+    });
+    const controls = createControls(state, {
+        findCell: cells.findCell,
         findNormalizedSelection: helpers.findNormalizedSelection,
         pushUndo: undoRedo.pushUndo,
         recalculate: formulaEngine.recalculate,
@@ -197,6 +205,7 @@ export function useSpreadsheet(): SpreadsheetState {
 
         // Cell access
         ...cells,
+        ...controls,
 
         // Selection
         ...selection,

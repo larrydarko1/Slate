@@ -168,6 +168,28 @@ describe('formulaEngine', () => {
         });
     });
 
+    describe('star ratings', () => {
+        // A1 rated 4, A2 rated 5, A3 a rating nobody has set
+        beforeEach(() => {
+            for (const row of [0, 1, 2]) ss.setCellType(id, 0, row, 'rating');
+            ss.setRating(id, 0, 0, 4);
+            ss.setRating(id, 0, 1, 5);
+        });
+
+        it('reads a rating as its number', () => {
+            ss.setCellValue(id, 1, 0, '=A1');
+            expect(ss.getDisplayValue(id, 1, 0)).toBe('4');
+            expect(ss.getCellType(id, 1, 0)).toBe('integer');
+        });
+
+        it('skips what nobody has rated in an AVERAGE and a COUNT', () => {
+            ss.setCellValue(id, 1, 0, '=AVERAGE(A1:A3)');
+            ss.setCellValue(id, 1, 1, '=COUNT(A1:A3)');
+            expect(ss.getDisplayValue(id, 1, 0)).toBe('4.5');
+            expect(ss.getDisplayValue(id, 1, 1)).toBe('2');
+        });
+    });
+
     describe('renaming', () => {
         it('rewrites references when a table is renamed', () => {
             ss.addTable();
