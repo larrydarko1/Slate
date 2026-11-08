@@ -25,6 +25,9 @@ type TypedValue = {
     rawInput: string; // what the user originally typed
 };
 
+/** Decimals a number shows until the cell is given its own with the toolbar buttons. */
+export const DEFAULT_DECIMAL_PLACES = 2;
+
 // Currency regex patterns
 const CURRENCY_USD_PATTERNS = [
     // $1,234.56  or  $1234.56  or  $1234  or  -$12.50
@@ -321,13 +324,14 @@ function formatValue(value: number | null, type: CellDataType, decimalPlaces?: n
             if (decimalPlaces !== undefined) {
                 return value.toFixed(decimalPlaces);
             }
-            // Show up to 10 significant decimal places, trim trailing zeros
-            if (Number.isInteger(value)) return value.toFixed(1);
-            return parseFloat(value.toFixed(10)).toString();
+            const rounded = parseFloat(value.toFixed(DEFAULT_DECIMAL_PLACES));
+            // A decimal keeps its point even when it rounds to a whole number
+            if (Number.isInteger(rounded)) return rounded.toFixed(1);
+            return rounded.toString();
         }
 
         case 'currency_usd': {
-            const dp = decimalPlaces ?? 2;
+            const dp = decimalPlaces ?? DEFAULT_DECIMAL_PLACES;
             const abs = Math.abs(value);
             const formatted = abs.toLocaleString('en-US', {
                 minimumFractionDigits: dp,
@@ -337,7 +341,7 @@ function formatValue(value: number | null, type: CellDataType, decimalPlaces?: n
         }
 
         case 'currency_eur': {
-            const dp = decimalPlaces ?? 2;
+            const dp = decimalPlaces ?? DEFAULT_DECIMAL_PLACES;
             const abs = Math.abs(value);
             const formatted = abs.toLocaleString('de-DE', {
                 minimumFractionDigits: dp,
@@ -351,10 +355,7 @@ function formatValue(value: number | null, type: CellDataType, decimalPlaces?: n
             if (decimalPlaces !== undefined) {
                 return `${pct.toFixed(decimalPlaces)}%`;
             }
-            if (Number.isInteger(pct) || Math.abs(pct - Math.round(pct)) < 1e-9) {
-                return `${Math.round(pct)}%`;
-            }
-            return `${parseFloat(pct.toFixed(10))}%`;
+            return `${parseFloat(pct.toFixed(DEFAULT_DECIMAL_PLACES))}%`;
         }
 
         case 'boolean':

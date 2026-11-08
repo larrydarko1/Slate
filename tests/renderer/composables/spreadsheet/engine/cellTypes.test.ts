@@ -223,6 +223,16 @@ describe('formatCellDisplay numeric formatting', () => {
         expect(formatCellDisplay(5, 'float')).toBe('5.0');
     });
 
+    it('shows at most two decimals unless told otherwise', () => {
+        expect(formatCellDisplay(2 / 3, 'float')).toBe('0.67');
+        expect(formatCellDisplay(3.14159, 'float')).toBe('3.14');
+        expect(formatCellDisplay(1.5, 'float')).toBe('1.5');
+    });
+
+    it('still marks a decimal that rounds to a whole number as a decimal', () => {
+        expect(formatCellDisplay(0.999, 'float')).toBe('1.0');
+    });
+
     it('formats float with custom decimal places', () => {
         expect(formatCellDisplay(3.14159, 'float', 2)).toBe('3.14');
     });
@@ -235,6 +245,11 @@ describe('formatCellDisplay numeric formatting', () => {
     it('formats percent', () => {
         expect(formatCellDisplay(0.5, 'percent')).toBe('50%');
         expect(formatCellDisplay(0.125, 'percent')).toBe('12.5%');
+    });
+
+    it('shows a percent with at most two decimals unless told otherwise', () => {
+        expect(formatCellDisplay(2 / 3, 'percent')).toBe('66.67%');
+        expect(formatCellDisplay(0.99999, 'percent')).toBe('100%');
     });
 
     it('formats boolean', () => {

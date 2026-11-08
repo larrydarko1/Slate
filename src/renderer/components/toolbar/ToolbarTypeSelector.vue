@@ -6,7 +6,7 @@ import IconChevronDown from '@/renderer/components/icons/IconChevronDown.vue';
 import IconDecimalsDecrease from '@/renderer/components/icons/IconDecimalsDecrease.vue';
 import IconDecimalsIncrease from '@/renderer/components/icons/IconDecimalsIncrease.vue';
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
-import { getTypeLabel } from '@/renderer/composables/spreadsheet/engine/cellTypes';
+import { DEFAULT_DECIMAL_PLACES, getTypeLabel } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 
 const typeOptions: { value: CellDataType; label: string; short: string }[] = [
@@ -45,7 +45,7 @@ const currentTypeLabel = computed(() => {
 function changeDecimals(delta: number): void {
     if (ss.activeCell.value === null) return;
     const fmt = ss.findActiveCellFormat();
-    const current = fmt?.decimalPlaces ?? 2;
+    const current = fmt?.decimalPlaces ?? DEFAULT_DECIMAL_PLACES;
     const next = Math.max(0, Math.min(10, current + delta));
     ss.setSelectionFormat({ decimalPlaces: next });
 }
