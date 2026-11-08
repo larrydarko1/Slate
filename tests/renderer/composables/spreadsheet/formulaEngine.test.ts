@@ -145,6 +145,29 @@ describe('formulaEngine', () => {
         });
     });
 
+    describe('checkboxes', () => {
+        // A1 and A3 ticked by clicking; A2 made a checkbox and never touched
+        beforeEach(() => {
+            for (const row of [0, 1, 2]) ss.setCellType(id, 0, row, 'checkbox');
+            ss.toggleCheckbox(id, 0, 0);
+            ss.toggleCheckbox(id, 0, 2);
+        });
+
+        it('reads a never-ticked box as FALSE, as it looks', () => {
+            ss.setCellValue(id, 1, 0, '=A2');
+            expect(ss.getDisplayValue(id, 1, 0)).toBe('FALSE');
+        });
+
+        it('counts every box, ticked or not, as part of the list', () => {
+            ss.setCellValue(id, 1, 0, '=SUM(A1:A3)');
+            ss.setCellValue(id, 1, 1, '=AVERAGE(A1:A3)');
+            ss.setCellValue(id, 1, 2, '=COUNTA(A1:A3)');
+            expect(ss.getDisplayValue(id, 1, 0)).toBe('2');
+            expect(ss.findCell(id, 1, 1)?.computed).toBeCloseTo(2 / 3);
+            expect(ss.getDisplayValue(id, 1, 2)).toBe('3');
+        });
+    });
+
     describe('renaming', () => {
         it('rewrites references when a table is renamed', () => {
             ss.addTable();

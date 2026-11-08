@@ -74,6 +74,8 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                 return cell.computed ?? null;
             }
 
+            // A never-ticked box looks unticked, so formulas count it like one that was unticked
+            if (cell.cellType === 'checkbox' && cell.value === null) return false;
             return cell.value;
         }
 

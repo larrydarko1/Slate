@@ -155,6 +155,14 @@ export function isCheckedValue(value: unknown): boolean {
 }
 
 /**
+ * The type of a TRUE/FALSE once arithmetic has used it: a count. Kept as
+ * boolean, `=SUM` over seven ticked boxes would compute 7 and show TRUE.
+ */
+export function toArithmeticType(t: CellDataType): CellDataType {
+    return t === 'boolean' ? 'integer' : t;
+}
+
+/**
  * Resolve the result type when two typed values interact in a formula.
  * - first: the left operand / first cell in chain (has priority)
  * - second: the right operand
@@ -169,8 +177,7 @@ export function resolveType(first: CellDataType, second: CellDataType): CellData
     // Text/URL mixed with numeric → incompatible for arithmetic
     if (first === 'text' || second === 'text' || first === 'url' || second === 'url') return null;
 
-    // Both boolean
-    if (first === 'boolean' && second === 'boolean') return 'boolean';
+    if (first === 'boolean' && second === 'boolean') return toArithmeticType(first);
 
     // Boolean + numeric → promote to the numeric type
     if (first === 'boolean') return second;
@@ -214,7 +221,8 @@ export function resolveTypeList(types: CellDataType[]): CellDataType | null {
         if (resolved === null) return null;
         result = resolved;
     }
-    return result;
+    // A single value never reaches resolveType, so `=SUM(A1)` needs this too
+    return toArithmeticType(result);
 }
 
 /**
