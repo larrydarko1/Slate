@@ -1,8 +1,9 @@
 /**
  * createCells — cell access, value setting, formatting, type management, and notes.
- * Owns: findCell, setCellValue, display/raw values, type/format ops, checkbox toggling, cell notes.
+ * Owns: findCell, setCellValue, display/raw values, type/format ops, cell notes.
  * Does NOT own: editing state (useEditing.ts), selection (useSelection.ts).
  */
+import { findControlValue, findTypedControlValue, isControlType } from '@/renderer/composables/spreadsheet/controls';
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import {
     detectType,
@@ -26,9 +27,6 @@ export type SpreadsheetCells = {
     getCellAlignment: (tableId: string, col: number, row: number) => 'left' | 'right' | 'center';
     setCellType: (tableId: string, col: number, row: number, newType: CellDataType) => void;
     setSelectionType: (newType: CellDataType) => void;
-    toggleCheckbox: (tableId: string, col: number, row: number) => void;
-    isActiveCellCheckbox: () => boolean;
-    toggleSelectionCheckboxes: () => void;
     setCellFormat: (tableId: string, col: number, row: number, fmt: CellFormatUpdate) => void;
     setSelectionFormat: (fmt: CellFormatUpdate) => void;
     findActiveCellFormat: () => CellFormat | null;
@@ -67,7 +65,7 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
 
         const cell = table.rows[row]?.[col];
         if (cell === undefined) return;
-        const wasCheckbox = cell.cellType === 'checkbox';
+        const control = isControlType(cell.cellType) ? cell.cellType : null;
 
         if (raw.startsWith('=')) {
             cell.formula = raw.substring(1);
@@ -80,10 +78,13 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
             delete cell.computed;
             delete cell.computedType;
 
-            if (raw === '') {
+            const kept = control === null ? null : findTypedControlValue(control, raw);
+            if (control !== null && kept !== null) {
+                cell.value = kept.value;
+                cell.cellType = control;
+            } else if (raw === '') {
                 cell.value = null;
-                // Clearing a checkbox unticks it; the box itself goes only by changing the type
-                cell.cellType = wasCheckbox ? 'checkbox' : 'empty';
+                cell.cellType = 'empty';
             } else {
                 const detected = detectType(raw);
                 cell.cellType = detected.type;
@@ -96,10 +97,6 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
                     cell.value = detected.rawInput;
                 } else {
                     cell.value = raw;
-                }
-                if (wasCheckbox && detected.type === 'boolean') {
-                    cell.value = detected.numericValue === 1;
-                    cell.cellType = 'checkbox';
                 }
             }
         }
@@ -169,43 +166,6 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
         deps.recalculate();
     }
 
-    function toggleCheckbox(tableId: string, col: number, row: number): void {
-        const cell = findCell(tableId, col, row);
-        if (!isEditableCheckbox(cell)) return;
-        deps.pushUndo();
-        cell.value = !isCheckedValue(cell.value);
-        deps.recalculate();
-    }
-
-    function isActiveCellCheckbox(): boolean {
-        const active = state.activeCell.value;
-        if (active === null) return false;
-        return isEditableCheckbox(findCell(active.tableId, active.col, active.row));
-    }
-
-    /**
-     * Every checkbox in the selection takes the opposite of the active cell's
-     * state, so a mixed selection ends up all ticked or all unticked rather
-     * than each box flipping on its own.
-     */
-    function toggleSelectionCheckboxes(): void {
-        const active = state.activeCell.value;
-        const sr = deps.findNormalizedSelection();
-        if (active === null || sr === null) return;
-        const activeCell = findCell(active.tableId, active.col, active.row);
-        if (!isEditableCheckbox(activeCell)) return;
-
-        const checked = !isCheckedValue(activeCell.value);
-        deps.pushUndo();
-        for (let rowIdx = sr.startRow; rowIdx <= sr.endRow; rowIdx++) {
-            for (let colIdx = sr.startCol; colIdx <= sr.endCol; colIdx++) {
-                const cell = findCell(sr.tableId, colIdx, rowIdx);
-                if (isEditableCheckbox(cell)) cell.value = checked;
-            }
-        }
-        deps.recalculate();
-    }
-
     function setCellFormat(tableId: string, col: number, row: number, fmt: CellFormatUpdate): void {
         deps.pushUndo();
         const cell = findCell(tableId, col, row);
@@ -270,9 +230,6 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
         getCellAlignment,
         setCellType,
         setSelectionType,
-        toggleCheckbox,
-        isActiveCellCheckbox,
-        toggleSelectionCheckboxes,
         setCellFormat,
         setSelectionFormat,
         findActiveCellFormat,
@@ -285,11 +242,11 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
 
 /**
  * Gives `cell` a new type, converting its value to fit. An empty cell is left
- * alone: typing into it detects a type of its own. The exception is a
- * checkbox, which an empty cell can be, as an unticked box. Text with no
- * number or date in it given a numeric type is left alone too, so a header
- * row caught in a selection stays text; so is text other than TRUE or FALSE
- * made a checkbox.
+ * alone: typing into it detects a type of its own. The exception is a control
+ * such as a checkbox, which an empty cell can be, as an empty control. Text
+ * with no number or date in it given a numeric type is left alone too, so a
+ * header row caught in a selection stays text; so is a value with no control
+ * to become.
  */
 function retype(cell: Cell, newType: CellDataType): void {
     if (cell.formula !== undefined) {
@@ -298,15 +255,15 @@ function retype(cell: Cell, newType: CellDataType): void {
         return;
     }
     if (cell.value === null) {
-        if (newType === 'checkbox') cell.cellType = 'checkbox';
-        else if (cell.cellType === 'checkbox') cell.cellType = 'empty';
+        if (isControlType(newType)) cell.cellType = newType;
+        else if (isControlType(cell.cellType)) cell.cellType = 'empty';
         return;
     }
-    if (newType === 'checkbox') {
-        const checked = findCheckboxValue(cell.value);
-        if (checked === null) return;
-        cell.value = checked;
-        cell.cellType = 'checkbox';
+    if (isControlType(newType)) {
+        const converted = findControlValue(newType, cell.value);
+        if (converted === null) return;
+        cell.value = converted.value;
+        cell.cellType = newType;
         return;
     }
     if (typeof cell.value === 'boolean' && isNumericType(newType)) cell.value = Number(cell.value);
@@ -324,17 +281,4 @@ function retype(cell: Cell, newType: CellDataType): void {
         cell.value = Math.round(cell.value);
     }
     cell.cellType = newType;
-}
-
-/** Ticked for TRUE or any non-zero number, unticked for FALSE or 0; other text has no box to become. */
-function findCheckboxValue(value: string | number | boolean): boolean | null {
-    if (typeof value === 'boolean') return value;
-    if (typeof value === 'number') return value !== 0;
-    const detected = detectType(value);
-    return detected.type === 'boolean' ? detected.numericValue === 1 : null;
-}
-
-/** A formula decides its own result, so a checkbox showing one cannot be clicked. */
-function isEditableCheckbox(cell: Cell | null): cell is Cell {
-    return cell !== null && cell.cellType === 'checkbox' && cell.formula === undefined;
 }
