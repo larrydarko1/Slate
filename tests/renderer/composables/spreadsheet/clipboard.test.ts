@@ -46,6 +46,30 @@ describe('clipboard', () => {
             expect(ss.getDisplayValue(id, 1, 3)).toBe('b');
         });
 
+        it('keeps the type each cell was given', async () => {
+            stubClipboard();
+            ss.setCellValue(id, 0, 0, '$5');
+            ss.setCellValue(id, 0, 1, '50%');
+            ss.setCellValue(id, 0, 2, '7');
+            ss.setCellType(id, 0, 2, 'text');
+            ss.setCellValue(id, 0, 3, '=2+3');
+            ss.setCellType(id, 0, 3, 'currency_eur');
+            ss.selectCell(id, 0, 0);
+            ss.extendSelection(id, 0, 3);
+            await ss.copyCells();
+
+            ss.selectCell(id, 1, 0);
+            await ss.pasteCells();
+            expect([0, 1, 2, 3].map((r) => ss.getCellType(id, 1, r))).toEqual([
+                'currency_usd',
+                'percent',
+                'text',
+                'currency_eur',
+            ]);
+            expect(ss.getDisplayValue(id, 1, 0)).toBe('$5.00');
+            expect(ss.getDisplayValue(id, 1, 1)).toBe('50%');
+        });
+
         it('writes the selection to the system clipboard as TSV', async () => {
             const { writeText } = stubClipboard();
             ss.setCellValue(id, 0, 0, 'a');
@@ -193,6 +217,19 @@ describe('clipboard', () => {
                 { tableId: id, startCol: 0, startRow: 1, endCol: 0, endRow: 3 },
             );
             expect([1, 2, 3].map((r) => ss.getDisplayValue(id, 0, r))).toEqual(['x', 'x', 'x']);
+        });
+
+        it('keeps the type the source was given', () => {
+            ss.setCellValue(id, 0, 0, '50%');
+            ss.setCellValue(id, 1, 0, '=1/4');
+            ss.setCellType(id, 1, 0, 'percent');
+            ss.fillCells(
+                id,
+                { tableId: id, startCol: 0, startRow: 0, endCol: 1, endRow: 0 },
+                { tableId: id, startCol: 0, startRow: 1, endCol: 1, endRow: 2 },
+            );
+            expect([1, 2].map((r) => ss.getDisplayValue(id, 0, r))).toEqual(['50%', '50%']);
+            expect([1, 2].map((r) => ss.getDisplayValue(id, 1, r))).toEqual(['25%', '25%']);
         });
 
         it('shifts formulas as it fills', () => {

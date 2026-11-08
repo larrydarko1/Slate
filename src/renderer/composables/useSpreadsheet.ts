@@ -129,6 +129,7 @@ export function useSpreadsheet(): SpreadsheetState {
         getDisplayValue: cells.getDisplayValue,
         getRawValue: cells.getRawValue,
         setCellFormat: cells.setCellFormat,
+        setCellType: cells.setCellType,
         shiftFormulaReferences: formulaEngine.shiftFormulaReferences,
         batchRecalculation: formulaEngine.batchRecalculation,
         shiftReferencesForMove: formulaEngine.shiftReferencesForMove,
