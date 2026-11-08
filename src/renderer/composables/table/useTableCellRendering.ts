@@ -5,6 +5,7 @@
  */
 import { computed, type Ref, type ComputedRef } from 'vue';
 
+import { MAX_RATING } from '@/renderer/composables/spreadsheet/controls';
 import { isCheckedValue } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
@@ -16,11 +17,9 @@ export type CellTextStyle = {
     fontFamily: string | undefined;
 };
 
-/** A checkbox cell's box. `readonly` when a formula decides whether it is ticked. */
-export type CheckboxState = {
-    checked: boolean;
-    readonly: boolean;
-};
+/** What a control cell shows. `readonly` when a formula decides its value. */
+export type ControlState =
+    { type: 'checkbox'; checked: boolean; readonly: boolean } | { type: 'rating'; stars: number; readonly: boolean };
 
 type TableCellRendering = {
     isActiveTable: ComputedRef<boolean>;
@@ -31,7 +30,7 @@ type TableCellRendering = {
     cellTextClass: (ci: number, ri: number) => Record<string, boolean>;
     cellTdStyle: (ci: number, ri: number) => Record<string, string | undefined>;
     cellTextStyle: (ci: number, ri: number) => CellTextStyle;
-    findCheckboxState: (ci: number, ri: number) => CheckboxState | null;
+    findControlState: (ci: number, ri: number) => ControlState | null;
     mergedColspan: (ci: number, ri: number) => number | undefined;
     mergedRowspan: (ci: number, ri: number) => number | undefined;
     openCellUrl: (url: string) => void;
@@ -164,14 +163,19 @@ export function useTableCellRendering(
         };
     }
 
-    function findCheckboxState(ci: number, ri: number): CheckboxState | null {
-        if (ss.getCellType(table.value.id, ci, ri) !== 'checkbox') return null;
+    function findControlState(ci: number, ri: number): ControlState | null {
+        const type = ss.getCellType(table.value.id, ci, ri);
+        if (type !== 'checkbox' && type !== 'rating') return null;
         const cell = table.value.rows[ri]?.[ci];
         if (cell === undefined) return null;
-        const value = cell.formula !== undefined ? cell.computed : cell.value;
-        // An error is shown as its text: a box would hide that the formula failed
+        const value = (cell.formula !== undefined ? cell.computed : cell.value) ?? null;
+        // An error is shown as its text: a control would hide that the formula failed
         if (typeof value === 'string' && value.startsWith('#')) return null;
-        return { checked: isCheckedValue(value), readonly: cell.formula !== undefined };
+        const readonly = cell.formula !== undefined;
+        if (type === 'checkbox') return { type, checked: isCheckedValue(value), readonly };
+        // A number no rating can show, such as a formula's 7, is shown as itself
+        if (value !== null && !isStarCount(value)) return null;
+        return { type, stars: value ?? 0, readonly };
     }
 
     // ── Merged cell helpers ──────────────────────────────────────────────────
@@ -208,9 +212,13 @@ export function useTableCellRendering(
         cellTextClass,
         cellTdStyle,
         cellTextStyle,
-        findCheckboxState,
+        findControlState,
         mergedColspan,
         mergedRowspan,
         openCellUrl,
     };
+}
+
+function isStarCount(value: unknown): value is number {
+    return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= MAX_RATING;
 }

@@ -30,6 +30,7 @@ Slate is a **free and open-source, canvas-based spreadsheet app** for desktop bu
 - **Autofill** — drag the fill handle to repeat values and formulas or continue a series of numbers or dates, or double-click it to fill a column down to the end of the data
 - **Smart cell types** — auto-detection of numbers, percentages, currency (USD/EUR), dates, URLs, booleans, and text
 - **Checkbox cells** — tick and untick with a click or Space; formulas read them as TRUE or FALSE
+- **Star rating cells** — rate from one to five stars with a click or a digit key; formulas read them as numbers
 
 ### Charts
 

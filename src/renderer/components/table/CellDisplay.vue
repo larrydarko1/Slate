@@ -1,38 +1,45 @@
 <script setup lang="ts">
 import IconCheck from '@/renderer/components/icons/IconCheck.vue';
 import IconExternalLink from '@/renderer/components/icons/IconExternalLink.vue';
-import type { CellTextStyle, CheckboxState } from '@/renderer/composables/table/useTableCellRendering';
+import IconStar from '@/renderer/components/icons/IconStar.vue';
+import { MAX_RATING } from '@/renderer/composables/spreadsheet/controls';
+import type { CellTextStyle, ControlState } from '@/renderer/composables/table/useTableCellRendering';
 
 defineProps<{
     text: string;
     isUrl: boolean;
     textClass: Record<string, boolean>;
     textStyle: CellTextStyle;
-    checkbox: CheckboxState | null;
+    control: ControlState | null;
 }>();
 
 defineEmits<{
     openUrl: [url: string];
     toggle: [];
+    rate: [stars: number];
 }>();
+
+function starLabel(stars: number): string {
+    return stars === 1 ? '1 star' : `${stars} stars`;
+}
 </script>
 
 <template>
     <!-- Checkbox cell -->
     <span
-        v-if="checkbox !== null"
+        v-if="control?.type === 'checkbox'"
         class="cell-text"
         :style="textStyle">
         <span
-            v-if="checkbox.readonly"
+            v-if="control.readonly"
             class="cell-checkbox"
             role="img"
-            :aria-label="checkbox.checked ? 'Ticked' : 'Not ticked'"
+            :aria-label="control.checked ? 'Ticked' : 'Not ticked'"
             title="Set by its formula">
             <span
                 class="cell-checkbox-box"
-                :class="{ checked: checkbox.checked }">
-                <IconCheck v-if="checkbox.checked" />
+                :class="{ checked: control.checked }">
+                <IconCheck v-if="control.checked" />
             </span>
         </span>
         <!-- mousedown still reaches the cell to select it; prevented so the
@@ -44,16 +51,58 @@ defineEmits<{
             class="cell-checkbox"
             tabindex="-1"
             aria-label="Tick box"
-            :aria-checked="checkbox.checked"
+            :aria-checked="control.checked"
             @mousedown.prevent
             @click.stop="$emit('toggle')"
             @dblclick.stop>
             <span
                 class="cell-checkbox-box"
-                :class="{ checked: checkbox.checked }">
-                <IconCheck v-if="checkbox.checked" />
+                :class="{ checked: control.checked }">
+                <IconCheck v-if="control.checked" />
             </span>
         </button>
+    </span>
+    <!-- Star rating cell -->
+    <span
+        v-else-if="control?.type === 'rating'"
+        class="cell-text"
+        :style="textStyle">
+        <span
+            v-if="control.readonly"
+            class="cell-rating"
+            role="img"
+            :aria-label="`${starLabel(control.stars)} of ${MAX_RATING}`"
+            title="Set by its formula">
+            <span
+                v-for="stars in MAX_RATING"
+                :key="stars"
+                class="cell-rating-star"
+                :class="{ filled: stars <= control.stars }">
+                <IconStar />
+            </span>
+        </span>
+        <span
+            v-else
+            class="cell-rating"
+            role="radiogroup"
+            aria-label="Star rating">
+            <!-- mousedown prevented for the same reason as the checkbox's -->
+            <button
+                v-for="stars in MAX_RATING"
+                :key="stars"
+                type="button"
+                role="radio"
+                class="cell-rating-star"
+                :class="{ filled: stars <= control.stars }"
+                tabindex="-1"
+                :aria-label="starLabel(stars)"
+                :aria-checked="stars === control.stars"
+                @mousedown.prevent
+                @click.stop="$emit('rate', stars)"
+                @dblclick.stop>
+                <IconStar />
+            </button>
+        </span>
     </span>
     <span
         v-else
@@ -165,6 +214,65 @@ defineEmits<{
 
 .cell-checkbox[role='img'] .cell-checkbox-box {
     opacity: $opacity-high;
+}
+
+/* ––– Star rating ––– */
+
+.cell-rating {
+    display: inline-flex;
+    vertical-align: middle;
+
+    &[role='img'] {
+        opacity: $opacity-high;
+    }
+}
+
+.cell-rating-star {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: $size-12;
+    height: $size-15;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: $text-muted;
+    cursor: pointer;
+    transition: color $transition-quick;
+
+    svg {
+        width: $size-9;
+        height: $size-9;
+        transition: fill $transition-quick;
+    }
+
+    &.filled {
+        color: $accent-color;
+
+        svg {
+            fill: currentcolor;
+        }
+    }
+}
+
+.cell-rating[role='img'] .cell-rating-star {
+    cursor: default;
+}
+
+.cell-rating[role='radiogroup']:has(.cell-rating-star:hover) .cell-rating-star {
+    color: $accent-color;
+
+    svg {
+        fill: currentcolor;
+    }
+}
+
+.cell-rating[role='radiogroup'] .cell-rating-star:hover ~ .cell-rating-star {
+    color: $text-muted;
+
+    svg {
+        fill: none;
+    }
 }
 
 /* ––– Link open button (URL cells) ––– */

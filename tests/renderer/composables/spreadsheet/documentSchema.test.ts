@@ -93,6 +93,13 @@ describe('the app reading its own state back', () => {
         expect(parseTables(JSON.stringify([table]))[0]?.rows.slice(0, 3)).toEqual(table.rows.slice(0, 3));
     });
 
+    it('reads rated and unrated star rating cells', () => {
+        const table = createDefaultTable(0, 0, 'Reviews');
+        table.rows[0]![0] = { value: 4, cellType: 'rating' };
+        table.rows[1]![0] = { value: null, cellType: 'rating' };
+        expect(parseTables(JSON.stringify([table]))[0]?.rows.slice(0, 2)).toEqual(table.rows.slice(0, 2));
+    });
+
     it('round-trips tables unchanged', () => {
         const tables = [createDefaultTable(0, 0, 'A'), createDefaultTable(5, 5, 'B')];
         expect(parseTables(JSON.stringify(tables))).toEqual(tables);

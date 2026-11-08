@@ -305,6 +305,10 @@ describe('toFormulaType', () => {
         expect(toFormulaType('checkbox')).toBe('boolean');
     });
 
+    it('hands formulas a star rating as a whole number', () => {
+        expect(toFormulaType('rating')).toBe('integer');
+    });
+
     it('leaves every other type as it is', () => {
         expect(toFormulaType('currency_usd')).toBe('currency_usd');
         expect(toFormulaType('boolean')).toBe('boolean');
@@ -320,9 +324,10 @@ describe('getTypeAlignment', () => {
         expect(getTypeAlignment('date')).toBe('right');
     });
 
-    it('centers booleans and checkboxes', () => {
+    it('centers booleans, checkboxes and star ratings', () => {
         expect(getTypeAlignment('boolean')).toBe('center');
         expect(getTypeAlignment('checkbox')).toBe('center');
+        expect(getTypeAlignment('rating')).toBe('center');
     });
 
     it('left-aligns text and urls', () => {
@@ -341,5 +346,6 @@ describe('getTypeLabel', () => {
         expect(getTypeLabel('empty')).toBe('Empty');
         expect(getTypeLabel('date')).toBe('Date');
         expect(getTypeLabel('checkbox')).toBe('Checkbox');
+        expect(getTypeLabel('rating')).toBe('Star rating');
     });
 });

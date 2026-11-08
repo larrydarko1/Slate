@@ -16,6 +16,7 @@ export type CellDataType =
     | 'text'
     | 'boolean'
     | 'checkbox'
+    | 'rating'
     | 'url'
     | 'empty';
 
@@ -139,12 +140,14 @@ export function isNumericType(t: CellDataType): boolean {
 }
 
 /**
- * A checkbox is how a TRUE/FALSE cell is shown, so formulas read it as one.
- * Without this, `=A1` on a checkbox would inherit the box and draw one
- * nobody can click.
+ * A control is only how a value is shown: a checkbox is a TRUE/FALSE and a
+ * star rating a whole number, so formulas read them as those. Without this,
+ * `=A1` on a checkbox would inherit the box and draw one nobody can click.
  */
 export function toFormulaType(t: CellDataType): CellDataType {
-    return t === 'checkbox' ? 'boolean' : t;
+    if (t === 'checkbox') return 'boolean';
+    if (t === 'rating') return 'integer';
+    return t;
 }
 
 /**
@@ -264,6 +267,7 @@ export function getTypeAlignment(type: CellDataType): 'left' | 'right' | 'center
             return 'right';
         case 'boolean':
         case 'checkbox':
+        case 'rating':
             return 'center';
         case 'text':
         case 'url':
@@ -295,6 +299,8 @@ export function getTypeLabel(type: CellDataType): string {
             return 'Boolean';
         case 'checkbox':
             return 'Checkbox';
+        case 'rating':
+            return 'Star rating';
         case 'url':
             return 'URL';
         case 'empty':

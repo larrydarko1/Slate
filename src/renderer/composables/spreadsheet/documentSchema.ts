@@ -44,6 +44,7 @@ const CellDataTypeSchema = z.enum([
     'text',
     'boolean',
     'checkbox',
+    'rating',
     'url',
     'empty',
 ]);

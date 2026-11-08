@@ -291,4 +291,66 @@ describe('SpreadsheetTable', () => {
             expect(wrapper.findAll('.cell')[1]!.text()).toMatch(/^#/);
         });
     });
+
+    describe('star rating cells', () => {
+        const stars = (col: number) => wrapper.findAll('.cell')[col]!.findAll('.cell-rating-star');
+        const lit = (col: number) => stars(col).filter((star) => star.classes('filled')).length;
+
+        beforeEach(async () => {
+            ss.setCellType(id, 0, 0, 'rating');
+            await wrapper.vm.$nextTick();
+        });
+
+        it('draws five unlit stars in an unrated cell', () => {
+            expect(stars(0)).toHaveLength(5);
+            expect(lit(0)).toBe(0);
+            expect(wrapper.find('.cell-rating').attributes('role')).toBe('radiogroup');
+        });
+
+        it('rates by the star clicked, and clears when it is clicked again', async () => {
+            await stars(0)[3]!.trigger('click');
+            expect(ss.findCell(id, 0, 0)?.value).toBe(4);
+            expect(lit(0)).toBe(4);
+            expect(stars(0)[3]!.attributes('aria-checked')).toBe('true');
+            await stars(0)[3]!.trigger('click');
+            expect(ss.findCell(id, 0, 0)?.value).toBeNull();
+        });
+
+        it('does not open the editor when a star is double-clicked', async () => {
+            await stars(0)[1]!.trigger('dblclick');
+            expect(ss.isEditing.value).toBe(false);
+        });
+
+        it('rates with a digit instead of typing it', async () => {
+            await wrapper.findAll('.cell')[0]!.trigger('mousedown');
+            await wrapper.find('.table-grid-wrapper').trigger('keydown', { key: '3' });
+            expect(ss.findCell(id, 0, 0)?.value).toBe(3);
+            expect(ss.isEditing.value).toBe(false);
+        });
+
+        it('still types a digit pressed with Cmd or Ctrl as a shortcut, not a rating', async () => {
+            await wrapper.findAll('.cell')[0]!.trigger('mousedown');
+            await wrapper.find('.table-grid-wrapper').trigger('keydown', { key: '3', metaKey: true });
+            expect(ss.findCell(id, 0, 0)?.value).toBeNull();
+        });
+
+        it('shows a formula rating as stars nobody can click', async () => {
+            ss.setCellValue(id, 1, 0, '=1+2');
+            ss.setCellType(id, 1, 0, 'rating');
+            await wrapper.vm.$nextTick();
+            const rating = wrapper.findAll('.cell')[1]!.find('.cell-rating');
+            expect(rating.attributes('role')).toBe('img');
+            expect(rating.attributes('aria-label')).toBe('3 stars of 5');
+            expect(rating.find('button').exists()).toBe(false);
+            expect(lit(1)).toBe(3);
+        });
+
+        it('shows a formula result no rating can show as its number', async () => {
+            ss.setCellValue(id, 1, 0, '=3+4');
+            ss.setCellType(id, 1, 0, 'rating');
+            await wrapper.vm.$nextTick();
+            expect(wrapper.findAll('.cell')[1]!.find('.cell-rating').exists()).toBe(false);
+            expect(wrapper.findAll('.cell')[1]!.text()).toBe('7');
+        });
+    });
 });
