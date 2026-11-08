@@ -42,6 +42,7 @@ const {
     cellTextClass,
     cellTdStyle,
     cellTextStyle,
+    findCheckboxState,
     mergedColspan,
     mergedRowspan,
     openCellUrl,
@@ -243,6 +244,12 @@ function onKeyDown(e: KeyboardEvent): void {
     if (mod && e.key === 'v') {
         e.preventDefault();
         void ss.pasteCells();
+        return;
+    }
+
+    if (e.key === ' ' && ss.isActiveCellCheckbox()) {
+        e.preventDefault();
+        ss.toggleSelectionCheckboxes();
         return;
     }
 
@@ -494,7 +501,9 @@ watch(
                                     :is-url="ss.getCellType(table.id, ci, ri) === 'url'"
                                     :text-class="cellTextClass(ci, ri)"
                                     :text-style="cellTextStyle(ci, ri)"
-                                    @open-url="openCellUrl" />
+                                    :checkbox="findCheckboxState(ci, ri)"
+                                    @open-url="openCellUrl"
+                                    @toggle="ss.toggleCheckbox(table.id, ci, ri)" />
                                 <!-- Fill handle at bottom-right corner of selection -->
                                 <div
                                     v-if="isSelectionCorner(ci, ri) && !ss.isEditing.value"

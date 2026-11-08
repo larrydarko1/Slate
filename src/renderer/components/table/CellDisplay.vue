@@ -1,21 +1,62 @@
 <script setup lang="ts">
+import IconCheck from '@/renderer/components/icons/IconCheck.vue';
 import IconExternalLink from '@/renderer/components/icons/IconExternalLink.vue';
-import type { CellTextStyle } from '@/renderer/composables/table/useTableCellRendering';
+import type { CellTextStyle, CheckboxState } from '@/renderer/composables/table/useTableCellRendering';
 
 defineProps<{
     text: string;
     isUrl: boolean;
     textClass: Record<string, boolean>;
     textStyle: CellTextStyle;
+    checkbox: CheckboxState | null;
 }>();
 
 defineEmits<{
     openUrl: [url: string];
+    toggle: [];
 }>();
 </script>
 
 <template>
+    <!-- Checkbox cell -->
     <span
+        v-if="checkbox !== null"
+        class="cell-text"
+        :style="textStyle">
+        <span
+            v-if="checkbox.readonly"
+            class="cell-checkbox"
+            role="img"
+            :aria-label="checkbox.checked ? 'Ticked' : 'Not ticked'"
+            title="Set by its formula">
+            <span
+                class="cell-checkbox-box"
+                :class="{ checked: checkbox.checked }">
+                <IconCheck v-if="checkbox.checked" />
+            </span>
+        </span>
+        <!-- mousedown still reaches the cell to select it; prevented so the
+             button doesn't take focus, which would make Space toggle twice -->
+        <button
+            v-else
+            type="button"
+            role="checkbox"
+            class="cell-checkbox"
+            tabindex="-1"
+            aria-label="Tick box"
+            :aria-checked="checkbox.checked"
+            @mousedown.prevent
+            @click.stop="$emit('toggle')"
+            @dblclick.stop>
+            <span
+                class="cell-checkbox-box"
+                :class="{ checked: checkbox.checked }">
+                <IconCheck v-if="checkbox.checked" />
+            </span>
+        </button>
+    </span>
+    <span
+        v-else
         class="cell-text"
         :class="textClass"
         :style="textStyle"
@@ -77,6 +118,53 @@ defineEmits<{
         text-underline-offset: 2px;
         cursor: default;
     }
+}
+
+/* ––– Checkbox ––– */
+
+.cell-checkbox {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: $size-15;
+    height: $size-15;
+    padding: 0;
+    border: none;
+    background: transparent;
+    vertical-align: middle;
+    cursor: pointer;
+
+    &[role='img'] {
+        cursor: default;
+    }
+}
+
+.cell-checkbox-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: $size-10;
+    height: $size-10;
+    border: $border-width-thin $text-muted;
+    border-radius: $border-radius-xs;
+    color: $accent-color;
+    transition:
+        background $transition-quick,
+        border-color $transition-quick;
+
+    &.checked {
+        border-color: $accent-color;
+        background: $accent-color-alpha;
+    }
+
+    svg {
+        width: $size-8;
+        height: $size-8;
+    }
+}
+
+.cell-checkbox[role='img'] .cell-checkbox-box {
+    opacity: $opacity-high;
 }
 
 /* ––– Link open button (URL cells) ––– */

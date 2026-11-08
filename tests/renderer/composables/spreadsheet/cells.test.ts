@@ -341,4 +341,191 @@ describe('cells', () => {
             expect(ss.getDisplayValue(id, 0, 0)).toMatch(/^#/);
         });
     });
+
+    describe('checkboxes', () => {
+        function makeCheckbox(col: number, row: number, raw: string): void {
+            ss.setCellValue(id, col, row, raw);
+            ss.setCellType(id, col, row, 'checkbox');
+        }
+
+        it.each([
+            ['true', true],
+            ['1', true],
+            ['5', true],
+            ['$2', true],
+            ['false', false],
+            ['0', false],
+        ])('makes %s a checkbox ticked: %s', (raw, checked) => {
+            makeCheckbox(0, 0, raw);
+            expect(ss.findCell(id, 0, 0)).toMatchObject({ value: checked, cellType: 'checkbox' });
+        });
+
+        it('makes an empty cell an unticked box', () => {
+            makeCheckbox(0, 0, '');
+            expect(ss.findCell(id, 0, 0)).toMatchObject({ value: null, cellType: 'checkbox' });
+        });
+
+        it('leaves other text as text', () => {
+            makeCheckbox(0, 0, 'Buy milk');
+            expect(ss.findCell(id, 0, 0)).toMatchObject({ value: 'Buy milk', cellType: 'text' });
+        });
+
+        it('takes the box away from an empty checkbox given another type', () => {
+            makeCheckbox(0, 0, '');
+            ss.setCellType(id, 0, 0, 'text');
+            expect(ss.getCellType(id, 0, 0)).toBe('empty');
+        });
+
+        it.each([
+            ['integer', 1, '1'],
+            ['currency_usd', 1, '$1.00'],
+            ['text', 'TRUE', 'TRUE'],
+        ] as const)('turns a ticked box into %s', (type, value, display) => {
+            makeCheckbox(0, 0, 'true');
+            ss.setCellType(id, 0, 0, type);
+            expect(ss.findCell(id, 0, 0)?.value).toBe(value);
+            expect(ss.getDisplayValue(id, 0, 0)).toBe(display);
+        });
+
+        it('stays a checkbox when TRUE or FALSE is typed into it', () => {
+            makeCheckbox(0, 0, '');
+            ss.setCellValue(id, 0, 0, 'TRUE');
+            expect(ss.findCell(id, 0, 0)).toMatchObject({ value: true, cellType: 'checkbox' });
+            ss.setCellValue(id, 0, 0, 'false');
+            expect(ss.findCell(id, 0, 0)).toMatchObject({ value: false, cellType: 'checkbox' });
+        });
+
+        it('unticks rather than disappears when cleared', () => {
+            makeCheckbox(0, 0, 'true');
+            ss.setCellValue(id, 0, 0, '');
+            expect(ss.findCell(id, 0, 0)).toMatchObject({ value: null, cellType: 'checkbox' });
+        });
+
+        it('becomes whatever else is typed into it', () => {
+            makeCheckbox(0, 0, 'true');
+            ss.setCellValue(id, 0, 0, 'Done');
+            expect(ss.findCell(id, 0, 0)).toMatchObject({ value: 'Done', cellType: 'text' });
+        });
+
+        it('edits as TRUE or FALSE', () => {
+            makeCheckbox(0, 0, '1');
+            expect(ss.getRawValue(id, 0, 0)).toBe('TRUE');
+            ss.toggleCheckbox(id, 0, 0);
+            expect(ss.getRawValue(id, 0, 0)).toBe('FALSE');
+        });
+
+        it('a typed TRUE stays a plain TRUE, not a checkbox', () => {
+            ss.setCellValue(id, 0, 0, 'TRUE');
+            expect(ss.getCellType(id, 0, 0)).toBe('boolean');
+        });
+
+        describe('toggleCheckbox', () => {
+            it('ticks an empty box and unticks a ticked one', () => {
+                makeCheckbox(0, 0, '');
+                ss.toggleCheckbox(id, 0, 0);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(true);
+                ss.toggleCheckbox(id, 0, 0);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(false);
+            });
+
+            it('undoes', async () => {
+                makeCheckbox(0, 0, '');
+                await Promise.resolve();
+                ss.toggleCheckbox(id, 0, 0);
+                ss.undo();
+                expect(ss.findCell(id, 0, 0)?.value).toBeNull();
+            });
+
+            it('recalculates formulas that read the box', () => {
+                makeCheckbox(0, 0, '');
+                ss.setCellValue(id, 1, 0, '=IF(A1, "Done", "To do")');
+                expect(ss.getDisplayValue(id, 1, 0)).toBe('To do');
+                ss.toggleCheckbox(id, 0, 0);
+                expect(ss.getDisplayValue(id, 1, 0)).toBe('Done');
+            });
+
+            it('leaves a cell that is not a checkbox alone', () => {
+                ss.setCellValue(id, 0, 0, 'TRUE');
+                ss.toggleCheckbox(id, 0, 0);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(1);
+            });
+
+            it('leaves a formula checkbox alone, since its formula decides', () => {
+                ss.setCellValue(id, 0, 0, '=1>0');
+                ss.setCellType(id, 0, 0, 'checkbox');
+                ss.toggleCheckbox(id, 0, 0);
+                expect(ss.findCell(id, 0, 0)?.computed).toBe(true);
+            });
+        });
+
+        describe('toggleSelectionCheckboxes', () => {
+            it('gives every box in the selection the opposite of the active one', () => {
+                makeCheckbox(0, 0, 'false');
+                makeCheckbox(0, 1, 'true');
+                makeCheckbox(0, 2, 'false');
+                ss.selectCell(id, 0, 0);
+                ss.extendSelection(id, 0, 2);
+                ss.toggleSelectionCheckboxes();
+                expect([0, 1, 2].map((r) => ss.findCell(id, 0, r)?.value)).toEqual([true, true, true]);
+            });
+
+            it('skips cells in the selection that are not checkboxes', () => {
+                makeCheckbox(0, 0, '');
+                ss.setCellValue(id, 0, 1, 'note');
+                ss.selectCell(id, 0, 0);
+                ss.extendSelection(id, 0, 1);
+                ss.toggleSelectionCheckboxes();
+                expect(ss.findCell(id, 0, 1)?.value).toBe('note');
+            });
+
+            it('does nothing when the active cell is not a checkbox', () => {
+                ss.setCellValue(id, 0, 0, 'note');
+                makeCheckbox(0, 1, '');
+                ss.selectCell(id, 0, 0);
+                ss.extendSelection(id, 0, 1);
+                ss.toggleSelectionCheckboxes();
+                expect(ss.findCell(id, 0, 1)?.value).toBeNull();
+            });
+
+            it('does nothing with no active cell', () => {
+                makeCheckbox(0, 0, '');
+                ss.toggleSelectionCheckboxes();
+                expect(ss.findCell(id, 0, 0)?.value).toBeNull();
+            });
+        });
+
+        describe('isActiveCellCheckbox', () => {
+            it('is true for a checkbox someone can tick', () => {
+                makeCheckbox(0, 0, '');
+                ss.selectCell(id, 0, 0);
+                expect(ss.isActiveCellCheckbox()).toBe(true);
+            });
+
+            it('is false for a formula checkbox, a plain cell, or no selection', () => {
+                expect(ss.isActiveCellCheckbox()).toBe(false);
+                ss.setCellValue(id, 0, 0, '=1>0');
+                ss.setCellType(id, 0, 0, 'checkbox');
+                ss.selectCell(id, 0, 0);
+                expect(ss.isActiveCellCheckbox()).toBe(false);
+                ss.selectCell(id, 1, 0);
+                expect(ss.isActiveCellCheckbox()).toBe(false);
+            });
+        });
+
+        describe('in formulas', () => {
+            it('reads as TRUE or FALSE', () => {
+                makeCheckbox(0, 0, 'true');
+                ss.setCellValue(id, 1, 0, '=AND(A1, NOT(FALSE))');
+                ss.setCellValue(id, 2, 0, '=A1');
+                expect(ss.getDisplayValue(id, 1, 0)).toBe('TRUE');
+                expect(ss.getCellType(id, 2, 0)).toBe('boolean');
+            });
+
+            it('counts as 1 when ticked in arithmetic', () => {
+                makeCheckbox(0, 0, 'true');
+                ss.setCellValue(id, 1, 0, '=A1+1');
+                expect(ss.getDisplayValue(id, 1, 0)).toBe('2');
+            });
+        });
+    });
 });

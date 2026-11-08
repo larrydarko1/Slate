@@ -33,7 +33,7 @@ const currentCellType = computed((): CellDataType => {
 
 const typeLabel = computed((): string => getTypeLabel(currentCellType.value));
 
-const typeShortLabel = computed((): 'INT' | 'DEC' | '€' | '$' | 'DATE' | 'ABC' | 'T/F' | '—' => {
+const typeShortLabel = computed((): 'INT' | 'DEC' | '€' | '$' | 'DATE' | 'ABC' | 'T/F' | '✓' | '—' => {
     switch (currentCellType.value) {
         case 'integer':
             return 'INT';
@@ -49,6 +49,8 @@ const typeShortLabel = computed((): 'INT' | 'DEC' | '€' | '$' | 'DATE' | 'ABC'
             return 'ABC';
         case 'boolean':
             return 'T/F';
+        case 'checkbox':
+            return '✓';
         case 'empty':
             return '—';
         default:
@@ -284,7 +286,8 @@ watch(
         color: $type-date;
     }
 
-    &.type-boolean {
+    &.type-boolean,
+    &.type-checkbox {
         background: $type-boolean-alpha;
         color: $type-boolean;
     }

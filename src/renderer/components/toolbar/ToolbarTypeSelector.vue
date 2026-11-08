@@ -17,6 +17,7 @@ const typeOptions: { value: CellDataType; label: string; short: string }[] = [
     { value: 'currency_usd', label: 'Dollar ($)', short: '$' },
     { value: 'currency_eur', label: 'Euro (€)', short: '€' },
     { value: 'date', label: 'Date', short: 'DATE' },
+    { value: 'checkbox', label: 'Checkbox', short: '✓' },
 ];
 
 const ss = injectSpreadsheet();
@@ -223,6 +224,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     &.badge-text {
         background: $type-date-alpha;
         color: $type-date;
+    }
+
+    &.badge-checkbox {
+        background: $type-boolean-alpha;
+        color: $type-boolean;
     }
 }
 

@@ -229,4 +229,66 @@ describe('SpreadsheetTable', () => {
             expect(wrapper.findAll('tbody tr')[0]!.findAll('.cell')).toHaveLength(4);
         });
     });
+
+    describe('checkbox cells', () => {
+        beforeEach(async () => {
+            ss.setCellType(id, 0, 0, 'checkbox');
+            await wrapper.vm.$nextTick();
+        });
+
+        it('draws an unticked box in an empty checkbox cell', () => {
+            const box = wrapper.find('.cell-checkbox');
+            expect(box.attributes('role')).toBe('checkbox');
+            expect(box.attributes('aria-checked')).toBe('false');
+            expect(wrapper.findAll('.cell')[0]!.text()).toBe('');
+        });
+
+        it('ticks the box when it is clicked', async () => {
+            await wrapper.find('.cell-checkbox').trigger('click');
+            expect(ss.findCell(id, 0, 0)?.value).toBe(true);
+            expect(wrapper.find('.cell-checkbox').attributes('aria-checked')).toBe('true');
+        });
+
+        it('selects the cell, without ticking it, when the cell is clicked beside the box', async () => {
+            await wrapper.findAll('.cell')[0]!.trigger('mousedown');
+            await wrapper.findAll('.cell')[0]!.trigger('click');
+            expect(ss.activeCell.value).toMatchObject({ col: 0, row: 0 });
+            expect(ss.findCell(id, 0, 0)?.value).toBeNull();
+        });
+
+        it('does not open the editor when the box is double-clicked', async () => {
+            await wrapper.find('.cell-checkbox').trigger('dblclick');
+            expect(ss.isEditing.value).toBe(false);
+        });
+
+        it('toggles with Space instead of typing a space', async () => {
+            await wrapper.findAll('.cell')[0]!.trigger('mousedown');
+            await wrapper.find('.table-grid-wrapper').trigger('keydown', { key: ' ' });
+            expect(ss.findCell(id, 0, 0)?.value).toBe(true);
+            expect(ss.isEditing.value).toBe(false);
+        });
+
+        it('still types a space into a cell that is not a checkbox', async () => {
+            await wrapper.findAll('.cell')[1]!.trigger('mousedown');
+            await wrapper.find('.table-grid-wrapper').trigger('keydown', { key: ' ' });
+            expect(ss.isEditing.value).toBe(true);
+        });
+
+        it('shows a formula checkbox as a box nobody can click', async () => {
+            ss.setCellValue(id, 1, 0, '=1>0');
+            ss.setCellType(id, 1, 0, 'checkbox');
+            await wrapper.vm.$nextTick();
+            const box = wrapper.findAll('.cell')[1]!.find('.cell-checkbox');
+            expect(box.element.tagName).toBe('SPAN');
+            expect(box.attributes('aria-label')).toBe('Ticked');
+        });
+
+        it('shows a formula error as its text, not as a box', async () => {
+            ss.setCellValue(id, 1, 0, '=1/0');
+            ss.setCellType(id, 1, 0, 'checkbox');
+            await wrapper.vm.$nextTick();
+            expect(wrapper.findAll('.cell')[1]!.find('.cell-checkbox').exists()).toBe(false);
+            expect(wrapper.findAll('.cell')[1]!.text()).toMatch(/^#/);
+        });
+    });
 });
