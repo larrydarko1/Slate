@@ -26,6 +26,9 @@ type ControlKeyPress = { key: string; altKey: boolean };
 /** One step down or up. */
 type StepDirection = -1 | 1;
 
+/** Why a set of limits cannot be used, and which of its fields to fix. */
+export type LimitsProblem = { field: keyof ControlLimits; message: string };
+
 export type SpreadsheetControls = {
     toggleCheckbox: (tableId: string, col: number, row: number) => void;
     isActiveCellCheckbox: () => boolean;
@@ -33,6 +36,8 @@ export type SpreadsheetControls = {
     setRating: (tableId: string, col: number, row: number, stars: number) => void;
     stepStepper: (tableId: string, col: number, row: number, direction: StepDirection) => void;
     handleControlKey: (press: ControlKeyPress) => boolean;
+    findActiveLimits: () => ControlLimits | null;
+    setSelectionLimits: (limits: ControlLimits) => void;
 };
 
 type ControlsDeps = {
@@ -119,6 +124,34 @@ export function createControls(state: SpreadsheetCoreState, deps: ControlsDeps):
         return false;
     }
 
+    function findActiveLimits(): ControlLimits | null {
+        const cell = findActiveControl('stepper');
+        return cell === null ? null : limitsOf(cell);
+    }
+
+    /**
+     * Gives every stepper in the selection `limits`, moving a value they leave
+     * out to the nearer end, so no stepper holds a value it cannot show.
+     */
+    function setSelectionLimits(limits: ControlLimits): void {
+        const problem = findLimitsProblem(limits);
+        if (problem !== null) throw new Error(`Stepper limits refused: ${problem.message}`);
+        const sr = deps.findNormalizedSelection();
+        if (sr === null) return;
+        deps.pushUndo();
+        for (let rowIdx = sr.startRow; rowIdx <= sr.endRow; rowIdx++) {
+            for (let colIdx = sr.startCol; colIdx <= sr.endCol; colIdx++) {
+                const cell = deps.findCell(sr.tableId, colIdx, rowIdx);
+                if (!isEditableControl(cell, 'stepper')) continue;
+                cell.limits = { ...limits };
+                if (typeof cell.value === 'number') {
+                    cell.value = Math.min(limits.max, Math.max(limits.min, cell.value));
+                }
+            }
+        }
+        deps.recalculate();
+    }
+
     function findActiveControl(type: ControlType): Cell | null {
         const active = state.activeCell.value;
         if (active === null) return null;
@@ -165,6 +198,8 @@ export function createControls(state: SpreadsheetCoreState, deps: ControlsDeps):
         setRating,
         stepStepper,
         handleControlKey,
+        findActiveLimits,
+        setSelectionLimits,
     };
 }
 
@@ -174,6 +209,16 @@ export function isControlType(type: CellDataType): type is ControlType {
 
 export function limitsOf(cell: Cell): ControlLimits {
     return cell.limits ?? DEFAULT_LIMITS;
+}
+
+/** The first thing wrong with `limits`, or null when a stepper can use them. */
+export function findLimitsProblem(limits: ControlLimits): LimitsProblem | null {
+    for (const field of ['min', 'max', 'step'] as const) {
+        if (!Number.isFinite(limits[field])) return { field, message: 'Enter a number' };
+    }
+    if (limits.max <= limits.min) return { field: 'max', message: 'Must be more than the minimum' };
+    if (limits.step <= 0) return { field: 'step', message: 'Must be more than 0' };
+    return null;
 }
 
 /** Whether a stepper with `limits` can show `value`: a number from its minimum to its maximum. */

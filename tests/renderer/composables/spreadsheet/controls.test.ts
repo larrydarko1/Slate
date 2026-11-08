@@ -1,5 +1,6 @@
 import { assert, describe, it, expect, beforeEach } from 'vitest';
 
+import { findLimitsProblem } from '@/renderer/composables/spreadsheet/controls';
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 
 describe('controls', () => {
@@ -496,6 +497,100 @@ describe('controls', () => {
                 ss.setCellValue(id, 1, 1, '=AVERAGE(A1:A3)');
                 expect(ss.getDisplayValue(id, 1, 0)).toBe('9');
                 expect(ss.getDisplayValue(id, 1, 1)).toBe('4.5');
+            });
+        });
+
+        describe('findActiveLimits', () => {
+            it("gives a stepper's own limits, or the defaults when it has none", () => {
+                makeStepper(0, 0, '5');
+                makeStepper(0, 1, '15');
+                setLimits(0, 1, 10, 20, 5);
+                ss.selectCell(id, 0, 0);
+                expect(ss.findActiveLimits()).toEqual({ min: 0, max: 100, step: 1 });
+                ss.selectCell(id, 0, 1);
+                expect(ss.findActiveLimits()).toEqual({ min: 10, max: 20, step: 5 });
+            });
+
+            it('gives none for an ordinary cell or a formula stepper', () => {
+                ss.setCellValue(id, 0, 0, '5');
+                ss.setCellValue(id, 0, 1, '=2+3');
+                ss.setCellType(id, 0, 1, 'stepper');
+                ss.selectCell(id, 0, 0);
+                expect(ss.findActiveLimits()).toBeNull();
+                ss.selectCell(id, 0, 1);
+                expect(ss.findActiveLimits()).toBeNull();
+            });
+        });
+
+        describe('setSelectionLimits', () => {
+            it('gives every stepper in the selection the limits, and nothing else', () => {
+                makeStepper(0, 0, '5');
+                makeStepper(0, 1, '');
+                ss.setCellValue(id, 0, 2, '5');
+                selectColumnA(3);
+                ss.setSelectionLimits({ min: 0, max: 10, step: 2 });
+                expect([0, 1, 2].map((r) => ss.findCell(id, 0, r)?.limits)).toEqual([
+                    { min: 0, max: 10, step: 2 },
+                    { min: 0, max: 10, step: 2 },
+                    undefined,
+                ]);
+            });
+
+            it('moves a value the new limits leave out to the nearer end', () => {
+                makeStepper(0, 0, '80');
+                makeStepper(0, 1, '2');
+                makeStepper(0, 2, '30');
+                makeStepper(0, 3, '');
+                selectColumnA(4);
+                ss.setSelectionLimits({ min: 10, max: 50, step: 1 });
+                expect([0, 1, 2, 3].map((r) => ss.findCell(id, 0, r)?.value)).toEqual([50, 10, 30, null]);
+            });
+
+            it('recalculates formulas that read a moved value', () => {
+                makeStepper(0, 0, '80');
+                ss.setCellValue(id, 1, 0, '=A1');
+                ss.selectCell(id, 0, 0);
+                ss.setSelectionLimits({ min: 0, max: 50, step: 1 });
+                expect(ss.getDisplayValue(id, 1, 0)).toBe('50');
+            });
+
+            it('undoes the limits and the moved values in one step', async () => {
+                makeStepper(0, 0, '80');
+                ss.selectCell(id, 0, 0);
+                await Promise.resolve();
+                ss.setSelectionLimits({ min: 0, max: 50, step: 1 });
+                ss.undo();
+                expect(ss.findCell(id, 0, 0)).toMatchObject({ value: 80 });
+                expect(ss.findCell(id, 0, 0)?.limits).toBeUndefined();
+            });
+
+            it('refuses limits a stepper cannot use', () => {
+                makeStepper(0, 0, '5');
+                ss.selectCell(id, 0, 0);
+                expect(() => ss.setSelectionLimits({ min: 10, max: 0, step: 1 })).toThrow(
+                    'Stepper limits refused: Must be more than the minimum',
+                );
+                expect(ss.findCell(id, 0, 0)?.limits).toBeUndefined();
+            });
+        });
+
+        describe('findLimitsProblem', () => {
+            it.each([[{ min: 0, max: 100, step: 1 }], [{ min: -5, max: 5, step: 0.5 }], [{ min: 0, max: 1, step: 5 }]])(
+                'accepts %j',
+                (limits) => {
+                    expect(findLimitsProblem(limits)).toBeNull();
+                },
+            );
+
+            it.each([
+                [{ min: Number.NaN, max: 10, step: 1 }, 'min', 'Enter a number'],
+                [{ min: 0, max: Number.POSITIVE_INFINITY, step: 1 }, 'max', 'Enter a number'],
+                [{ min: 10, max: 10, step: 1 }, 'max', 'Must be more than the minimum'],
+                [{ min: 10, max: 0, step: 1 }, 'max', 'Must be more than the minimum'],
+                [{ min: 0, max: 10, step: 0 }, 'step', 'Must be more than 0'],
+                [{ min: 0, max: 10, step: -1 }, 'step', 'Must be more than 0'],
+            ])('refuses %j, naming its %s', (limits, field, message) => {
+                expect(findLimitsProblem(limits)).toEqual({ field, message });
             });
         });
 

@@ -13,6 +13,7 @@
  */
 import { z } from 'zod';
 
+import { findLimitsProblem } from '@/renderer/composables/spreadsheet/controls';
 import { type CellDataType, detectType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import {
     type Canvas,
@@ -64,10 +65,9 @@ const CellFormatSchema = z.object({
     decimalPlaces: z.number().exactOptional(),
 });
 
-// A stepper whose limits hold nothing, or that never moves, has no value it could show
 const ControlLimitsSchema = z
     .object({ min: z.number(), max: z.number(), step: z.number() })
-    .refine((limits): boolean => limits.min < limits.max && limits.step > 0);
+    .refine((limits): boolean => findLimitsProblem(limits) === null);
 
 const CellSchema = z
     .object({

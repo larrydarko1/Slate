@@ -3,6 +3,7 @@ import { computed, nextTick, ref, toRef, watch, useTemplateRef } from 'vue';
 
 import ContextMenu from '@/renderer/components/ContextMenu.vue';
 import CellDisplay from '@/renderer/components/table/CellDisplay.vue';
+import CellSettingsPanel from '@/renderer/components/table/CellSettingsPanel.vue';
 import NoteEditor from '@/renderer/components/table/NoteEditor.vue';
 import NotePopup from '@/renderer/components/table/NotePopup.vue';
 import { useCellMove } from '@/renderer/composables/table/useCellMove';
@@ -128,7 +129,6 @@ function onCellMouseDown(ci: number, ri: number, e: MouseEvent): void {
         return;
     }
 
-    // Formula mode: click inserts cell reference
     if (ss.formulaMode.value && ss.isEditing.value) {
         e.preventDefault();
         e.stopPropagation();
@@ -306,256 +306,264 @@ watch(
 </script>
 
 <template>
-    <!-- Focusable container: the @keydown below is the grid's keyboard
-         navigation, and the markup inside is a real <table>. -->
-    <!-- eslint-disable-next-line a11y/no-static-element-interactions -->
+    <!-- Positions the table without clipping what sits beside it, such as the settings panel -->
     <div
-        ref="tableEl"
-        class="spreadsheet-table"
-        :class="{
-            'active': isActiveTable,
-            'formula-mode': ss.formulaMode.value && ss.isEditing.value,
-            'moving-cells': moveState?.lifted === true,
-        }"
-        :style="tableStyle"
-        tabindex="0"
-        @mousedown="onTableMouseDown"
-        @keydown="onKeyDown">
-        <!-- Title bar -->
+        class="table-frame"
+        :style="tableStyle">
+        <!-- Focusable container: the @keydown below is the grid's keyboard
+         navigation, and the markup inside is a real <table>. -->
+        <!-- eslint-disable-next-line a11y/no-static-element-interactions -->
         <div
-            class="table-title-bar"
-            role="presentation"
-            @mousedown.stop="startDrag"
-            @dblclick.stop>
-            <input
-                v-if="editingName"
-                ref="nameInputRef"
-                v-model="localName"
-                class="table-name-input editing"
-                @blur="commitName"
-                @keydown.enter.prevent="commitName"
-                @keydown.escape.prevent="cancelNameEdit"
-                @mousedown.stop />
-            <!-- Double-click renames; the same action is on the table's
+            ref="tableEl"
+            class="spreadsheet-table"
+            :class="{
+                'active': isActiveTable,
+                'formula-mode': ss.formulaMode.value && ss.isEditing.value,
+                'moving-cells': moveState?.lifted === true,
+            }"
+            tabindex="0"
+            @mousedown="onTableMouseDown"
+            @keydown="onKeyDown">
+            <!-- Title bar -->
+            <div
+                class="table-title-bar"
+                role="presentation"
+                @mousedown.stop="startDrag"
+                @dblclick.stop>
+                <input
+                    v-if="editingName"
+                    ref="nameInputRef"
+                    v-model="localName"
+                    class="table-name-input editing"
+                    @blur="commitName"
+                    @keydown.enter.prevent="commitName"
+                    @keydown.escape.prevent="cancelNameEdit"
+                    @mousedown.stop />
+                <!-- Double-click renames; the same action is on the table's
                  context menu, which is reachable from the keyboard. -->
-            <!-- eslint-disable-next-line a11y/no-static-element-interactions -->
-            <span
-                v-else
-                class="table-name"
-                @dblclick.stop="startNameEdit"
-                >{{ table.name }}</span
-            >
-            <button
-                class="table-close-btn"
-                title="Delete table"
-                @click.stop="$emit('remove')"
-                >×</button
-            >
-        </div>
+                <!-- eslint-disable-next-line a11y/no-static-element-interactions -->
+                <span
+                    v-else
+                    class="table-name"
+                    @dblclick.stop="startNameEdit"
+                    >{{ table.name }}</span
+                >
+                <button
+                    class="table-close-btn"
+                    title="Delete table"
+                    @click.stop="$emit('remove')"
+                    >×</button
+                >
+            </div>
 
-        <!-- Table grid -->
-        <div class="table-grid-wrapper">
-            <table
-                class="table-grid"
-                cellpadding="0"
-                cellspacing="0">
-                <thead>
-                    <tr>
-                        <th
-                            class="corner-cell"
-                            :class="{ 'all-selected': ss.isEntireTableSelected(table.id) }"
-                            @mousedown.stop="onCornerClick"></th>
-                        <!-- @mouseover extends a drag-select in progress: it only
+            <!-- Table grid -->
+            <div class="table-grid-wrapper">
+                <table
+                    class="table-grid"
+                    cellpadding="0"
+                    cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th
+                                class="corner-cell"
+                                :class="{ 'all-selected': ss.isEntireTableSelected(table.id) }"
+                                @mousedown.stop="onCornerClick"></th>
+                            <!-- @mouseover extends a drag-select in progress: it only
                              means anything while a mouse button is held, so there is
                              no focus equivalent. -->
-                        <!-- eslint-disable-next-line a11y/mouse-events-have-key-events -->
-                        <th
-                            v-for="(col, ci) in table.columns"
-                            :key="col.id"
-                            :style="{ width: col.width + 'px', minWidth: col.width + 'px' }"
-                            class="col-header"
+                            <!-- eslint-disable-next-line a11y/mouse-events-have-key-events -->
+                            <th
+                                v-for="(col, ci) in table.columns"
+                                :key="col.id"
+                                :style="{ width: col.width + 'px', minWidth: col.width + 'px' }"
+                                class="col-header"
+                                :class="{
+                                    'col-selected': ss.isColInSelection(table.id, ci),
+                                    'reorder-source':
+                                        reorderColState.active &&
+                                        ci >= reorderColState.fromStart &&
+                                        ci <= reorderColState.fromEnd,
+                                    'reorder-drop-before':
+                                        reorderColState.active &&
+                                        reorderColState.toIdx === ci &&
+                                        reorderColState.toIdx < reorderColState.fromStart,
+                                    'reorder-drop-after':
+                                        reorderColState.active &&
+                                        reorderColState.toIdx === ci &&
+                                        reorderColState.toIdx > reorderColState.fromEnd,
+                                }"
+                                @mousedown.stop="onColHeaderMouseDown(ci, $event)"
+                                @mouseover="onColHeaderMouseOver(ci)"
+                                @contextmenu.prevent="onColumnContextMenu(ci, $event)">
+                                <span>{{ columnLetter(ci) }}</span>
+                                <div
+                                    class="col-resize-handle"
+                                    role="presentation"
+                                    @mousedown.stop.prevent="startColResize(ci, $event)"></div>
+                            </th>
+                            <th
+                                class="add-col-header"
+                                title="Drag to add columns"
+                                @mousedown.stop.prevent="startAddColDrag($event)">
+                                <span class="add-handle add-handle-col">≡</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="(row, ri) in table.rows"
+                            :key="ri"
                             :class="{
-                                'col-selected': ss.isColInSelection(table.id, ci),
-                                'reorder-source':
-                                    reorderColState.active &&
-                                    ci >= reorderColState.fromStart &&
-                                    ci <= reorderColState.fromEnd,
-                                'reorder-drop-before':
-                                    reorderColState.active &&
-                                    reorderColState.toIdx === ci &&
-                                    reorderColState.toIdx < reorderColState.fromStart,
-                                'reorder-drop-after':
-                                    reorderColState.active &&
-                                    reorderColState.toIdx === ci &&
-                                    reorderColState.toIdx > reorderColState.fromEnd,
-                            }"
-                            @mousedown.stop="onColHeaderMouseDown(ci, $event)"
-                            @mouseover="onColHeaderMouseOver(ci)"
-                            @contextmenu.prevent="onColumnContextMenu(ci, $event)">
-                            <span>{{ columnLetter(ci) }}</span>
-                            <div
-                                class="col-resize-handle"
-                                role="presentation"
-                                @mousedown.stop.prevent="startColResize(ci, $event)"></div>
-                        </th>
-                        <th
-                            class="add-col-header"
-                            title="Drag to add columns"
-                            @mousedown.stop.prevent="startAddColDrag($event)">
-                            <span class="add-handle add-handle-col">≡</span>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr
-                        v-for="(row, ri) in table.rows"
-                        :key="ri"
-                        :class="{
-                            'reorder-row-source':
-                                reorderRowState.active &&
-                                ri >= reorderRowState.fromStart &&
-                                ri <= reorderRowState.fromEnd,
-                            'reorder-row-drop-before':
-                                reorderRowState.active &&
-                                reorderRowState.toIdx === ri &&
-                                reorderRowState.toIdx < reorderRowState.fromStart,
-                            'reorder-row-drop-after':
-                                reorderRowState.active &&
-                                reorderRowState.toIdx === ri &&
-                                reorderRowState.toIdx > reorderRowState.fromEnd,
-                        }">
-                        <!-- eslint-disable-next-line a11y/mouse-events-have-key-events -->
-                        <td
-                            class="row-header"
-                            :class="{
-                                'row-selected': ss.isRowInSelection(table.id, ri),
-                                'reorder-source':
+                                'reorder-row-source':
                                     reorderRowState.active &&
                                     ri >= reorderRowState.fromStart &&
                                     ri <= reorderRowState.fromEnd,
-                                'reorder-drop-before':
+                                'reorder-row-drop-before':
                                     reorderRowState.active &&
                                     reorderRowState.toIdx === ri &&
                                     reorderRowState.toIdx < reorderRowState.fromStart,
-                                'reorder-drop-after':
+                                'reorder-row-drop-after':
                                     reorderRowState.active &&
                                     reorderRowState.toIdx === ri &&
                                     reorderRowState.toIdx > reorderRowState.fromEnd,
-                            }"
-                            @mousedown.stop="onRowHeaderMouseDown(ri, $event)"
-                            @mouseover="onRowHeaderMouseOver(ri)"
-                            @contextmenu.prevent="onRowContextMenu(ri, $event)">
-                            {{ ri + 1 }}
-                        </td>
-                        <template
-                            v-for="(_cell, ci) in row"
-                            :key="ci">
+                            }">
                             <!-- eslint-disable-next-line a11y/mouse-events-have-key-events -->
                             <td
-                                v-if="!ss.isCellHiddenByMerge(table.id, ci, ri)"
-                                class="cell"
-                                :class="[
-                                    cellClasses(ci, ri),
-                                    { 'lifted': isCellLifted(ci, ri), 'in-move': isCellInMovePreview(ci, ri) },
-                                ]"
-                                :style="cellTdStyle(ci, ri)"
-                                :colspan="mergedColspan(ci, ri)"
-                                :rowspan="mergedRowspan(ci, ri)"
-                                @mousedown.stop="onCellMouseDown(ci, ri, $event)"
-                                @mouseover="onCellMouseOver(ci, ri)"
-                                @dblclick.stop="onCellDblClick(ci, ri)"
-                                @contextmenu.prevent="onCellContextMenu(ci, ri, $event)">
-                                <!-- Note indicator triangle -->
-                                <div
-                                    v-if="ss.cellHasNote(table.id, ci, ri)"
-                                    class="note-indicator"
-                                    role="button"
-                                    tabindex="0"
-                                    aria-label="Show cell note"
-                                    @mouseenter="showNotePopup(ci, ri, $event)"
-                                    @mouseleave="hideNotePopup"
-                                    @focus="showNotePopup(ci, ri, $event)"
-                                    @blur="hideNotePopup"></div>
-                                <template v-if="isCellEditing(ci, ri)">
-                                    <input
-                                        ref="cellInputRef"
-                                        class="cell-edit-input"
-                                        :value="ss.editValue.value"
-                                        @input="onCellInput"
-                                        @keydown.enter.prevent="onCellEnter"
-                                        @keydown.tab.prevent="onCellTab($event)"
-                                        @keydown.escape.prevent="ss.cancelEdit()"
-                                        @blur="onCellEditBlur"
-                                        @mousedown.stop />
-                                </template>
-                                <CellDisplay
-                                    v-else
-                                    :text="ss.getDisplayValue(table.id, ci, ri)"
-                                    :is-url="ss.getCellType(table.id, ci, ri) === 'url'"
-                                    :text-class="cellTextClass(ci, ri)"
-                                    :text-style="cellTextStyle(ci, ri)"
-                                    :control="findControlState(ci, ri)"
-                                    @open-url="openCellUrl"
-                                    @toggle="ss.toggleCheckbox(table.id, ci, ri)"
-                                    @rate="(stars) => ss.setRating(table.id, ci, ri, stars)"
-                                    @step="(direction) => ss.stepStepper(table.id, ci, ri, direction)" />
-                                <!-- Fill handle at bottom-right corner of selection -->
-                                <div
-                                    v-if="isSelectionCorner(ci, ri) && !ss.isEditing.value"
-                                    class="fill-handle"
-                                    role="presentation"
-                                    title="Drag to fill, or double-click to fill down"
-                                    @mousedown.stop.prevent="startFillDrag(ci, ri, $event)"
-                                    @dblclick.stop="fillToEnd"></div>
+                                class="row-header"
+                                :class="{
+                                    'row-selected': ss.isRowInSelection(table.id, ri),
+                                    'reorder-source':
+                                        reorderRowState.active &&
+                                        ri >= reorderRowState.fromStart &&
+                                        ri <= reorderRowState.fromEnd,
+                                    'reorder-drop-before':
+                                        reorderRowState.active &&
+                                        reorderRowState.toIdx === ri &&
+                                        reorderRowState.toIdx < reorderRowState.fromStart,
+                                    'reorder-drop-after':
+                                        reorderRowState.active &&
+                                        reorderRowState.toIdx === ri &&
+                                        reorderRowState.toIdx > reorderRowState.fromEnd,
+                                }"
+                                @mousedown.stop="onRowHeaderMouseDown(ri, $event)"
+                                @mouseover="onRowHeaderMouseOver(ri)"
+                                @contextmenu.prevent="onRowContextMenu(ri, $event)">
+                                {{ ri + 1 }}
                             </td>
-                        </template>
-                    </tr>
-                    <!-- Add row drag handle -->
-                    <tr>
-                        <td
-                            class="add-row-cell"
-                            :colspan="table.columns.length + 2"
-                            title="Drag to add rows"
-                            @mousedown.stop.prevent="startAddRowDrag($event)">
-                            <span class="add-handle add-handle-row">≡</span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                            <template
+                                v-for="(_cell, ci) in row"
+                                :key="ci">
+                                <!-- eslint-disable-next-line a11y/mouse-events-have-key-events -->
+                                <td
+                                    v-if="!ss.isCellHiddenByMerge(table.id, ci, ri)"
+                                    class="cell"
+                                    :class="[
+                                        cellClasses(ci, ri),
+                                        { 'lifted': isCellLifted(ci, ri), 'in-move': isCellInMovePreview(ci, ri) },
+                                    ]"
+                                    :style="cellTdStyle(ci, ri)"
+                                    :colspan="mergedColspan(ci, ri)"
+                                    :rowspan="mergedRowspan(ci, ri)"
+                                    @mousedown.stop="onCellMouseDown(ci, ri, $event)"
+                                    @mouseover="onCellMouseOver(ci, ri)"
+                                    @dblclick.stop="onCellDblClick(ci, ri)"
+                                    @contextmenu.prevent="onCellContextMenu(ci, ri, $event)">
+                                    <!-- Note indicator triangle -->
+                                    <div
+                                        v-if="ss.cellHasNote(table.id, ci, ri)"
+                                        class="note-indicator"
+                                        role="button"
+                                        tabindex="0"
+                                        aria-label="Show cell note"
+                                        @mouseenter="showNotePopup(ci, ri, $event)"
+                                        @mouseleave="hideNotePopup"
+                                        @focus="showNotePopup(ci, ri, $event)"
+                                        @blur="hideNotePopup"></div>
+                                    <template v-if="isCellEditing(ci, ri)">
+                                        <input
+                                            ref="cellInputRef"
+                                            class="cell-edit-input"
+                                            :value="ss.editValue.value"
+                                            @input="onCellInput"
+                                            @keydown.enter.prevent="onCellEnter"
+                                            @keydown.tab.prevent="onCellTab($event)"
+                                            @keydown.escape.prevent="ss.cancelEdit()"
+                                            @blur="onCellEditBlur"
+                                            @mousedown.stop />
+                                    </template>
+                                    <CellDisplay
+                                        v-else
+                                        :text="ss.getDisplayValue(table.id, ci, ri)"
+                                        :is-url="ss.getCellType(table.id, ci, ri) === 'url'"
+                                        :text-class="cellTextClass(ci, ri)"
+                                        :text-style="cellTextStyle(ci, ri)"
+                                        :control="findControlState(ci, ri)"
+                                        @open-url="openCellUrl"
+                                        @toggle="ss.toggleCheckbox(table.id, ci, ri)"
+                                        @rate="(stars) => ss.setRating(table.id, ci, ri, stars)"
+                                        @step="(direction) => ss.stepStepper(table.id, ci, ri, direction)" />
+                                    <!-- Fill handle at bottom-right corner of selection -->
+                                    <div
+                                        v-if="isSelectionCorner(ci, ri) && !ss.isEditing.value"
+                                        class="fill-handle"
+                                        role="presentation"
+                                        title="Drag to fill, or double-click to fill down"
+                                        @mousedown.stop.prevent="startFillDrag(ci, ri, $event)"
+                                        @dblclick.stop="fillToEnd"></div>
+                                </td>
+                            </template>
+                        </tr>
+                        <!-- Add row drag handle -->
+                        <tr>
+                            <td
+                                class="add-row-cell"
+                                :colspan="table.columns.length + 2"
+                                title="Drag to add rows"
+                                @mousedown.stop.prevent="startAddRowDrag($event)">
+                                <span class="add-handle add-handle-row">≡</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-        <!-- Context menu -->
-        <ContextMenu ref="ctxMenu" />
+            <ContextMenu ref="ctxMenu" />
 
-        <!-- Note popup -->
-        <!-- Hover-follow only: these keep the tooltip open while the pointer
+            <!-- Note popup -->
+            <!-- Hover-follow only: these keep the tooltip open while the pointer
              moves onto it. Keyboard users get it from the indicator's focus. -->
-        <!-- eslint-disable-next-line a11y/mouse-events-have-key-events -->
-        <NotePopup
-            :visible="notePopup.visible"
-            :x="notePopup.x"
-            :y="notePopup.y"
-            :text="notePopup.text"
-            @mouseenter="onNotePopupEnter"
-            @mouseleave="onNotePopupLeave" />
+            <!-- eslint-disable-next-line a11y/mouse-events-have-key-events -->
+            <NotePopup
+                :visible="notePopup.visible"
+                :x="notePopup.x"
+                :y="notePopup.y"
+                :text="notePopup.text"
+                @mouseenter="onNotePopupEnter"
+                @mouseleave="onNotePopupLeave" />
 
-        <!-- Note editor dialog -->
-        <NoteEditor
-            :visible="noteEditor.visible"
-            :x="noteEditor.x"
-            :y="noteEditor.y"
-            :text="noteEditor.text"
-            :has-existing="noteEditor.hasExisting"
-            @update:text="noteEditor.text = $event"
-            @save="saveNoteFromEditor"
-            @delete="deleteNoteFromEditor"
-            @cancel="cancelNoteEdit" />
+            <!-- Note editor dialog -->
+            <NoteEditor
+                :visible="noteEditor.visible"
+                :x="noteEditor.x"
+                :y="noteEditor.y"
+                :text="noteEditor.text"
+                :has-existing="noteEditor.hasExisting"
+                @update:text="noteEditor.text = $event"
+                @save="saveNoteFromEditor"
+                @delete="deleteNoteFromEditor"
+                @cancel="cancelNoteEdit" />
+        </div>
+        <CellSettingsPanel v-if="isActiveTable" />
     </div>
 </template>
 
 <style scoped lang="scss">
-.spreadsheet-table {
+.table-frame {
     position: absolute;
+}
+
+.spreadsheet-table {
+    position: relative;
     border-radius: $border-radius-xl;
     overflow: hidden;
     box-shadow: $shadow-md;
