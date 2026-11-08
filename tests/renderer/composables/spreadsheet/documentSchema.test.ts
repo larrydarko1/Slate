@@ -85,6 +85,14 @@ describe('the app reading its own state back', () => {
         expect(parseTables(JSON.stringify([table]))[0]?.rows[0]?.[0]).toEqual({ value: 46085, cellType: 'date' });
     });
 
+    it('reads ticked, unticked and empty checkbox cells', () => {
+        const table = createDefaultTable(0, 0, 'Tasks');
+        table.rows[0]![0] = { value: true, cellType: 'checkbox' };
+        table.rows[1]![0] = { value: false, cellType: 'checkbox' };
+        table.rows[2]![0] = { value: null, cellType: 'checkbox' };
+        expect(parseTables(JSON.stringify([table]))[0]?.rows.slice(0, 3)).toEqual(table.rows.slice(0, 3));
+    });
+
     it('round-trips tables unchanged', () => {
         const tables = [createDefaultTable(0, 0, 'A'), createDefaultTable(5, 5, 'B')];
         expect(parseTables(JSON.stringify(tables))).toEqual(tables);

@@ -8,6 +8,8 @@ import {
     formatCellDisplay,
     getTypeAlignment,
     getTypeLabel,
+    isCheckedValue,
+    toFormulaType,
     type CellDataType,
 } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import { dateToSerial, formatDate } from '@/renderer/composables/spreadsheet/engine/dates';
@@ -260,6 +262,33 @@ describe('formatCellDisplay', () => {
         const serial = dateToSerial(2026, 3, 4);
         expect(formatCellDisplay(serial, 'date')).toBe(formatDate(serial));
     });
+
+    it('writes a checkbox as TRUE or FALSE, and an empty one as nothing', () => {
+        expect(formatCellDisplay(true, 'checkbox')).toBe('TRUE');
+        expect(formatCellDisplay(0, 'checkbox')).toBe('FALSE');
+        expect(formatCellDisplay(null, 'checkbox')).toBe('');
+    });
+});
+
+describe('isCheckedValue', () => {
+    it.each([true, 1, -2, 'TRUE', 'x'])('reads %s as ticked', (value) => {
+        expect(isCheckedValue(value)).toBe(true);
+    });
+
+    it.each([false, 0, '', null, undefined, Number.NaN])('reads %s as unticked', (value) => {
+        expect(isCheckedValue(value)).toBe(false);
+    });
+});
+
+describe('toFormulaType', () => {
+    it('hands formulas a checkbox as a boolean', () => {
+        expect(toFormulaType('checkbox')).toBe('boolean');
+    });
+
+    it('leaves every other type as it is', () => {
+        expect(toFormulaType('currency_usd')).toBe('currency_usd');
+        expect(toFormulaType('boolean')).toBe('boolean');
+    });
 });
 
 // ── getTypeAlignment ─────────────────────────────────────────────────────────
@@ -271,8 +300,9 @@ describe('getTypeAlignment', () => {
         expect(getTypeAlignment('date')).toBe('right');
     });
 
-    it('centers booleans', () => {
+    it('centers booleans and checkboxes', () => {
         expect(getTypeAlignment('boolean')).toBe('center');
+        expect(getTypeAlignment('checkbox')).toBe('center');
     });
 
     it('left-aligns text and urls', () => {
@@ -290,5 +320,6 @@ describe('getTypeLabel', () => {
         expect(getTypeLabel('percent')).toBe('Percent (%)');
         expect(getTypeLabel('empty')).toBe('Empty');
         expect(getTypeLabel('date')).toBe('Date');
+        expect(getTypeLabel('checkbox')).toBe('Checkbox');
     });
 });

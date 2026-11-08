@@ -1,13 +1,23 @@
 /**
  * cellTypes — type detection, formatting, and hierarchy for cell values.
- * Owns: CellDataType, detectType, formatCellDisplay, resolveType, getTypeLabel.
+ * Owns: CellDataType, detectType, formatCellDisplay, resolveType, getTypeLabel, isCheckedValue.
  * Does NOT own: formula parsing (parser.ts), evaluation (evaluator.ts).
  */
 
 import { formatDate, parseDate } from '@/renderer/composables/spreadsheet/engine/dates';
 
 export type CellDataType =
-    'integer' | 'float' | 'percent' | 'currency_eur' | 'currency_usd' | 'date' | 'text' | 'boolean' | 'url' | 'empty';
+    | 'integer'
+    | 'float'
+    | 'percent'
+    | 'currency_eur'
+    | 'currency_usd'
+    | 'date'
+    | 'text'
+    | 'boolean'
+    | 'checkbox'
+    | 'url'
+    | 'empty';
 
 type TypedValue = {
     type: CellDataType;
@@ -126,6 +136,25 @@ export function isNumericType(t: CellDataType): boolean {
 }
 
 /**
+ * A checkbox is how a TRUE/FALSE cell is shown, so formulas read it as one.
+ * Without this, `=A1` on a checkbox would inherit the box and draw one
+ * nobody can click.
+ */
+export function toFormulaType(t: CellDataType): CellDataType {
+    return t === 'checkbox' ? 'boolean' : t;
+}
+
+/**
+ * Whether a TRUE/FALSE or checkbox cell reads as ticked. The value is not
+ * always a JS boolean: typing TRUE stores 1, and a formula result or an
+ * imported file can leave a 0/1 or a string behind.
+ */
+export function isCheckedValue(value: unknown): boolean {
+    if (value === null || value === undefined || value === false || value === 0 || value === '') return false;
+    return !Number.isNaN(value);
+}
+
+/**
  * Resolve the result type when two typed values interact in a formula.
  * - first: the left operand / first cell in chain (has priority)
  * - second: the right operand
@@ -195,13 +224,7 @@ export function formatCellDisplay(value: unknown, type: CellDataType, decimalPla
     if (value === null || value === undefined) return '';
 
     if (type === 'text' || type === 'url') return toDisplayString(value);
-    // A boolean-typed cell does not always hold a JS boolean — a formula result
-    // or an imported file can leave a 0/1 or a string behind, so fall back to
-    // the value's own truthiness.
-    if (type === 'boolean') {
-        const isFalsy = value === false || value === 0 || value === '' || Number.isNaN(value);
-        return isFalsy ? 'FALSE' : 'TRUE';
-    }
+    if (type === 'boolean' || type === 'checkbox') return isCheckedValue(value) ? 'TRUE' : 'FALSE';
     if (type === 'empty') return '';
 
     if (typeof value === 'number') {
@@ -229,6 +252,7 @@ export function getTypeAlignment(type: CellDataType): 'left' | 'right' | 'center
         case 'date':
             return 'right';
         case 'boolean':
+        case 'checkbox':
             return 'center';
         case 'text':
         case 'url':
@@ -258,6 +282,8 @@ export function getTypeLabel(type: CellDataType): string {
             return 'Text';
         case 'boolean':
             return 'Boolean';
+        case 'checkbox':
+            return 'Checkbox';
         case 'url':
             return 'URL';
         case 'empty':

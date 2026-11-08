@@ -5,9 +5,22 @@
  */
 import { computed, type Ref, type ComputedRef } from 'vue';
 
+import { isCheckedValue } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 import { indexToColumnLetter } from '@/renderer/types/spreadsheet';
+
+export type CellTextStyle = {
+    textAlign: 'left' | 'center' | 'right';
+    color: string | undefined;
+    fontFamily: string | undefined;
+};
+
+/** A checkbox cell's box. `readonly` when a formula decides whether it is ticked. */
+export type CheckboxState = {
+    checked: boolean;
+    readonly: boolean;
+};
 
 type TableCellRendering = {
     isActiveTable: ComputedRef<boolean>;
@@ -17,10 +30,8 @@ type TableCellRendering = {
     cellClasses: (ci: number, ri: number) => Record<string, boolean>;
     cellTextClass: (ci: number, ri: number) => Record<string, boolean>;
     cellTdStyle: (ci: number, ri: number) => Record<string, string | undefined>;
-    cellTextStyle: (
-        ci: number,
-        ri: number,
-    ) => { textAlign: 'left' | 'center' | 'right'; color: string | undefined; fontFamily: string | undefined };
+    cellTextStyle: (ci: number, ri: number) => CellTextStyle;
+    findCheckboxState: (ci: number, ri: number) => CheckboxState | null;
     mergedColspan: (ci: number, ri: number) => number | undefined;
     mergedRowspan: (ci: number, ri: number) => number | undefined;
     openCellUrl: (url: string) => void;
@@ -140,10 +151,7 @@ export function useTableCellRendering(
         return base;
     }
 
-    function cellTextStyle(
-        ci: number,
-        ri: number,
-    ): { textAlign: 'left' | 'center' | 'right'; color: string | undefined; fontFamily: string | undefined } {
+    function cellTextStyle(ci: number, ri: number): CellTextStyle {
         const align = ss.getCellAlignment(table.value.id, ci, ri);
         const cell = table.value.rows[ri]?.[ci];
         return {
@@ -154,6 +162,16 @@ export function useTableCellRendering(
                     ? cell.format.fontFamily
                     : undefined,
         };
+    }
+
+    function findCheckboxState(ci: number, ri: number): CheckboxState | null {
+        if (ss.getCellType(table.value.id, ci, ri) !== 'checkbox') return null;
+        const cell = table.value.rows[ri]?.[ci];
+        if (cell === undefined) return null;
+        const value = cell.formula !== undefined ? cell.computed : cell.value;
+        // An error is shown as its text: a box would hide that the formula failed
+        if (typeof value === 'string' && value.startsWith('#')) return null;
+        return { checked: isCheckedValue(value), readonly: cell.formula !== undefined };
     }
 
     // ── Merged cell helpers ──────────────────────────────────────────────────
@@ -190,6 +208,7 @@ export function useTableCellRendering(
         cellTextClass,
         cellTdStyle,
         cellTextStyle,
+        findCheckboxState,
         mergedColspan,
         mergedRowspan,
         openCellUrl,

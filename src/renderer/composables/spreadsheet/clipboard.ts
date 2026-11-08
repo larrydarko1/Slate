@@ -28,6 +28,7 @@ type ClipboardDeps = {
     getDisplayValue: (tableId: string, col: number, row: number) => string;
     getRawValue: (tableId: string, col: number, row: number) => string;
     setCellFormat: (tableId: string, col: number, row: number, fmt: Partial<CellFormat>) => void;
+    setCellType: (tableId: string, col: number, row: number, newType: CellDataType) => void;
     shiftFormulaReferences: (formula: string, colDelta: number, rowDelta: number) => string;
     batchRecalculation: (run: () => void) => void;
     shiftReferencesForMove: SpreadsheetFormulaEngine['shiftReferencesForMove'];
@@ -37,6 +38,8 @@ type ClipboardDeps = {
 type ClipboardCell = {
     raw: string;
     format?: CellFormat;
+    // The raw text alone would be read back as whatever it looks like, so 50% would paste as 0.5
+    cellType?: CellDataType;
 };
 
 /** A run of numbers or dates rising by a constant step, the way a fill continues it. */
@@ -64,6 +67,7 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
                 // Set only when there is one: an absent format and a `format` key
                 // holding `undefined` are different things to the paste side.
                 if (cell?.format !== undefined) copied.format = { ...cell.format };
+                if (cell !== null && cell.cellType !== 'empty') copied.cellType = cell.cellType;
                 rowCells.push(copied);
                 tsvCols.push(deps.getDisplayValue(sr.tableId, colIdx, rowIdx));
             }
@@ -143,6 +147,9 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
                         startRow + rowIdx,
                         shiftIfMoved(entry.raw, colIdx, rowIdx),
                     );
+                    if (entry.cellType !== undefined) {
+                        deps.setCellType(tableId, startCol + colIdx, startRow + rowIdx, entry.cellType);
+                    }
                     if (entry.format !== undefined) {
                         deps.setCellFormat(tableId, startCol + colIdx, startRow + rowIdx, entry.format);
                     }
@@ -219,7 +226,8 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
 
             const series = seriesByLine.get(vertical ? colIdx : rowIdx);
             const cell = table?.rows[rowIdx]?.[colIdx];
-            if (series !== undefined && cell !== undefined) {
+            const continuesSeries = series !== undefined && cell !== undefined;
+            if (continuesSeries) {
                 const offset = vertical ? rowIdx - source.startRow : colIdx - source.startCol;
                 // Clears whatever the cell held, then takes the next value as it is,
                 // rather than as text to detect a type from again.
@@ -231,6 +239,9 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
                 deps.setCellValue(tableId, colIdx, rowIdx, `=${shifted}`);
             } else {
                 deps.setCellValue(tableId, colIdx, rowIdx, deps.getRawValue(tableId, srcC, srcR));
+            }
+            if (!continuesSeries && srcCell.cellType !== 'empty') {
+                deps.setCellType(tableId, colIdx, rowIdx, srcCell.cellType);
             }
             if (srcCell.format !== undefined) {
                 deps.setCellFormat(tableId, colIdx, rowIdx, { ...srcCell.format });

@@ -1,5 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { assert, describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import Toolbar from '@/renderer/components/Toolbar.vue';
 import { useSpreadsheet, SPREADSHEET_KEY, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
@@ -86,6 +86,14 @@ describe('Toolbar', () => {
         ])('%s sets the alignment', async (title, align) => {
             await byTitle(title).trigger('click');
             expect(ss.findCell(id, 0, 0)?.format?.align).toBe(align);
+        });
+
+        it('makes the cell a checkbox from the type menu', async () => {
+            await byTitle('Cell format type').trigger('click');
+            const option = wrapper.findAll('.type-option').find((candidate) => candidate.text().includes('Checkbox'));
+            assert.isDefined(option);
+            await option.trigger('click');
+            expect(ss.getCellType(id, 0, 0)).toBe('checkbox');
         });
     });
 
