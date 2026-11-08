@@ -218,6 +218,18 @@ describe('formatCellDisplay numeric formatting', () => {
         expect(formatCellDisplay(3.7, 'integer')).toBe('4');
     });
 
+    it.each([
+        [42, '42'],
+        [2.5, '2.5'],
+        [7.333333, '7.33'],
+    ])('shows a stepper holding %s without a forced decimal point', (value, shown) => {
+        expect(formatCellDisplay(value, 'stepper')).toBe(shown);
+    });
+
+    it('shows a stepper with the decimals it was given', () => {
+        expect(formatCellDisplay(2.5, 'stepper', 3)).toBe('2.500');
+    });
+
     it('formats float with default precision', () => {
         expect(formatCellDisplay(3.14, 'float')).toBe('3.14');
         expect(formatCellDisplay(5, 'float')).toBe('5.0');
@@ -302,16 +314,24 @@ describe('isCheckedValue', () => {
 
 describe('toFormulaType', () => {
     it('hands formulas a checkbox as a boolean', () => {
-        expect(toFormulaType('checkbox')).toBe('boolean');
+        expect(toFormulaType('checkbox', true)).toBe('boolean');
     });
 
     it('hands formulas a star rating as a whole number', () => {
-        expect(toFormulaType('rating')).toBe('integer');
+        expect(toFormulaType('rating', 3)).toBe('integer');
+    });
+
+    it.each([
+        [42, 'integer'],
+        [null, 'integer'],
+        [2.5, 'float'],
+    ])('hands formulas a stepper holding %s as a plain number of its kind', (value, type) => {
+        expect(toFormulaType('stepper', value)).toBe(type);
     });
 
     it('leaves every other type as it is', () => {
-        expect(toFormulaType('currency_usd')).toBe('currency_usd');
-        expect(toFormulaType('boolean')).toBe('boolean');
+        expect(toFormulaType('currency_usd', 5)).toBe('currency_usd');
+        expect(toFormulaType('boolean', true)).toBe('boolean');
     });
 });
 
@@ -322,6 +342,7 @@ describe('getTypeAlignment', () => {
         expect(getTypeAlignment('integer')).toBe('right');
         expect(getTypeAlignment('currency_usd')).toBe('right');
         expect(getTypeAlignment('date')).toBe('right');
+        expect(getTypeAlignment('stepper')).toBe('right');
     });
 
     it('centers booleans, checkboxes and star ratings', () => {
@@ -347,5 +368,6 @@ describe('getTypeLabel', () => {
         expect(getTypeLabel('date')).toBe('Date');
         expect(getTypeLabel('checkbox')).toBe('Checkbox');
         expect(getTypeLabel('rating')).toBe('Star rating');
+        expect(getTypeLabel('stepper')).toBe('Stepper');
     });
 });

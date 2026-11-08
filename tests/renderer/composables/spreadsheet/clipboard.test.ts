@@ -70,6 +70,39 @@ describe('clipboard', () => {
             expect(ss.getDisplayValue(id, 1, 1)).toBe('50%');
         });
 
+        it("keeps a stepper's own limits", async () => {
+            stubClipboard();
+            ss.setCellValue(id, 0, 0, '150');
+            ss.findCell(id, 0, 0)!.limits = { min: 100, max: 200, step: 10 };
+            ss.setCellType(id, 0, 0, 'stepper');
+            ss.selectCell(id, 0, 0);
+            await ss.copyCells();
+
+            ss.selectCell(id, 1, 0);
+            await ss.pasteCells();
+            expect(ss.findCell(id, 1, 0)).toMatchObject({
+                value: 150,
+                cellType: 'stepper',
+                limits: { min: 100, max: 200, step: 10 },
+            });
+        });
+
+        it('replaces the limits of a stepper it pastes over', async () => {
+            stubClipboard();
+            ss.setCellValue(id, 0, 0, '50');
+            ss.setCellType(id, 0, 0, 'stepper');
+            ss.setCellValue(id, 1, 0, '5');
+            ss.findCell(id, 1, 0)!.limits = { min: 0, max: 10, step: 1 };
+            ss.setCellType(id, 1, 0, 'stepper');
+            ss.selectCell(id, 0, 0);
+            await ss.copyCells();
+
+            ss.selectCell(id, 1, 0);
+            await ss.pasteCells();
+            expect(ss.findCell(id, 1, 0)).toMatchObject({ value: 50, cellType: 'stepper' });
+            expect(ss.findCell(id, 1, 0)?.limits).toBeUndefined();
+        });
+
         it('writes the selection to the system clipboard as TSV', async () => {
             const { writeText } = stubClipboard();
             ss.setCellValue(id, 0, 0, 'a');
@@ -329,6 +362,20 @@ describe('clipboard', () => {
                 ss.fillCells(id, range(0, 0, 0, 1), range(0, 0, 0, 3));
                 expect(column(0, [2, 3])).toEqual([4, 5]);
                 expect(ss.getCellType(id, 0, 3)).toBe('rating');
+            });
+
+            it('repeats steppers rather than counting past their maximum', () => {
+                for (const [row, raw] of ['8', '9'].entries()) {
+                    ss.setCellValue(id, 0, row, raw);
+                    ss.findCell(id, 0, row)!.limits = { min: 0, max: 10, step: 1 };
+                    ss.setCellType(id, 0, row, 'stepper');
+                }
+                ss.fillCells(id, range(0, 0, 0, 1), range(0, 0, 0, 3));
+                expect(column(0, [2, 3])).toEqual([8, 9]);
+                expect(ss.findCell(id, 0, 3)).toMatchObject({
+                    cellType: 'stepper',
+                    limits: { min: 0, max: 10, step: 1 },
+                });
             });
 
             it('continues the step between two numbers', () => {

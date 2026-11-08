@@ -353,4 +353,68 @@ describe('SpreadsheetTable', () => {
             expect(wrapper.findAll('.cell')[1]!.text()).toBe('7');
         });
     });
+
+    describe('stepper cells', () => {
+        const buttons = (col: number) => wrapper.findAll('.cell')[col]!.findAll('.cell-stepper-btn');
+        const select = async (col: number) => wrapper.findAll('.cell')[col]!.trigger('mousedown');
+
+        beforeEach(async () => {
+            ss.setCellValue(id, 0, 0, '5');
+            ss.setCellType(id, 0, 0, 'stepper');
+            await wrapper.vm.$nextTick();
+        });
+
+        it('shows only the number until the cell is selected', async () => {
+            expect(buttons(0)).toHaveLength(0);
+            expect(wrapper.findAll('.cell')[0]!.text()).toBe('5');
+            await select(0);
+            expect(buttons(0).map((button) => button.attributes('aria-label'))).toEqual(['Step down', 'Step up']);
+            expect(wrapper.findAll('.cell')[0]!.text()).toBe('5');
+        });
+
+        it('steps by the button clicked', async () => {
+            await select(0);
+            await buttons(0)[1]!.trigger('click');
+            await buttons(0)[1]!.trigger('click');
+            expect(ss.findCell(id, 0, 0)?.value).toBe(7);
+            await buttons(0)[0]!.trigger('click');
+            expect(wrapper.findAll('.cell')[0]!.text()).toBe('6');
+        });
+
+        it('turns off the button that would pass a limit', async () => {
+            ss.setCellValue(id, 0, 0, '100');
+            await select(0);
+            expect(buttons(0)[1]!.attributes('disabled')).toBeDefined();
+            expect(buttons(0)[0]!.attributes('disabled')).toBeUndefined();
+        });
+
+        it('does not open the editor when a button is double-clicked', async () => {
+            await select(0);
+            await buttons(0)[1]!.trigger('dblclick');
+            expect(ss.isEditing.value).toBe(false);
+        });
+
+        it('steps with Alt+Up and Alt+Down instead of moving', async () => {
+            await select(0);
+            await wrapper.find('.table-grid-wrapper').trigger('keydown', { key: 'ArrowUp', altKey: true });
+            expect(ss.findCell(id, 0, 0)?.value).toBe(6);
+            await wrapper.find('.table-grid-wrapper').trigger('keydown', { key: 'ArrowDown', altKey: true });
+            expect(ss.findCell(id, 0, 0)?.value).toBe(5);
+            expect(ss.activeCell.value).toMatchObject({ col: 0, row: 0 });
+        });
+
+        it('types a digit into the cell, since a stepper holds any number', async () => {
+            await select(0);
+            await wrapper.find('.table-grid-wrapper').trigger('keydown', { key: '3' });
+            expect(ss.isEditing.value).toBe(true);
+        });
+
+        it('shows a formula stepper as its number, with no buttons', async () => {
+            ss.setCellValue(id, 1, 0, '=2+3');
+            ss.setCellType(id, 1, 0, 'stepper');
+            await select(1);
+            expect(buttons(1)).toHaveLength(0);
+            expect(wrapper.findAll('.cell')[1]!.text()).toBe('5');
+        });
+    });
 });

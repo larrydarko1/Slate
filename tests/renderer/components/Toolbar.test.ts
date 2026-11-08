@@ -105,6 +105,14 @@ describe('Toolbar', () => {
             await option.trigger('click');
             expect(ss.getCellType(id, 0, 0)).toBe('rating');
         });
+
+        it('makes the cell a stepper from the type menu', async () => {
+            await byTitle('Cell format type').trigger('click');
+            const option = wrapper.findAll('.type-option').find((candidate) => candidate.text().includes('Stepper'));
+            assert.isDefined(option);
+            await option.trigger('click');
+            expect(ss.getCellType(id, 0, 0)).toBe('stepper');
+        });
     });
 
     describe('text box formatting', () => {

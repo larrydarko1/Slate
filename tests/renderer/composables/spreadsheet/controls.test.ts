@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { assert, describe, it, expect, beforeEach } from 'vitest';
 
 import { useSpreadsheet, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 
@@ -14,6 +14,15 @@ describe('controls', () => {
     function makeRating(col: number, row: number, raw: string): void {
         ss.setCellValue(id, col, row, raw);
         ss.setCellType(id, col, row, 'rating');
+    }
+
+    function makeStepper(col: number, row: number, raw: string): void {
+        ss.setCellValue(id, col, row, raw);
+        ss.setCellType(id, col, row, 'stepper');
+    }
+
+    function press(key: string, init: KeyboardEventInit = {}): KeyboardEvent {
+        return new KeyboardEvent('keydown', { key, ...init });
     }
 
     /** Selects A1 to A`rows`, with A1 active. */
@@ -143,6 +152,7 @@ describe('controls', () => {
                 ['7', 7, 'integer'],
                 ['2.5', 2.5, 'float'],
                 ['-1', -1, 'integer'],
+                ['TRUE', 1, 'boolean'],
                 ['great', 'great', 'text'],
             ])('leaves %s as it is, since no rating shows it', (raw, value, cellType) => {
                 makeRating(0, 0, raw);
@@ -242,23 +252,23 @@ describe('controls', () => {
                 makeRating(0, 1, '');
                 ss.setCellValue(id, 0, 2, 'note');
                 selectColumnA(3);
-                expect(ss.handleControlKey('4')).toBe(true);
+                expect(ss.handleControlKey(press('4'))).toBe(true);
                 expect([0, 1, 2].map((r) => ss.findCell(id, 0, r)?.value)).toEqual([4, 4, 'note']);
             });
 
             it('clears the ratings with 0, and sets the same digit twice without clearing', () => {
                 makeRating(0, 0, '3');
                 selectColumnA(1);
-                ss.handleControlKey('3');
+                ss.handleControlKey(press('3'));
                 expect(ss.findCell(id, 0, 0)?.value).toBe(3);
-                ss.handleControlKey('0');
+                ss.handleControlKey(press('0'));
                 expect(ss.findCell(id, 0, 0)?.value).toBeNull();
             });
 
             it.each([['6'], ['9'], [' '], ['a']])('leaves %j to be typed on a rating', (key) => {
                 makeRating(0, 0, '2');
                 selectColumnA(1);
-                expect(ss.handleControlKey(key)).toBe(false);
+                expect(ss.handleControlKey(press(key))).toBe(false);
                 expect(ss.findCell(id, 0, 0)?.value).toBe(2);
             });
 
@@ -266,23 +276,236 @@ describe('controls', () => {
                 ss.setCellValue(id, 0, 0, '=1+1');
                 ss.setCellType(id, 0, 0, 'rating');
                 ss.selectCell(id, 0, 0);
-                expect(ss.handleControlKey('3')).toBe(false);
+                expect(ss.handleControlKey(press('3'))).toBe(false);
                 ss.selectCell(id, 1, 0);
-                expect(ss.handleControlKey('3')).toBe(false);
+                expect(ss.handleControlKey(press('3'))).toBe(false);
             });
 
             it('ticks checkboxes with Space', () => {
                 makeCheckbox(0, 0, '');
                 selectColumnA(1);
-                expect(ss.handleControlKey(' ')).toBe(true);
+                expect(ss.handleControlKey(press(' '))).toBe(true);
                 expect(ss.findCell(id, 0, 0)?.value).toBe(true);
             });
 
             it('leaves a digit to be typed on a checkbox', () => {
                 makeCheckbox(0, 0, '');
                 selectColumnA(1);
-                expect(ss.handleControlKey('1')).toBe(false);
+                expect(ss.handleControlKey(press('1'))).toBe(false);
             });
+        });
+    });
+    describe('steppers', () => {
+        function setLimits(col: number, row: number, min: number, max: number, step: number): void {
+            const cell = ss.findCell(id, col, row);
+            assert.isNotNull(cell);
+            cell.limits = { min, max, step };
+        }
+
+        describe('typing', () => {
+            it.each([
+                ['42', 42],
+                ['0', 0],
+                ['100', 100],
+                ['7.3', 7.3],
+            ])('keeps %j, which is within the limits', (raw, value) => {
+                makeStepper(0, 0, '');
+                ss.setCellValue(id, 0, 0, raw);
+                expect(ss.findCell(id, 0, 0)).toMatchObject({ value, cellType: 'stepper' });
+            });
+
+            it.each([
+                ['150', 150, 'integer'],
+                ['-1', -1, 'integer'],
+                ['$5', 5, 'currency_usd'],
+                ['50%', 0.5, 'percent'],
+                ['TRUE', 1, 'boolean'],
+                ['soon', 'soon', 'text'],
+            ])('makes %j, which no stepper here can show, an ordinary cell', (raw, value, cellType) => {
+                makeStepper(0, 0, '5');
+                ss.setCellValue(id, 0, 0, raw);
+                expect(ss.findCell(id, 0, 0)).toMatchObject({ value, cellType });
+            });
+
+            it("goes by the cell's own limits", () => {
+                makeStepper(0, 0, '');
+                setLimits(0, 0, 10, 20, 1);
+                ss.setCellValue(id, 0, 0, '5');
+                expect(ss.findCell(id, 0, 0)?.cellType).toBe('integer');
+                makeStepper(0, 0, '15');
+                expect(ss.findCell(id, 0, 0)).toMatchObject({ value: 15, cellType: 'stepper' });
+            });
+
+            it('stays a stepper, empty, when cleared', () => {
+                makeStepper(0, 0, '5');
+                ss.setCellValue(id, 0, 0, '');
+                expect(ss.findCell(id, 0, 0)).toMatchObject({ value: null, cellType: 'stepper' });
+            });
+        });
+
+        describe('setCellType', () => {
+            it('makes a number within the limits a stepper, and an empty cell an empty one', () => {
+                makeStepper(0, 0, '42');
+                makeStepper(0, 1, '');
+                expect(ss.findCell(id, 0, 0)).toMatchObject({ value: 42, cellType: 'stepper' });
+                expect(ss.findCell(id, 0, 1)).toMatchObject({ value: null, cellType: 'stepper' });
+            });
+
+            it.each([
+                ['150', 150, 'integer'],
+                ['TRUE', 1, 'boolean'],
+                ['soon', 'soon', 'text'],
+            ])('leaves %j, which has no stepper to become, as it is', (raw, value, cellType) => {
+                makeStepper(0, 0, raw);
+                expect(ss.findCell(id, 0, 0)).toMatchObject({ value, cellType });
+            });
+        });
+
+        describe('stepStepper', () => {
+            it('moves up and down by the step', () => {
+                makeStepper(0, 0, '5');
+                ss.stepStepper(id, 0, 0, 1);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(6);
+                ss.stepStepper(id, 0, 0, -1);
+                ss.stepStepper(id, 0, 0, -1);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(4);
+            });
+
+            it.each([[1], [-1]] as const)('takes an empty stepper to its minimum, stepping %i', (direction) => {
+                makeStepper(0, 0, '');
+                setLimits(0, 0, 10, 20, 5);
+                ss.stepStepper(id, 0, 0, direction);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(10);
+            });
+
+            it('stops at the limits rather than passing them', () => {
+                makeStepper(0, 0, '18');
+                setLimits(0, 0, 10, 20, 5);
+                ss.stepStepper(id, 0, 0, 1);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(20);
+                ss.stepStepper(id, 0, 0, 1);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(20);
+                makeStepper(0, 0, '12');
+                ss.stepStepper(id, 0, 0, -1);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(10);
+            });
+
+            it('adds a decimal step without a rounding error', () => {
+                makeStepper(0, 0, '');
+                setLimits(0, 0, 0, 1, 0.1);
+                ss.setCellValue(id, 0, 0, '0.2');
+                ss.stepStepper(id, 0, 0, 1);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(0.3);
+            });
+
+            it('moves a value off the step by the step, without snapping it', () => {
+                makeStepper(0, 0, '7.3');
+                ss.stepStepper(id, 0, 0, 1);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(8.3);
+            });
+
+            it('undoes', async () => {
+                makeStepper(0, 0, '5');
+                await Promise.resolve();
+                ss.stepStepper(id, 0, 0, 1);
+                ss.undo();
+                expect(ss.findCell(id, 0, 0)?.value).toBe(5);
+            });
+
+            it('adds nothing to undo when already at the limit', async () => {
+                makeStepper(0, 0, '1');
+                await Promise.resolve();
+                ss.setCellValue(id, 0, 0, '100');
+                await Promise.resolve();
+                ss.stepStepper(id, 0, 0, 1);
+                ss.undo();
+                expect(ss.findCell(id, 0, 0)?.value).toBe(1);
+            });
+
+            it('recalculates formulas that read the stepper', () => {
+                makeStepper(0, 0, '5');
+                ss.setCellValue(id, 1, 0, '=A1*2');
+                ss.stepStepper(id, 0, 0, 1);
+                expect(ss.getDisplayValue(id, 1, 0)).toBe('12');
+            });
+
+            it('leaves a formula stepper and an ordinary cell alone', () => {
+                ss.setCellValue(id, 0, 0, '=1+1');
+                ss.setCellType(id, 0, 0, 'stepper');
+                ss.setCellValue(id, 0, 1, '5');
+                ss.stepStepper(id, 0, 0, 1);
+                ss.stepStepper(id, 0, 1, 1);
+                expect(ss.findCell(id, 0, 0)?.computed).toBe(2);
+                expect(ss.findCell(id, 0, 1)?.value).toBe(5);
+            });
+        });
+
+        describe('handleControlKey', () => {
+            it('steps every stepper in the selection with Alt+Up, each by its own limits', () => {
+                makeStepper(0, 0, '5');
+                makeStepper(0, 1, '20');
+                setLimits(0, 1, 0, 20, 5);
+                makeStepper(0, 2, '');
+                ss.setCellValue(id, 0, 3, '5');
+                selectColumnA(4);
+                expect(ss.handleControlKey(press('ArrowUp', { altKey: true }))).toBe(true);
+                expect([0, 1, 2, 3].map((r) => ss.findCell(id, 0, r)?.value)).toEqual([6, 20, 0, 5]);
+            });
+
+            it('steps down with Alt+Down', () => {
+                makeStepper(0, 0, '5');
+                selectColumnA(1);
+                expect(ss.handleControlKey(press('ArrowDown', { altKey: true }))).toBe(true);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(4);
+            });
+
+            it.each([
+                ['ArrowUp', {}],
+                ['3', {}],
+                ['ArrowLeft', { altKey: true }],
+            ])('leaves %j to move or type on a stepper', (key, init) => {
+                makeStepper(0, 0, '5');
+                selectColumnA(1);
+                expect(ss.handleControlKey(press(key, init))).toBe(false);
+                expect(ss.findCell(id, 0, 0)?.value).toBe(5);
+            });
+
+            it('leaves Alt+Up to move on a formula stepper', () => {
+                ss.setCellValue(id, 0, 0, '=1+1');
+                ss.setCellType(id, 0, 0, 'stepper');
+                ss.selectCell(id, 0, 0);
+                expect(ss.handleControlKey(press('ArrowUp', { altKey: true }))).toBe(false);
+            });
+        });
+
+        describe('in formulas', () => {
+            it.each([
+                ['42', '42'],
+                ['2.5', '2.5'],
+            ])('reads %j as the number it holds', (raw, shown) => {
+                makeStepper(0, 0, raw);
+                ss.setCellValue(id, 1, 0, '=A1');
+                expect(ss.getDisplayValue(id, 1, 0)).toBe(shown);
+            });
+
+            it('adds steppers up, skipping an empty one in AVERAGE', () => {
+                makeStepper(0, 0, '4');
+                makeStepper(0, 1, '5');
+                makeStepper(0, 2, '');
+                ss.setCellValue(id, 1, 0, '=SUM(A1:A3)');
+                ss.setCellValue(id, 1, 1, '=AVERAGE(A1:A3)');
+                expect(ss.getDisplayValue(id, 1, 0)).toBe('9');
+                expect(ss.getDisplayValue(id, 1, 1)).toBe('4.5');
+            });
+        });
+
+        it('keeps its limits through undo', async () => {
+            makeStepper(0, 0, '15');
+            setLimits(0, 0, 10, 20, 5);
+            await Promise.resolve();
+            ss.stepStepper(id, 0, 0, 1);
+            ss.undo();
+            expect(ss.findCell(id, 0, 0)?.limits).toEqual({ min: 10, max: 20, step: 5 });
         });
     });
 });

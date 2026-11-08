@@ -118,7 +118,6 @@ function cancelNameEdit(): void {
 }
 
 function onCellMouseDown(ci: number, ri: number, e: MouseEvent): void {
-    // Chart data selection mode
     if (ss.chartSelectionActive.value) {
         e.preventDefault();
         e.stopPropagation();
@@ -247,7 +246,7 @@ function onKeyDown(e: KeyboardEvent): void {
         return;
     }
 
-    if (!mod && ss.handleControlKey(e.key)) {
+    if (!mod && ss.handleControlKey(e)) {
         e.preventDefault();
         return;
     }
@@ -503,7 +502,8 @@ watch(
                                     :control="findControlState(ci, ri)"
                                     @open-url="openCellUrl"
                                     @toggle="ss.toggleCheckbox(table.id, ci, ri)"
-                                    @rate="(stars) => ss.setRating(table.id, ci, ri, stars)" />
+                                    @rate="(stars) => ss.setRating(table.id, ci, ri, stars)"
+                                    @step="(direction) => ss.stepStepper(table.id, ci, ri, direction)" />
                                 <!-- Fill handle at bottom-right corner of selection -->
                                 <div
                                     v-if="isSelectionCorner(ci, ri) && !ss.isEditing.value"

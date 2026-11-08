@@ -31,6 +31,7 @@ Slate is a **free and open-source, canvas-based spreadsheet app** for desktop bu
 - **Smart cell types** — auto-detection of numbers, percentages, currency (USD/EUR), dates, URLs, booleans, and text
 - **Checkbox cells** — tick and untick with a click or Space; formulas read them as TRUE or FALSE
 - **Star rating cells** — rate from one to five stars with a click or a digit key; formulas read them as numbers
+- **Stepper cells** — step a number up or down with a click or Alt+Up/Down, kept within its range
 
 ### Charts
 

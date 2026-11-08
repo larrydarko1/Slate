@@ -45,6 +45,7 @@ const CellDataTypeSchema = z.enum([
     'boolean',
     'checkbox',
     'rating',
+    'stepper',
     'url',
     'empty',
 ]);
@@ -63,6 +64,11 @@ const CellFormatSchema = z.object({
     decimalPlaces: z.number().exactOptional(),
 });
 
+// A stepper whose limits hold nothing, or that never moves, has no value it could show
+const ControlLimitsSchema = z
+    .object({ min: z.number(), max: z.number(), step: z.number() })
+    .refine((limits): boolean => limits.min < limits.max && limits.step > 0);
+
 const CellSchema = z
     .object({
         value: CellValueSchema.default(null),
@@ -71,6 +77,7 @@ const CellSchema = z
         cellType: CellDataTypeSchema.exactOptional(),
         computedType: CellDataTypeSchema.exactOptional(),
         format: CellFormatSchema.exactOptional(),
+        limits: ControlLimitsSchema.exactOptional(),
         note: z.string().exactOptional(),
     })
     .transform(({ cellType, ...cell }): Cell => ({ ...cell, cellType: cellType ?? inferCellType(cell.value) }));

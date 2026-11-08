@@ -100,6 +100,24 @@ describe('the app reading its own state back', () => {
         expect(parseTables(JSON.stringify([table]))[0]?.rows.slice(0, 2)).toEqual(table.rows.slice(0, 2));
     });
 
+    it('reads stepper cells with and without their own limits', () => {
+        const table = createDefaultTable(0, 0, 'Stock');
+        table.rows[0]![0] = { value: 4, cellType: 'stepper', limits: { min: 0, max: 10, step: 0.5 } };
+        table.rows[1]![0] = { value: null, cellType: 'stepper' };
+        expect(parseTables(JSON.stringify([table]))[0]?.rows.slice(0, 2)).toEqual(table.rows.slice(0, 2));
+    });
+
+    it.each([
+        ['a minimum above the maximum', { min: 10, max: 0, step: 1 }],
+        ['a minimum equal to the maximum', { min: 5, max: 5, step: 1 }],
+        ['a step of 0', { min: 0, max: 10, step: 0 }],
+        ['a negative step', { min: 0, max: 10, step: -1 }],
+    ])('refuses a stepper with %s', (_label, limits) => {
+        const table = createDefaultTable(0, 0, 'Stock');
+        table.rows[0]![0] = { value: null, cellType: 'stepper', limits };
+        expect(() => parseTables(JSON.stringify([table]))).toThrow(z.ZodError);
+    });
+
     it('round-trips tables unchanged', () => {
         const tables = [createDefaultTable(0, 0, 'A'), createDefaultTable(5, 5, 'B')];
         expect(parseTables(JSON.stringify(tables))).toEqual(tables);

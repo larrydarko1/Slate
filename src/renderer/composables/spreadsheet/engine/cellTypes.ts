@@ -17,6 +17,7 @@ export type CellDataType =
     | 'boolean'
     | 'checkbox'
     | 'rating'
+    | 'stepper'
     | 'url'
     | 'empty';
 
@@ -140,13 +141,16 @@ export function isNumericType(t: CellDataType): boolean {
 }
 
 /**
- * A control is only how a value is shown: a checkbox is a TRUE/FALSE and a
- * star rating a whole number, so formulas read them as those. Without this,
- * `=A1` on a checkbox would inherit the box and draw one nobody can click.
+ * A control is only how a value is shown: a checkbox is a TRUE/FALSE, a star
+ * rating a whole number and a stepper whatever number it holds, so formulas
+ * read them as those. Without this, `=A1` on a checkbox would inherit the box
+ * and draw one nobody can click.
  */
-export function toFormulaType(t: CellDataType): CellDataType {
+export function toFormulaType(t: CellDataType, value: unknown): CellDataType {
     if (t === 'checkbox') return 'boolean';
     if (t === 'rating') return 'integer';
+    // Read as a decimal only when it holds one, so `=A1` on a 42 shows 42, not 42.0
+    if (t === 'stepper') return typeof value === 'number' && !Number.isInteger(value) ? 'float' : 'integer';
     return t;
 }
 
@@ -264,6 +268,7 @@ export function getTypeAlignment(type: CellDataType): 'left' | 'right' | 'center
         case 'currency_eur':
         case 'currency_usd':
         case 'date':
+        case 'stepper':
             return 'right';
         case 'boolean':
         case 'checkbox':
@@ -301,6 +306,8 @@ export function getTypeLabel(type: CellDataType): string {
             return 'Checkbox';
         case 'rating':
             return 'Star rating';
+        case 'stepper':
+            return 'Stepper';
         case 'url':
             return 'URL';
         case 'empty':
@@ -369,6 +376,11 @@ function formatValue(value: number | null, type: CellDataType, decimalPlaces?: n
 
         case 'date':
             return formatDate(value);
+
+        // Its step can make a decimal of it, and 42 is still shown as 42
+        case 'stepper':
+            if (decimalPlaces !== undefined) return value.toFixed(decimalPlaces);
+            return parseFloat(value.toFixed(DEFAULT_DECIMAL_PLACES)).toString();
 
         default:
             return value.toString();

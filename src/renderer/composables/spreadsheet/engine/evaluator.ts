@@ -28,18 +28,16 @@ export function evaluate(node: ASTNode, ctx: FormulaContext): TypedCellValue {
             return { value: node.value, type: 'boolean' };
         case 'error':
             return { value: node.value, type: 'text' };
-        case 'cell_ref':
-            return {
-                value: ctx.getCellValue(node.col, node.row),
-                type: toFormulaType(ctx.getCellType(node.col, node.row)),
-            };
+        case 'cell_ref': {
+            const value = ctx.getCellValue(node.col, node.row);
+            return { value, type: toFormulaType(ctx.getCellType(node.col, node.row), value) };
+        }
         case 'external_cell_ref': {
             if (ctx.resolveExternalCellValue === undefined || ctx.resolveExternalCellType === undefined)
                 throw new Error('Cross-table references not supported in this context');
-            return {
-                value: ctx.resolveExternalCellValue(node.canvasName, node.tableName, node.col, node.row),
-                type: toFormulaType(ctx.resolveExternalCellType(node.canvasName, node.tableName, node.col, node.row)),
-            };
+            const value = ctx.resolveExternalCellValue(node.canvasName, node.tableName, node.col, node.row);
+            const type = ctx.resolveExternalCellType(node.canvasName, node.tableName, node.col, node.row);
+            return { value, type: toFormulaType(type, value) };
         }
         case 'range':
             throw new Error('Range can only be used as a function argument');
@@ -143,7 +141,8 @@ function flattenTypedArgs(args: ASTNode[], ctx: FormulaContext): TypedCellValue[
         if (arg.type === 'range') {
             const vals = ctx.getCellRange(arg.sc, arg.sr, arg.ec, arg.er);
             const types = ctx.getCellRangeTypes(arg.sc, arg.sr, arg.ec, arg.er);
-            for (const [i, value] of vals.entries()) out.push({ value, type: toFormulaType(types[i] ?? 'empty') });
+            for (const [i, value] of vals.entries())
+                out.push({ value, type: toFormulaType(types[i] ?? 'empty', value) });
         } else if (arg.type === 'external_range') {
             if (ctx.resolveExternalCellRange === undefined || ctx.resolveExternalCellRangeTypes === undefined)
                 throw new Error('Cross-table references not supported in this context');
@@ -156,7 +155,8 @@ function flattenTypedArgs(args: ASTNode[], ctx: FormulaContext): TypedCellValue[
                 arg.ec,
                 arg.er,
             );
-            for (const [i, value] of vals.entries()) out.push({ value, type: toFormulaType(types[i] ?? 'empty') });
+            for (const [i, value] of vals.entries())
+                out.push({ value, type: toFormulaType(types[i] ?? 'empty', value) });
         } else {
             const result = evaluate(arg, ctx);
             out.push(result);

@@ -5,10 +5,10 @@
  */
 import { computed, type Ref, type ComputedRef } from 'vue';
 
-import { MAX_RATING } from '@/renderer/composables/spreadsheet/controls';
+import { isWithinLimits, limitsOf, MAX_RATING } from '@/renderer/composables/spreadsheet/controls';
 import { isCheckedValue } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
-import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
+import type { Cell, SpreadsheetTable } from '@/renderer/types/spreadsheet';
 import { indexToColumnLetter } from '@/renderer/types/spreadsheet';
 
 export type CellTextStyle = {
@@ -17,9 +17,14 @@ export type CellTextStyle = {
     fontFamily: string | undefined;
 };
 
-/** What a control cell shows. `readonly` when a formula decides its value. */
+/**
+ * What a control cell shows. `readonly` when a formula decides its value. A
+ * stepper shows its buttons only while selected, and only when they can move it.
+ */
 export type ControlState =
-    { type: 'checkbox'; checked: boolean; readonly: boolean } | { type: 'rating'; stars: number; readonly: boolean };
+    | { type: 'checkbox'; checked: boolean; readonly: boolean }
+    | { type: 'rating'; stars: number; readonly: boolean }
+    | { type: 'stepper'; canStepDown: boolean; canStepUp: boolean };
 
 type TableCellRendering = {
     isActiveTable: ComputedRef<boolean>;
@@ -165,9 +170,10 @@ export function useTableCellRendering(
 
     function findControlState(ci: number, ri: number): ControlState | null {
         const type = ss.getCellType(table.value.id, ci, ri);
-        if (type !== 'checkbox' && type !== 'rating') return null;
+        if (type !== 'checkbox' && type !== 'rating' && type !== 'stepper') return null;
         const cell = table.value.rows[ri]?.[ci];
         if (cell === undefined) return null;
+        if (type === 'stepper') return isSelected(ci, ri) ? findStepperState(cell) : null;
         const value = (cell.formula !== undefined ? cell.computed : cell.value) ?? null;
         // An error is shown as its text: a control would hide that the formula failed
         if (typeof value === 'string' && value.startsWith('#')) return null;
@@ -221,4 +227,16 @@ export function useTableCellRendering(
 
 function isStarCount(value: unknown): value is number {
     return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= MAX_RATING;
+}
+
+/**
+ * A formula decides its own result, and a value outside the limits (an older
+ * file's) has no place on the stepper, so both show as the number alone.
+ */
+function findStepperState(cell: Cell): ControlState | null {
+    if (cell.formula !== undefined) return null;
+    const limits = limitsOf(cell);
+    if (cell.value === null) return { type: 'stepper', canStepDown: true, canStepUp: true };
+    if (!isWithinLimits(cell.value, limits)) return null;
+    return { type: 'stepper', canStepDown: cell.value > limits.min, canStepUp: cell.value < limits.max };
 }
