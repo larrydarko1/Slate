@@ -219,7 +219,8 @@ function onCellEditBlur(): void {
 }
 
 function onKeyDown(e: KeyboardEvent): void {
-    if (ss.isEditing.value) return;
+    // A key typed into the table's name is the name's, not a cell's
+    if (ss.isEditing.value || e.target instanceof HTMLInputElement) return;
     const ac = ss.activeCell.value;
     if (ac?.tableId !== props.table.id) return;
 

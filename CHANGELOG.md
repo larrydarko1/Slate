@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Typing a new name for a table while one of its cells is selected now types into the name. Before, each key went to the selected cell instead, opening it for editing and leaving the name unchanged.
 - Adding up TRUE/FALSE values gives a number. `=SUM` over a column of checkboxes now shows how many are ticked, and `=AVERAGE` the share that are, where before both showed TRUE. `=TRUE+TRUE` is 2 and `=-TRUE` is -1. A checkbox that has never been ticked now counts as FALSE in formulas, the same as one that was ticked and unticked. A formula that only refers to a checkbox, such as `=B2`, or compares values, such as `=A1>5`, still shows TRUE or FALSE.
 - Copying, pasting and filling cells keeps their type. Before, `$5` pasted as `5` and `50%` as `0.5`, and a number in a cell set to Text pasted as a number again. A formula cell given a type, such as a percentage, keeps it too.
 - On macOS, opening a `.slate` file after closing Slate's last window now brings the window back with the file in it. Before, Slate stayed in the Dock without a window, and the file only appeared after clicking the Dock icon.

@@ -188,6 +188,16 @@ describe('SpreadsheetTable', () => {
             expect(ss.tables.value[0]!.name).toBe('Renamed');
         });
 
+        it('types into the name, not into the selected cell', async () => {
+            await wrapper.findAll('.cell')[0]!.trigger('mousedown');
+            await wrapper.find('.table-name').trigger('dblclick');
+            await wrapper.vm.$nextTick();
+            const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true, cancelable: true });
+            wrapper.find('.table-name-input').element.dispatchEvent(event);
+            expect(ss.isEditing.value).toBe(false);
+            expect(event.defaultPrevented).toBe(false);
+        });
+
         // The button only emits; whether to confirm is the parent's call.
         it('asks the parent to remove the table', async () => {
             await wrapper.find('.table-close-btn').trigger('click');
