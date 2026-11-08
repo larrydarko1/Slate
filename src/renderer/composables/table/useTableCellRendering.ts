@@ -9,6 +9,12 @@ import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 import type { SpreadsheetTable } from '@/renderer/types/spreadsheet';
 import { indexToColumnLetter } from '@/renderer/types/spreadsheet';
 
+export type CellTextStyle = {
+    textAlign: 'left' | 'center' | 'right';
+    color: string | undefined;
+    fontFamily: string | undefined;
+};
+
 type TableCellRendering = {
     isActiveTable: ComputedRef<boolean>;
     columnLetter: (ci: number) => string;
@@ -17,10 +23,7 @@ type TableCellRendering = {
     cellClasses: (ci: number, ri: number) => Record<string, boolean>;
     cellTextClass: (ci: number, ri: number) => Record<string, boolean>;
     cellTdStyle: (ci: number, ri: number) => Record<string, string | undefined>;
-    cellTextStyle: (
-        ci: number,
-        ri: number,
-    ) => { textAlign: 'left' | 'center' | 'right'; color: string | undefined; fontFamily: string | undefined };
+    cellTextStyle: (ci: number, ri: number) => CellTextStyle;
     mergedColspan: (ci: number, ri: number) => number | undefined;
     mergedRowspan: (ci: number, ri: number) => number | undefined;
     openCellUrl: (url: string) => void;
@@ -140,10 +143,7 @@ export function useTableCellRendering(
         return base;
     }
 
-    function cellTextStyle(
-        ci: number,
-        ri: number,
-    ): { textAlign: 'left' | 'center' | 'right'; color: string | undefined; fontFamily: string | undefined } {
+    function cellTextStyle(ci: number, ri: number): CellTextStyle {
         const align = ss.getCellAlignment(table.value.id, ci, ri);
         const cell = table.value.rows[ri]?.[ci];
         return {

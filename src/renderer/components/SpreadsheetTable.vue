@@ -2,7 +2,7 @@
 import { computed, nextTick, ref, toRef, watch, useTemplateRef } from 'vue';
 
 import ContextMenu from '@/renderer/components/ContextMenu.vue';
-import IconExternalLink from '@/renderer/components/icons/IconExternalLink.vue';
+import CellDisplay from '@/renderer/components/table/CellDisplay.vue';
 import NoteEditor from '@/renderer/components/table/NoteEditor.vue';
 import NotePopup from '@/renderer/components/table/NotePopup.vue';
 import { useCellMove } from '@/renderer/composables/table/useCellMove';
@@ -488,28 +488,13 @@ watch(
                                         @blur="onCellEditBlur"
                                         @mousedown.stop />
                                 </template>
-                                <template v-else>
-                                    <span
-                                        class="cell-text"
-                                        :class="cellTextClass(ci, ri)"
-                                        :style="cellTextStyle(ci, ri)"
-                                        :title="ss.getDisplayValue(table.id, ci, ri)">
-                                        {{ ss.getDisplayValue(table.id, ci, ri) }}
-                                    </span>
-                                    <button
-                                        v-if="
-                                            ss.getCellType(table.id, ci, ri) === 'url' &&
-                                            ss.getDisplayValue(table.id, ci, ri)
-                                        "
-                                        class="cell-link-btn"
-                                        title="Open link in browser"
-                                        @mousedown.stop
-                                        @click.stop="openCellUrl(ss.getDisplayValue(table.id, ci, ri))">
-                                        <IconExternalLink
-                                            width="10"
-                                            height="10" />
-                                    </button>
-                                </template>
+                                <CellDisplay
+                                    v-else
+                                    :text="ss.getDisplayValue(table.id, ci, ri)"
+                                    :is-url="ss.getCellType(table.id, ci, ri) === 'url'"
+                                    :text-class="cellTextClass(ci, ri)"
+                                    :text-style="cellTextStyle(ci, ri)"
+                                    @open-url="openCellUrl" />
                                 <!-- Fill handle at bottom-right corner of selection -->
                                 <div
                                     v-if="isSelectionCorner(ci, ri) && !ss.isEditing.value"
@@ -823,81 +808,6 @@ watch(
     &:hover:not(.selected, .in-selection) {
         background: $accent-color-alpha;
     }
-}
-
-.cell-text {
-    display: block;
-    padding: 0 $space-5;
-    line-height: 2.1667;
-    font-size: $font-size-base;
-    color: $text-primary;
-
-    @include truncate;
-
-    &.error-value {
-        color: $danger-color;
-        font-size: $font-size-sm;
-    }
-
-    &.bold {
-        font-weight: $font-weight-bold;
-    }
-
-    &.italic {
-        font-style: italic;
-    }
-
-    &.type-currency {
-        font-feature-settings: 'tnum' 1;
-        letter-spacing: $letter-spacing-tight;
-    }
-
-    &.type-integer,
-    &.type-float,
-    &.type-percent,
-    &.type-date {
-        font-feature-settings: 'tnum' 1;
-    }
-
-    &.type-url {
-        color: $accent-color;
-        text-decoration: underline;
-        text-underline-offset: 2px;
-        cursor: default;
-    }
-}
-
-/* –––––– Link open button (URL cells) ––––– */
-
-.cell-link-btn {
-    position: absolute;
-    right: $size-2;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: $size-11;
-    height: $size-11;
-    padding: 0;
-    border: none;
-    border-radius: $border-radius-xs;
-    background: transparent;
-    color: $accent-color;
-    cursor: pointer;
-    opacity: $opacity-none;
-    pointer-events: none;
-    z-index: $z-raised-high;
-
-    &:hover {
-        background: $accent-color-alpha;
-    }
-}
-
-.cell:hover .cell-link-btn,
-.cell.selected .cell-link-btn {
-    opacity: $opacity-full;
-    pointer-events: auto;
 }
 
 .cell-edit-input {
