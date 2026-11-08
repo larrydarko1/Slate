@@ -124,7 +124,6 @@ function onCellMouseDown(ci: number, ri: number, e: MouseEvent): void {
         isChartDragging = true;
         chartDragStart = { ci, ri };
         ss.handleChartCellSelection(props.table.id, ci, ri, ci, ri, false);
-        document.addEventListener('mousemove', onChartDragMove);
         document.addEventListener('mouseup', onChartDragEnd);
         return;
     }
@@ -160,14 +159,9 @@ function onCellMouseOver(ci: number, ri: number): void {
     }
 }
 
-function onChartDragMove(_e: MouseEvent): void {
-    // Chart selection handled by onCellMouseOver
-}
-
 function onChartDragEnd(): void {
     isChartDragging = false;
     chartDragStart = null;
-    document.removeEventListener('mousemove', onChartDragMove);
     document.removeEventListener('mouseup', onChartDragEnd);
 }
 
