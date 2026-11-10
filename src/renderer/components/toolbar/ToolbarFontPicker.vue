@@ -113,7 +113,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 
 .font-selector-btn {
     gap: $space-1;
-    max-width: $size-23;
+    max-width: $size-26;
 
     .chevron {
         opacity: $opacity-mid;
@@ -125,7 +125,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 .font-selector-label {
     @include truncate;
 
-    max-width: $size-24;
+    min-width: 0;
 }
 
 .font-dropdown {

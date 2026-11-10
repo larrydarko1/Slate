@@ -244,31 +244,31 @@ onBeforeUnmount((): void => {
             aria-hidden="true"></div>
         <div class="toolbar-group">
             <button
-                class="tb has-label"
+                class="tb"
                 title="New (⌘N)"
+                aria-label="New"
                 @click="$emit('newFile')">
                 <IconFileNew
                     width="16"
                     height="16" />
-                <span>New</span>
             </button>
             <button
-                class="tb has-label"
+                class="tb"
                 title="Open (⌘O)"
+                aria-label="Open"
                 @click="$emit('openFile')">
                 <IconFolderOpen
                     width="16"
                     height="16" />
-                <span>Open</span>
             </button>
             <button
-                class="tb has-label"
+                class="tb"
                 title="Save (⌘S)"
+                aria-label="Save"
                 @click="$emit('saveFile')">
                 <IconSave
                     width="16"
                     height="16" />
-                <span>Save</span>
             </button>
         </div>
 
@@ -279,7 +279,7 @@ onBeforeUnmount((): void => {
         <div class="toolbar-group">
             <button
                 class="tb has-label"
-                title="Add Table"
+                title="Add table"
                 @click="$emit('addTable')">
                 <IconTable
                     width="16"
@@ -288,7 +288,7 @@ onBeforeUnmount((): void => {
             </button>
             <button
                 class="tb has-label"
-                title="Add Text Box"
+                title="Add text box"
                 @click="$emit('addTextBox')">
                 <IconTextBox
                     width="16"
@@ -297,7 +297,7 @@ onBeforeUnmount((): void => {
             </button>
             <button
                 class="tb has-label"
-                title="Add Chart"
+                title="Add chart"
                 @click="$emit('addChart')">
                 <IconChart
                     width="16"
@@ -306,100 +306,103 @@ onBeforeUnmount((): void => {
             </button>
         </div>
 
-        <div
-            class="toolbar-sep"
-            aria-hidden="true"></div>
+        <!-- Cell-only controls: none of them applies to a text box -->
+        <template v-if="!hasActiveTextBox">
+            <div
+                class="toolbar-sep"
+                aria-hidden="true"></div>
 
-        <div class="toolbar-group">
-            <button
-                class="tb has-label"
-                title="Merge cells"
-                @click="$emit('mergeCells')">
-                <IconMergeCells
-                    width="16"
-                    height="16" />
-                <span>Merge</span>
-            </button>
-            <button
-                class="tb has-label"
-                title="Unmerge cells"
-                @click="$emit('unmergeCells')">
-                <IconUnmergeCells
-                    width="16"
-                    height="16" />
-                <span>Unmerge</span>
-            </button>
-        </div>
-
-        <div
-            class="toolbar-sep"
-            aria-hidden="true"></div>
-
-        <!-- Cell type selector -->
-        <ToolbarTypeSelector />
-        <div
-            class="toolbar-sep"
-            aria-hidden="true"></div>
-
-        <!-- Cell coloring -->
-        <div class="toolbar-group">
-            <!-- Text color -->
-            <ColorPicker
-                label="Text Color"
-                clear-label="No color"
-                :current-color="currentTextColor"
-                :last-color="lastTextColor"
-                :palette="colorPalette"
-                :disabled="!hasActiveCell"
-                :open="colorMenuType === 'text'"
-                @apply="applyTextColor"
-                @clear="clearTextColor"
-                @update:open="(v: boolean) => (colorMenuType = v ? 'text' : null)">
-                <template #icon>
-                    <IconTextColor
+            <div class="toolbar-group">
+                <button
+                    class="tb"
+                    title="Merge cells"
+                    aria-label="Merge cells"
+                    @click="$emit('mergeCells')">
+                    <IconMergeCells
                         width="16"
                         height="16" />
-                </template>
-            </ColorPicker>
-
-            <!-- Fill color -->
-            <ColorPicker
-                label="Fill Color"
-                clear-label="No fill"
-                :current-color="currentFillColor"
-                :last-color="lastFillColor"
-                :palette="colorPalette"
-                :disabled="!hasActiveCell"
-                :open="colorMenuType === 'fill'"
-                @apply="applyFillColor"
-                @clear="clearFillColor"
-                @update:open="(v: boolean) => (colorMenuType = v ? 'fill' : null)">
-                <template #icon>
-                    <svg
+                </button>
+                <button
+                    class="tb"
+                    title="Unmerge cells"
+                    aria-label="Unmerge cells"
+                    @click="$emit('unmergeCells')">
+                    <IconUnmergeCells
                         width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
-                        fill="none">
-                        <rect
-                            x="2.5"
-                            y="2.5"
-                            width="11"
-                            height="11"
-                            rx="2"
-                            stroke="currentColor"
-                            stroke-width="1.3" />
-                        <rect
-                            x="4"
-                            y="4"
-                            width="8"
-                            height="8"
-                            rx="1"
-                            :fill="lastFillColor"
-                            opacity="0.5" />
-                    </svg>
-                </template>
-            </ColorPicker>
-        </div>
+                        height="16" />
+                </button>
+            </div>
+
+            <div
+                class="toolbar-sep"
+                aria-hidden="true"></div>
+
+            <!-- Cell type selector -->
+            <ToolbarTypeSelector />
+            <div
+                class="toolbar-sep"
+                aria-hidden="true"></div>
+
+            <!-- Cell coloring -->
+            <div class="toolbar-group">
+                <!-- Text color -->
+                <ColorPicker
+                    label="Text color"
+                    clear-label="No color"
+                    :current-color="currentTextColor"
+                    :last-color="lastTextColor"
+                    :palette="colorPalette"
+                    :disabled="!hasActiveCell"
+                    :open="colorMenuType === 'text'"
+                    @apply="applyTextColor"
+                    @clear="clearTextColor"
+                    @update:open="(v: boolean) => (colorMenuType = v ? 'text' : null)">
+                    <template #icon>
+                        <IconTextColor
+                            width="16"
+                            height="16" />
+                    </template>
+                </ColorPicker>
+
+                <!-- Fill color -->
+                <ColorPicker
+                    label="Fill color"
+                    clear-label="No fill"
+                    :current-color="currentFillColor"
+                    :last-color="lastFillColor"
+                    :palette="colorPalette"
+                    :disabled="!hasActiveCell"
+                    :open="colorMenuType === 'fill'"
+                    @apply="applyFillColor"
+                    @clear="clearFillColor"
+                    @update:open="(v: boolean) => (colorMenuType = v ? 'fill' : null)">
+                    <template #icon>
+                        <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none">
+                            <rect
+                                x="2.5"
+                                y="2.5"
+                                width="11"
+                                height="11"
+                                rx="2"
+                                stroke="currentColor"
+                                stroke-width="1.3" />
+                            <rect
+                                x="4"
+                                y="4"
+                                width="8"
+                                height="8"
+                                rx="1"
+                                :fill="lastFillColor"
+                                opacity="0.5" />
+                        </svg>
+                    </template>
+                </ColorPicker>
+            </div>
+        </template>
 
         <!-- ═══ Formatting controls (shown for active cell OR text box) ═══ -->
         <template v-if="hasActiveCell || hasActiveTextBox">
@@ -419,19 +422,21 @@ onBeforeUnmount((): void => {
                     <button
                         class="tb"
                         title="Decrease font size"
+                        aria-label="Decrease font size"
                         @click="tbDecreaseFontSize">
                         <IconFontSizeDown
-                            width="14"
-                            height="14" />
+                            width="16"
+                            height="16" />
                     </button>
                     <span class="tb-font-size">{{ activeTextBoxData?.fontSize ?? 14 }}</span>
                     <button
                         class="tb"
                         title="Increase font size"
+                        aria-label="Increase font size"
                         @click="tbIncreaseFontSize">
                         <IconFontSizeUp
-                            width="14"
-                            height="14" />
+                            width="16"
+                            height="16" />
                     </button>
                 </div>
             </template>
@@ -443,20 +448,24 @@ onBeforeUnmount((): void => {
                 <button
                     class="tb"
                     :class="{ 'tb-active': fmtIsBold }"
+                    :aria-pressed="fmtIsBold"
                     title="Bold"
+                    aria-label="Bold"
                     @click="fmtToggleBold">
                     <IconBold
-                        width="14"
-                        height="14" />
+                        width="16"
+                        height="16" />
                 </button>
                 <button
                     class="tb"
                     :class="{ 'tb-active': fmtIsItalic }"
+                    :aria-pressed="fmtIsItalic"
                     title="Italic"
+                    aria-label="Italic"
                     @click="fmtToggleItalic">
                     <IconItalic
-                        width="14"
-                        height="14" />
+                        width="16"
+                        height="16" />
                 </button>
             </div>
 
@@ -469,29 +478,35 @@ onBeforeUnmount((): void => {
                 <button
                     class="tb"
                     :class="{ 'tb-active': fmtAlign === 'left' }"
-                    title="Align Left"
+                    :aria-pressed="fmtAlign === 'left'"
+                    title="Align left"
+                    aria-label="Align left"
                     @click="fmtSetAlign('left')">
                     <IconAlignLeft
-                        width="14"
-                        height="14" />
+                        width="16"
+                        height="16" />
                 </button>
                 <button
                     class="tb"
                     :class="{ 'tb-active': fmtAlign === 'center' }"
-                    title="Align Center"
+                    :aria-pressed="fmtAlign === 'center'"
+                    title="Align center"
+                    aria-label="Align center"
                     @click="fmtSetAlign('center')">
                     <IconAlignCenter
-                        width="14"
-                        height="14" />
+                        width="16"
+                        height="16" />
                 </button>
                 <button
                     class="tb"
                     :class="{ 'tb-active': fmtAlign === 'right' }"
-                    title="Align Right"
+                    :aria-pressed="fmtAlign === 'right'"
+                    title="Align right"
+                    aria-label="Align right"
                     @click="fmtSetAlign('right')">
                     <IconAlignRight
-                        width="14"
-                        height="14" />
+                        width="16"
+                        height="16" />
                 </button>
             </div>
 
@@ -504,7 +519,7 @@ onBeforeUnmount((): void => {
                 <!-- TextBox text color -->
                 <div class="toolbar-group">
                     <ColorPicker
-                        label="Text Color"
+                        label="Text color"
                         clear-label="No color"
                         :current-color="activeTextBoxData?.textColor"
                         :last-color="tbLastTextColor"
@@ -522,7 +537,7 @@ onBeforeUnmount((): void => {
 
                     <!-- TextBox fill color -->
                     <ColorPicker
-                        label="Fill Color"
+                        label="Fill color"
                         clear-label="No fill"
                         :current-color="activeTextBoxData?.bgColor"
                         :last-color="tbLastFillColor"
@@ -632,6 +647,7 @@ onBeforeUnmount((): void => {
             <button
                 class="tb theme-toggle"
                 :title="isDark ? 'Light mode' : 'Dark mode'"
+                :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
                 @click="toggleTheme">
                 <!-- Sun icon (shown in dark mode) -->
                 <IconSun
@@ -683,8 +699,7 @@ onBeforeUnmount((): void => {
     align-items: center;
     padding: 0 $space-1;
     flex-shrink: 0;
-    color: $color-text;
-    opacity: $opacity-mid;
+    color: $color-text-muted;
     -webkit-app-region: no-drag;
 
     svg {
@@ -693,8 +708,6 @@ onBeforeUnmount((): void => {
         display: block;
     }
 }
-
-/* ––––– Toolbar button ––––– */
 
 /* ––––– TextBox toolbar extras ––––– */
 
@@ -707,9 +720,7 @@ onBeforeUnmount((): void => {
     font-size: $font-size-base;
     font-weight: $font-weight-semibold;
     color: $color-text;
-    background: $color-bg-chrome;
-    border-radius: $border-radius-sm;
-    padding: 0 $space-1;
+    font-variant-numeric: tabular-nums;
     user-select: none;
 }
 

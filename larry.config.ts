@@ -9,9 +9,9 @@ import { defineConfig } from '@larrydarko/lint-config/config';
  * regrow to the old number.
  */
 const LENGTH_BASELINE: Record<string, number> = {
-    // 687 lines of template — one <button> per formatting control, each with its
-    // own inline SVG. Splitting means pulling the SVGs out, not the logic.
-    'src/renderer/components/Toolbar.vue': 859,
+    // Mostly template: one <button> per formatting control, in two sets (cells and
+    // text boxes). A split would put each set in its own component.
+    'src/renderer/components/Toolbar.vue': 605,
     // 265 lines of script and a 261-line template: neither half is over on its own.
     'src/renderer/components/SpreadsheetTable.vue': 517,
 };

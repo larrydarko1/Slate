@@ -24,8 +24,8 @@
     align-items: center;
     justify-content: center;
     gap: $space-1;
-    min-width: $size-18;
-    height: $size-18;
+    min-width: $size-17;
+    height: $size-17;
     padding: 0 $space-2;
     border-radius: $border-radius-md;
     background: transparent;
@@ -53,12 +53,6 @@
     // Extra room on the trailing side, where the label sits.
     &.has-label {
         padding: 0 $space-3 0 $space-2;
-
-        span {
-            font-size: $font-size-base;
-            font-weight: $font-weight-normal;
-            letter-spacing: $letter-spacing-tight;
-        }
     }
 }
 

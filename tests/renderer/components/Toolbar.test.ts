@@ -48,9 +48,9 @@ describe('Toolbar', () => {
             ['New (⌘N)', 'newFile'],
             ['Open (⌘O)', 'openFile'],
             ['Save (⌘S)', 'saveFile'],
-            ['Add Table', 'addTable'],
-            ['Add Text Box', 'addTextBox'],
-            ['Add Chart', 'addChart'],
+            ['Add table', 'addTable'],
+            ['Add text box', 'addTextBox'],
+            ['Add chart', 'addChart'],
             ['Merge cells', 'mergeCells'],
             ['Unmerge cells', 'unmergeCells'],
         ])('%s emits %s', async (title, event) => {
@@ -80,12 +80,18 @@ describe('Toolbar', () => {
         });
 
         it.each([
-            ['Align Left', 'left'],
-            ['Align Center', 'center'],
-            ['Align Right', 'right'],
+            ['Align left', 'left'],
+            ['Align center', 'center'],
+            ['Align right', 'right'],
         ])('%s sets the alignment', async (title, align) => {
             await byTitle(title).trigger('click');
             expect(ss.findCell(id, 0, 0)?.format?.align).toBe(align);
+        });
+
+        it('marks bold as pressed while the cell is bold', async () => {
+            expect(byTitle('Bold').attributes('aria-pressed')).toBe('false');
+            await byTitle('Bold').trigger('click');
+            expect(byTitle('Bold').attributes('aria-pressed')).toBe('true');
         });
 
         it('makes the cell a checkbox from the type menu', async () => {
@@ -132,9 +138,16 @@ describe('Toolbar', () => {
         });
 
         it('aligns the active text box', async () => {
-            await byTitle('Align Center').trigger('click');
+            await byTitle('Align center').trigger('click');
             expect(ss.textBoxes.value[0]!.align).toBe('center');
         });
+
+        it.each(['Merge cells', 'Unmerge cells', 'Cell format type'])(
+            'hides %s, which only applies to cells',
+            (title) => {
+                expect(wrapper.find(`[title="${title}"]`).exists()).toBe(false);
+            },
+        );
 
         it('steps the font size up and down', async () => {
             const start = ss.textBoxes.value[0]!.fontSize;
