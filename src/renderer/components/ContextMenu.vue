@@ -73,39 +73,39 @@ function onItemClick(item: MenuItem): void {
 .context-menu {
     position: absolute;
     min-width: $size-24;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
+    background: $color-bg-surface;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-xl;
     padding: $space-3;
     box-shadow:
         $shadow-lg,
-        0 0 0 1px $scrim-faint;
+        0 0 0 1px $color-scrim-faint;
     z-index: $z-modal-raised;
 }
 
 .context-menu-item {
     padding: $space-5 $space-11;
     font-size: $font-size-base;
-    color: $text-primary;
+    color: $color-text;
     cursor: pointer;
     user-select: none;
     border-radius: $border-radius-md;
 
     &:hover:not(.separator) {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 
     &.separator {
         height: $size-0;
         margin: $space-2 $space-5;
         padding: 0;
-        background: $border-color;
+        background: $color-border;
         cursor: default;
         border-radius: 0;
     }
 
     &.danger {
-        color: $danger-color;
+        color: $color-danger;
     }
 }
 </style>

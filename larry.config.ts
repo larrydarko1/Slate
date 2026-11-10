@@ -122,10 +122,7 @@ export default defineConfig({
         'refactoring': {},
         // `index.scss` is the entry, imported once by main.ts. `_variables.scss` is injected into every SFC
         // style block, each its own Sass compilation, so anything reachable from it that emits ships once per
-        // component; the mixins live there because a mixin emits nothing until included. The palettes are
-        // literal `[data-theme]` blocks in _themes.scss, plus a `:root` block for the frame painted before
-        // Toolbar.vue sets `data-theme`: a Sass map would be opaque to this gate and to stylelint. Colours
-        // the same in every theme live once in _tokens.scss.
+        // component: it holds the theme maps, and `_theme.scss` turns them into custom properties once.
         'scss-standards': {
             styles: 'src/renderer/styles',
             src: 'src/renderer',
@@ -134,12 +131,8 @@ export default defineConfig({
             injectedSpecifier: '@/renderer/styles/variables',
             emitters: [
                 {
-                    module: 'tokens',
-                    why: '_tokens.scss holds the colours that are the same in every theme. Un-@used, every `var()` naming one of them resolves to nothing.',
-                },
-                {
-                    module: 'themes',
-                    why: 'The palettes are CSS custom properties. Un-@used, every `var(--token)` in the app resolves to nothing.',
+                    module: 'theme',
+                    why: '_theme.scss is what turns the maps into custom properties. Un-@used, every `var(--color-*)` in the app resolves to nothing.',
                 },
                 {
                     module: 'base',
@@ -151,11 +144,11 @@ export default defineConfig({
                 },
             ],
             themes: {
-                source: 'css-blocks',
-                file: 'src/renderer/styles/_themes.scss',
+                source: 'scss-maps',
+                file: 'src/renderer/styles/_variables.scss',
                 reference: 'dark',
-                selector: 'data-theme',
-                invariantFile: 'src/renderer/styles/_tokens.scss',
+                mixinFile: 'src/renderer/styles/_theme.scss',
+                emitFile: 'src/renderer/styles/_theme.scss',
             },
         },
         'secrets': { skip: 'No script ran it before larry upgrade.' },

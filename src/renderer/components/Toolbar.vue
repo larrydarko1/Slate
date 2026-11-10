@@ -654,8 +654,8 @@ onBeforeUnmount((): void => {
     align-items: center;
     height: $size-21;
     padding: 0 $space-9;
-    background: $bg-primary;
-    border-bottom: $border-width-thin $border-color;
+    background: $color-bg-surface;
+    border-bottom: $border-width-thin $color-border;
     user-select: none;
     flex-shrink: 0;
     gap: $space-1;
@@ -667,7 +667,7 @@ onBeforeUnmount((): void => {
 .toolbar-sep {
     width: $size-0;
     height: $size-11;
-    background: $border-color;
+    background: $color-border;
     margin: 0 $space-5;
     flex-shrink: 0;
 }
@@ -683,7 +683,7 @@ onBeforeUnmount((): void => {
     align-items: center;
     padding: 0 $space-3;
     flex-shrink: 0;
-    color: $text-primary;
+    color: $color-text;
     opacity: $opacity-mid;
     -webkit-app-region: no-drag;
 
@@ -706,8 +706,8 @@ onBeforeUnmount((): void => {
     height: $size-16;
     font-size: $font-size-base;
     font-weight: $font-weight-semibold;
-    color: $text-primary;
-    background: $bg-tertiary;
+    color: $color-text;
+    background: $color-bg-subtle;
     border-radius: $border-radius-sm;
     padding: 0 $space-3;
     user-select: none;
@@ -716,17 +716,17 @@ onBeforeUnmount((): void => {
 .tb-border-select {
     flex: 1;
     height: $size-14;
-    border: $border-width-thin $border-color;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-sm;
-    background: $bg-primary;
-    color: $text-primary;
+    background: $color-bg-surface;
+    color: $color-text;
     font-size: $font-size-sm;
     padding: 0 $space-3;
     cursor: pointer;
     outline: none;
 
     &:focus {
-        border-color: $accent-color;
+        border-color: $color-accent;
     }
 }
 </style>

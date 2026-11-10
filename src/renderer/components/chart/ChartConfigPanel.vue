@@ -199,8 +199,8 @@ function onGridToggle(e: Event): void {
     top: 0;
     right: -$size-31;
     width: $size-30;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
+    background: $color-bg-surface;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
     padding: $space-7;
     box-shadow: $shadow-md;
@@ -212,7 +212,7 @@ function onGridToggle(e: Event): void {
 
 .config-section {
     margin-bottom: $space-7;
-    border-bottom: $border-width-thin $border-color;
+    border-bottom: $border-width-thin $color-border;
     padding-bottom: $space-5;
 }
 
@@ -221,7 +221,7 @@ function onGridToggle(e: Event): void {
     align-items: center;
     justify-content: space-between;
     font-weight: $font-weight-semibold;
-    color: $text-muted;
+    color: $color-text-muted;
     font-size: $font-size-xs;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -235,9 +235,9 @@ function onGridToggle(e: Event): void {
     width: $size-12;
     height: $size-12;
     border-radius: $border-radius-sm;
-    border: $border-width-thin $border-color;
-    background: $bg-secondary;
-    color: $text-muted;
+    border: $border-width-thin $color-border;
+    background: $color-bg-chrome;
+    color: $color-text-muted;
     font-size: $font-size-md;
     font-weight: $font-weight-semibold;
     cursor: pointer;
@@ -248,9 +248,9 @@ function onGridToggle(e: Event): void {
         color $duration-base;
 
     &:hover {
-        background: $accent-color;
-        color: $on-accent;
-        border-color: $accent-color;
+        background: $color-accent;
+        color: $color-on-accent;
+        border-color: $color-accent;
     }
 }
 
@@ -259,9 +259,9 @@ function onGridToggle(e: Event): void {
     align-items: center;
     gap: $space-3;
     padding: $space-2 $space-3;
-    border: $border-width-thin $border-color;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius;
-    background: $bg-secondary;
+    background: $color-bg-chrome;
     margin-bottom: $space-3;
     cursor: text;
     transition:
@@ -269,11 +269,11 @@ function onGridToggle(e: Event): void {
         box-shadow $duration-base;
 
     &:hover {
-        border-color: $text-muted;
+        border-color: $color-text-muted;
     }
 
     &.picking {
-        background: $bg-primary;
+        background: $color-bg-surface;
     }
 }
 
@@ -291,12 +291,12 @@ function onGridToggle(e: Event): void {
     background: transparent;
     font-size: $font-size-sm;
     font-family: $font-family;
-    color: $text-primary;
+    color: $color-text;
     padding: 0;
     min-width: 0;
 
     &::placeholder {
-        color: $text-muted;
+        color: $color-text-muted;
         font-family: inherit;
         font-size: $font-size-xs;
     }
@@ -311,7 +311,7 @@ function onGridToggle(e: Event): void {
     border-radius: $border-radius-round;
     border: none;
     background: transparent;
-    color: $text-muted;
+    color: $color-text-muted;
     font-size: $font-size-md;
     cursor: pointer;
     padding: 0;
@@ -322,14 +322,14 @@ function onGridToggle(e: Event): void {
         color $duration-base;
 
     &:hover {
-        background: $danger-color-alpha;
-        color: $danger-color;
+        background: $color-danger-subtle;
+        color: $color-danger;
     }
 }
 
 .ref-empty-hint {
     font-size: $font-size-xs;
-    color: $text-muted;
+    color: $color-text-muted;
     text-align: center;
     padding: $space-3;
 }
@@ -343,7 +343,7 @@ function onGridToggle(e: Event): void {
     > label:first-child {
         flex: 0 0 50px;
         font-weight: $font-weight-semibold;
-        color: $text-muted;
+        color: $color-text-muted;
         padding-top: $space-1;
         font-size: $font-size-sm;
     }
@@ -352,10 +352,10 @@ function onGridToggle(e: Event): void {
         flex: 1;
         font-size: $font-size-sm;
         padding: $space-1 $space-3;
-        border: $border-width-thin $border-color;
+        border: $border-width-thin $color-border;
         border-radius: $border-radius-sm;
-        background: $bg-secondary;
-        color: $text-primary;
+        background: $color-bg-chrome;
+        color: $color-text;
     }
 
     input[type='checkbox'] {
@@ -365,7 +365,7 @@ function onGridToggle(e: Event): void {
 
 .config-hint {
     font-size: $font-size-xs;
-    color: $text-muted;
+    color: $color-text-muted;
     padding-top: $space-2;
 }
 </style>

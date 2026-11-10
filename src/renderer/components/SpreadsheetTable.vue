@@ -567,8 +567,8 @@ watch(
     border-radius: $border-radius-xl;
     overflow: hidden;
     box-shadow: $shadow-md;
-    border: $border-width-thin $border-color;
-    background: $bg-primary;
+    border: $border-width-thin $color-border;
+    background: $color-bg-surface;
     outline: none;
     transition:
         box-shadow $duration-base,
@@ -576,7 +576,7 @@ watch(
 
     &.active {
         box-shadow: $shadow-lg;
-        border-color: $accent-color;
+        border-color: $color-accent;
     }
 
     &.formula-mode {
@@ -585,7 +585,7 @@ watch(
 
             &:hover {
                 /* stylelint-disable-next-line declaration-no-important */
-                background: $accent-color-alpha !important;
+                background: $color-accent-subtle !important;
             }
         }
     }
@@ -603,8 +603,8 @@ watch(
     justify-content: space-between;
     height: $size-18;
     padding: 0 $space-9;
-    background: $accent-color;
-    color: $on-accent;
+    background: $color-accent;
+    color: $color-on-accent;
     cursor: grab;
     user-select: none;
 
@@ -623,8 +623,8 @@ watch(
 .table-name-input {
     border: none;
     outline: none;
-    background: $glass-soft;
-    color: $on-accent;
+    background: $color-glass-soft;
+    color: $color-on-accent;
     font-size: $font-size-base;
     font-weight: $font-weight-semibold;
     border-radius: $border-radius-xs;
@@ -632,7 +632,7 @@ watch(
     width: $size-23;
 
     &::selection {
-        background: $glass;
+        background: $color-glass;
     }
 }
 
@@ -642,7 +642,7 @@ watch(
     border: none;
     border-radius: $border-radius-sm;
     background: transparent;
-    color: $glass-strong;
+    color: $color-glass-strong;
     font-size: $font-size-xl;
     line-height: $line-height-none;
     cursor: pointer;
@@ -651,8 +651,8 @@ watch(
     justify-content: center;
 
     &:hover {
-        background: $glass-soft;
-        color: $on-accent;
+        background: $color-glass-soft;
+        color: $color-on-accent;
     }
 }
 
@@ -671,42 +671,42 @@ watch(
     width: $size-20;
     min-width: $size-20;
     height: $size-15;
-    background: $bg-tertiary;
-    border-bottom: $border-width-thin $border-color;
-    border-right: $border-width-thin $border-color;
+    background: $color-bg-subtle;
+    border-bottom: $border-width-thin $color-border;
+    border-right: $border-width-thin $color-border;
     cursor: pointer;
     user-select: none;
 
     &:hover {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 
     &.all-selected {
-        background: $accent-color;
+        background: $color-accent;
     }
 }
 
 .col-header {
     position: relative;
     height: $size-15;
-    background: $bg-tertiary;
-    border-bottom: $border-width-thin $border-color;
-    border-right: $border-width-thin $border-color;
+    background: $color-bg-subtle;
+    border-bottom: $border-width-thin $color-border;
+    border-right: $border-width-thin $color-border;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
-    color: $text-muted;
+    color: $color-text-muted;
     text-align: center;
     user-select: none;
     padding: 0 $space-3;
     cursor: pointer;
 
     &:hover:not(.col-selected) {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 
     &.col-selected {
-        background: $accent-color;
-        color: $on-accent;
+        background: $color-accent;
+        color: $color-on-accent;
     }
 }
 
@@ -721,7 +721,7 @@ watch(
 
     &:hover,
     &:active {
-        background: $accent-color;
+        background: $color-accent;
         opacity: $opacity-low;
     }
 }
@@ -729,14 +729,14 @@ watch(
 .add-col-header {
     width: $size-17;
     min-width: $size-17;
-    background: $bg-tertiary;
-    border-bottom: $border-width-thin $border-color;
+    background: $color-bg-subtle;
+    border-bottom: $border-width-thin $color-border;
     text-align: center;
     cursor: e-resize;
     user-select: none;
 
     &:hover {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 }
 
@@ -744,31 +744,31 @@ watch(
     width: $size-20;
     min-width: $size-20;
     height: $size-16;
-    background: $bg-tertiary;
-    border-bottom: $border-width-thin $border-color;
-    border-right: $border-width-thin $border-color;
+    background: $color-bg-subtle;
+    border-bottom: $border-width-thin $color-border;
+    border-right: $border-width-thin $color-border;
     font-size: $font-size-sm;
     font-weight: $font-weight-medium;
-    color: $text-muted;
+    color: $color-text-muted;
     text-align: center;
     user-select: none;
     padding: 0 $space-3;
     cursor: pointer;
 
     &:hover:not(.row-selected) {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 
     &.row-selected {
-        background: $accent-color;
-        color: $on-accent;
+        background: $color-accent;
+        color: $color-on-accent;
     }
 }
 
 .cell {
     height: $size-16;
-    border-bottom: $border-width-thin $border-color;
-    border-right: $border-width-thin $border-color;
+    border-bottom: $border-width-thin $color-border;
+    border-right: $border-width-thin $color-border;
     padding: 0;
     position: relative;
     cursor: cell;
@@ -780,26 +780,26 @@ watch(
     user-select: none;
 
     &.header-row {
-        background: $bg-secondary;
+        background: $color-bg-chrome;
         font-weight: $font-weight-semibold;
     }
 
     &.selected {
-        outline: 2px solid $accent-color;
+        outline: 2px solid $color-accent;
         outline-offset: -1px;
         z-index: $z-raised-high;
         overflow: visible;
     }
 
     &.in-selection {
-        background: $accent-color-alpha;
+        background: $color-accent-subtle;
         z-index: $z-base;
     }
 
     &.in-fill,
     &.in-move {
-        background: $accent-color-alpha;
-        outline: 1px dashed $accent-color;
+        background: $color-accent-subtle;
+        outline: 1px dashed $color-accent;
         outline-offset: -1px;
         z-index: $z-base;
     }
@@ -818,7 +818,7 @@ watch(
     }
 
     &:hover:not(.selected, .in-selection) {
-        background: $accent-color-alpha;
+        background: $color-accent-subtle;
     }
 }
 
@@ -832,8 +832,8 @@ watch(
     padding: 0 $space-5;
     font-size: $font-size-base;
     font-family: inherit;
-    color: $text-primary;
-    background: $bg-primary;
+    color: $color-text;
+    background: $color-bg-surface;
     z-index: $z-raised;
     user-select: text;
 }
@@ -847,7 +847,7 @@ watch(
     width: 0;
     height: 0;
     border-left: $size-5 solid transparent;
-    border-top: $size-5 solid $note-accent;
+    border-top: $size-5 solid $color-note-accent;
     z-index: $z-raised-high;
     pointer-events: auto;
     cursor: default;
@@ -861,15 +861,15 @@ watch(
     bottom: -$size-3;
     width: $size-7;
     height: $size-7;
-    background: $accent-color;
-    border: 1.5px solid $on-accent;
+    background: $color-accent;
+    border: 1.5px solid $color-on-accent;
     border-radius: $border-radius-hairline;
     cursor: crosshair;
     z-index: $z-raised-high;
     pointer-events: auto;
 
     @include dark {
-        border-color: $bg-primary;
+        border-color: $color-bg-surface;
     }
 }
 
@@ -884,46 +884,46 @@ tr.reorder-row-source > td {
 }
 
 tr.reorder-row-drop-before > td {
-    box-shadow: inset 0 $size-1 0 0 $accent-color;
+    box-shadow: inset 0 $size-1 0 0 $color-accent;
 }
 
 tr.reorder-row-drop-after > td {
-    box-shadow: inset 0 (-$size-1) 0 0 $accent-color;
+    box-shadow: inset 0 (-$size-1) 0 0 $color-accent;
 }
 
 .row-header.reorder-drop-before {
-    box-shadow: inset 0 $size-1 0 0 $accent-color;
+    box-shadow: inset 0 $size-1 0 0 $color-accent;
 }
 
 .row-header.reorder-drop-after {
-    box-shadow: inset 0 (-$size-1) 0 0 $accent-color;
+    box-shadow: inset 0 (-$size-1) 0 0 $color-accent;
 }
 
 .col-header.reorder-drop-before {
-    box-shadow: inset $size-1 0 0 0 $accent-color;
+    box-shadow: inset $size-1 0 0 0 $color-accent;
 }
 
 .col-header.reorder-drop-after {
-    box-shadow: inset (-$size-1) 0 0 0 $accent-color;
+    box-shadow: inset (-$size-1) 0 0 0 $color-accent;
 }
 
 .add-row-cell {
     height: $size-15;
-    background: $bg-tertiary;
+    background: $color-bg-subtle;
     text-align: center;
     cursor: s-resize;
     border-bottom: none;
     user-select: none;
 
     &:hover {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 }
 
 .add-handle {
     font-size: $font-size-base;
     font-weight: $font-weight-bold;
-    color: $text-muted;
+    color: $color-text-muted;
     line-height: 2;
     letter-spacing: 1px;
 }

@@ -170,12 +170,12 @@ function starLabel(stars: number): string {
     padding: 0 $space-5;
     line-height: 2.1667;
     font-size: $font-size-base;
-    color: $text-primary;
+    color: $color-text;
 
     @include truncate;
 
     &.error-value {
-        color: $danger-color;
+        color: $color-danger;
         font-size: $font-size-sm;
     }
 
@@ -201,7 +201,7 @@ function starLabel(stars: number): string {
     }
 
     &.type-url {
-        color: $accent-color;
+        color: $color-accent;
         text-decoration: underline;
         text-underline-offset: 2px;
         cursor: default;
@@ -233,16 +233,16 @@ function starLabel(stars: number): string {
     justify-content: center;
     width: $size-10;
     height: $size-10;
-    border: $border-width-thin $text-muted;
+    border: $border-width-thin $color-text-muted;
     border-radius: $border-radius-xs;
-    color: $accent-color;
+    color: $color-accent;
     transition:
         background $transition-quick,
         border-color $transition-quick;
 
     &.checked {
-        border-color: $accent-color;
-        background: $accent-color-alpha;
+        border-color: $color-accent;
+        background: $color-accent-subtle;
     }
 
     svg {
@@ -275,7 +275,7 @@ function starLabel(stars: number): string {
     padding: 0;
     border: none;
     background: transparent;
-    color: $text-muted;
+    color: $color-text-muted;
     cursor: pointer;
     transition: color $transition-quick;
 
@@ -286,7 +286,7 @@ function starLabel(stars: number): string {
     }
 
     &.filled {
-        color: $accent-color;
+        color: $color-accent;
 
         svg {
             fill: currentcolor;
@@ -299,7 +299,7 @@ function starLabel(stars: number): string {
 }
 
 .cell-rating[role='radiogroup']:has(.cell-rating-star:hover) .cell-rating-star {
-    color: $accent-color;
+    color: $color-accent;
 
     svg {
         fill: currentcolor;
@@ -307,7 +307,7 @@ function starLabel(stars: number): string {
 }
 
 .cell-rating[role='radiogroup'] .cell-rating-star:hover ~ .cell-rating-star {
-    color: $text-muted;
+    color: $color-text-muted;
 
     svg {
         fill: none;
@@ -340,15 +340,15 @@ function starLabel(stars: number): string {
     border: none;
     border-radius: $border-radius-xs;
     background: transparent;
-    color: $text-muted;
+    color: $color-text-muted;
     cursor: pointer;
     transition:
         background $transition-quick,
         color $transition-quick;
 
     &:hover:not(:disabled) {
-        background: $accent-color-alpha;
-        color: $accent-color;
+        background: $color-accent-subtle;
+        color: $color-accent;
     }
 
     &:disabled {
@@ -382,14 +382,14 @@ function starLabel(stars: number): string {
     border: none;
     border-radius: $border-radius-xs;
     background: transparent;
-    color: $accent-color;
+    color: $color-accent;
     cursor: pointer;
     opacity: $opacity-none;
     pointer-events: none;
     z-index: $z-raised-high;
 
     &:hover {
-        background: $accent-color-alpha;
+        background: $color-accent-subtle;
     }
 }
 

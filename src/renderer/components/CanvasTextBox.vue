@@ -35,7 +35,7 @@ const textStyle = computed(() => ({
             : undefined,
     fontWeight: props.textBox.fontWeight,
     fontStyle: props.textBox.fontStyle,
-    color: props.textBox.textColor !== '' ? props.textBox.textColor : 'var(--text-primary)',
+    color: props.textBox.textColor !== '' ? props.textBox.textColor : 'var(--color-text)',
     textAlign: props.textBox.align,
 }));
 
@@ -150,7 +150,7 @@ function finishTextEdit(): void {
     border: $border-width-thin transparent;
 
     &:hover:not(.active) {
-        border-color: $border-color;
+        border-color: $color-border;
     }
 
     &.editing {
@@ -167,7 +167,7 @@ function finishTextEdit(): void {
     overflow: hidden;
     font-family: inherit;
     line-height: $line-height-base;
-    color: $text-primary;
+    color: $color-text;
 }
 
 .textbox-placeholder {
@@ -175,7 +175,7 @@ function finishTextEdit(): void {
     inset: 0;
     padding: $space-7 $space-9;
     font-size: $font-size-lg;
-    color: $text-muted;
+    color: $color-text-muted;
     opacity: $opacity-mid;
     pointer-events: none;
     line-height: $line-height-base;
@@ -193,7 +193,7 @@ function finishTextEdit(): void {
     line-height: $line-height-base;
     white-space: pre-wrap;
     overflow-wrap: break-word;
-    color: $text-primary;
+    color: $color-text;
 }
 
 /* ––––– Resize handles ––––– */

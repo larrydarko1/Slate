@@ -166,9 +166,8 @@ slate/
 │       ├── main.ts                #   Vue entry point
 │       ├── styles/                #   SCSS design system
 │       │   ├── index.scss         #     Entry point — imported once by main.ts
-│       │   ├── _tokens.scss       #     Custom properties shared by every theme
-│       │   ├── _themes.scss       #     Per-theme palettes (light/dark)
-│       │   ├── _variables.scss    #     Scales, theme aliases & mixins — injected into every SFC
+│       │   ├── _variables.scss    #     Scales, theme maps, aliases & mixins — injected into every SFC
+│       │   ├── _theme.scss        #     Emits the theme maps as CSS custom properties
 │       │   ├── _base.scss         #     Document typography, Electron drag regions
 │       │   └── components/        #     Shared button, canvas & placeholder styles
 │       ├── components/            #   Vue components

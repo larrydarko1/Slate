@@ -103,9 +103,9 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
     left: calc(100% + #{$space-7});
     width: $size-28;
     padding: $space-7;
-    border: $border-width-thin $border-color;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    background: $bg-primary;
+    background: $color-bg-surface;
     box-shadow: $shadow-md;
     font-size: $font-size-sm;
     cursor: default;
@@ -116,7 +116,7 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
     margin: 0 0 $space-7;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
-    color: $text-primary;
+    color: $color-text;
 }
 
 /* ––– Fields ––– */
@@ -129,22 +129,22 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
     margin-bottom: $space-5;
 
     label {
-        color: $text-muted;
+        color: $color-text-muted;
         font-weight: $font-weight-semibold;
     }
 
     input {
         min-width: 0;
         padding: $space-1 $space-3;
-        border: $border-width-thin $border-color;
+        border: $border-width-thin $color-border;
         border-radius: $border-radius-sm;
-        background: $bg-secondary;
-        color: $text-primary;
+        background: $color-bg-chrome;
+        color: $color-text;
         font: inherit;
         font-variant-numeric: tabular-nums;
 
         &[aria-invalid='true'] {
-            border-color: $danger-color;
+            border-color: $color-danger;
         }
     }
 }
@@ -152,13 +152,13 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
 .cell-settings-error {
     grid-column: 1 / -1;
     margin: 0;
-    color: $danger-color;
+    color: $color-danger;
     font-size: $font-size-xs;
 }
 
 .cell-settings-hint {
     margin: $space-7 0 0;
-    color: $text-muted;
+    color: $color-text-muted;
     font-size: $font-size-xs;
 }
 </style>

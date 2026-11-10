@@ -229,8 +229,8 @@ watch(
     align-items: center;
     height: $size-19;
     padding: 0 $space-11;
-    background: $bg-secondary;
-    border-bottom: $border-width-thin $border-color;
+    background: $color-bg-chrome;
+    border-bottom: $border-width-thin $color-border;
     flex-shrink: 0;
     -webkit-app-region: no-drag;
 }
@@ -240,7 +240,7 @@ watch(
     max-width: $size-24;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
-    color: $text-muted;
+    color: $color-text-muted;
 
     @include truncate;
 
@@ -249,7 +249,7 @@ watch(
 }
 
 .cell-ref-empty {
-    color: $text3;
+    color: $color-text-faint;
 }
 
 .type-badge {
@@ -262,52 +262,52 @@ watch(
     margin-right: $space-5;
     flex-shrink: 0;
     line-height: 1.7778;
-    background: $bg-tertiary;
-    color: $text-muted;
+    background: $color-bg-subtle;
+    color: $color-text-muted;
 
     &.type-integer {
-        background: $type-text-alpha;
-        color: $type-text;
+        background: $color-type-text-subtle;
+        color: $color-type-text;
     }
 
     &.type-float {
-        background: $type-number-alpha;
-        color: $type-number;
+        background: $color-type-number-subtle;
+        color: $color-type-number;
     }
 
     &.type-currency-eur {
-        background: $type-currency-alpha;
-        color: $type-currency;
+        background: $color-type-currency-subtle;
+        color: $color-type-currency;
     }
 
     &.type-currency-usd {
-        background: $type-percent-alpha;
-        color: $type-percent;
+        background: $color-type-percent-subtle;
+        color: $color-type-percent;
     }
 
     &.type-text {
-        background: $type-date-alpha;
-        color: $type-date;
+        background: $color-type-date-subtle;
+        color: $color-type-date;
     }
 
     &.type-boolean,
     &.type-checkbox,
     &.type-rating,
     &.type-stepper {
-        background: $type-boolean-alpha;
-        color: $type-boolean;
+        background: $color-type-boolean-subtle;
+        color: $color-type-boolean;
     }
 
     &.type-date {
-        background: $type-date-alpha;
-        color: $type-date;
+        background: $color-type-date-subtle;
+        color: $color-type-date;
     }
 }
 
 .formula-separator {
     width: $size-0;
     height: $size-11;
-    background: $border-color;
+    background: $color-border;
     margin-right: $space-7;
     flex-shrink: 0;
 }
@@ -322,7 +322,7 @@ watch(
 .fx-label {
     font-size: $font-size-sm;
     font-weight: $font-weight-bold;
-    color: $accent-color;
+    color: $color-accent;
     flex-shrink: 0;
     opacity: $opacity-higher;
 }
@@ -341,18 +341,18 @@ watch(
     background: transparent;
     font-size: $font-size-base;
     font-family: $font-family;
-    color: $text-primary;
+    color: $color-text;
     padding: $space-1 0;
     position: relative;
     z-index: $z-base;
 
     &.has-rich-overlay {
         color: transparent;
-        caret-color: $text-primary;
+        caret-color: $color-text;
     }
 
     &::placeholder {
-        color: $text3;
+        color: $color-text-faint;
     }
 
     &:disabled {
@@ -375,11 +375,11 @@ watch(
 }
 
 .formula-eq {
-    color: $text-muted;
+    color: $color-text-muted;
 }
 
 .formula-text {
-    color: $text-primary;
+    color: $color-text;
 }
 
 .ref-badge {
@@ -398,23 +398,23 @@ watch(
     justify-content: center;
     width: $size-16;
     height: $size-14;
-    border: $border-width-thin $border-color;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius;
-    background: $bg-tertiary;
-    color: $text-muted;
+    background: $color-bg-subtle;
+    color: $color-text-muted;
     cursor: pointer;
     flex-shrink: 0;
     transition: all $duration-base;
 
     &:hover:not(:disabled) {
-        background: $bg-hover;
-        color: $text-primary;
+        background: $color-bg-hover;
+        color: $color-text;
     }
 
     &.active {
-        background: $accent-color;
-        border-color: $accent-color;
-        color: $on-accent;
+        background: $color-accent;
+        border-color: $color-accent;
+        color: $color-on-accent;
     }
 
     &:disabled {

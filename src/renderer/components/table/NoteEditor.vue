@@ -84,12 +84,12 @@ watch(
 .note-editor {
     position: absolute;
     width: $size-26;
-    background: $note-bg;
-    border: $border-width-thin $note-border;
+    background: $color-note-bg;
+    border: $border-width-thin $color-note-border;
     border-radius: $border-radius-xl;
     box-shadow:
-        0 8px 32px $scrim-heavy,
-        0 0 0 1px $scrim-faint;
+        0 8px 32px $color-scrim-heavy,
+        0 0 0 1px $color-scrim-faint;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -107,10 +107,10 @@ watch(
     font-family: inherit;
     line-height: $line-height-base;
     background: transparent;
-    color: $note-text;
+    color: $color-note-text;
 
     &::placeholder {
-        color: $note-placeholder;
+        color: $color-note-placeholder;
     }
 }
 
@@ -119,7 +119,7 @@ watch(
     align-items: center;
     padding: $space-5 $space-7;
     gap: $space-5;
-    border-top: $border-width-thin $note-border;
+    border-top: $border-width-thin $color-note-border;
 }
 
 .note-editor-spacer {
@@ -139,28 +139,28 @@ watch(
 
 .note-editor-cancel {
     background: transparent;
-    color: $note-muted;
+    color: $color-note-muted;
 
     &:hover {
-        background: $scrim-soft;
+        background: $color-scrim-soft;
     }
 }
 
 .note-editor-save {
-    background: $note-accent;
-    color: $on-accent;
+    background: $color-note-accent;
+    color: $color-on-accent;
 
     &:hover {
-        background: $note-accent-hover;
+        background: $color-note-accent-hover;
     }
 }
 
 .note-editor-delete {
     background: transparent;
-    color: $danger-color;
+    color: $color-danger;
 
     &:hover {
-        background: $danger-color-alpha;
+        background: $color-danger-subtle;
     }
 }
 </style>

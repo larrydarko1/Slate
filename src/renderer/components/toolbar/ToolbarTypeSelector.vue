@@ -166,8 +166,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     top: 100%;
     left: 0;
     margin-top: $space-3;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
+    background: $color-bg-surface;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
     box-shadow: $shadow-lg;
     padding: $space-3;
@@ -184,17 +184,17 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     border: none;
     border-radius: $border-radius;
     background: transparent;
-    color: $text-primary;
+    color: $color-text;
     font-size: $font-size-base;
     cursor: pointer;
     transition: background $duration-quick;
 
     &:hover {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 
     &.active {
-        background: $accent-color-alpha;
+        background: $color-accent-subtle;
         font-weight: $font-weight-semibold;
     }
 }
@@ -206,39 +206,39 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     border-radius: $border-radius-xs;
     min-width: $size-16;
     text-align: center;
-    background: $bg-tertiary;
-    color: $text-muted;
+    background: $color-bg-subtle;
+    color: $color-text-muted;
 
     &.badge-integer {
-        background: $type-text-alpha;
-        color: $type-text;
+        background: $color-type-text-subtle;
+        color: $color-type-text;
     }
 
     &.badge-float {
-        background: $type-number-alpha;
-        color: $type-number;
+        background: $color-type-number-subtle;
+        color: $color-type-number;
     }
 
     &.badge-currency-eur {
-        background: $type-currency-alpha;
-        color: $type-currency;
+        background: $color-type-currency-subtle;
+        color: $color-type-currency;
     }
 
     &.badge-currency-usd {
-        background: $type-percent-alpha;
-        color: $type-percent;
+        background: $color-type-percent-subtle;
+        color: $color-type-percent;
     }
 
     &.badge-text {
-        background: $type-date-alpha;
-        color: $type-date;
+        background: $color-type-date-subtle;
+        color: $color-type-date;
     }
 
     &.badge-checkbox,
     &.badge-rating,
     &.badge-stepper {
-        background: $type-boolean-alpha;
-        color: $type-boolean;
+        background: $color-type-boolean-subtle;
+        color: $color-type-boolean;
     }
 }
 

@@ -1,0 +1,24 @@
+// Theme emission: turns the maps in _variables.scss into custom properties.
+// Its own partial because _variables.scss is injected into every SFC, and a rule
+// there would ship once per component. Only index.scss reaches this file.
+// `:root` shares the dark block so the first frame, painted before Toolbar.vue
+// sets `data-theme`, can never disagree with the dark theme.
+
+@use '@/renderer/styles/variables' as *;
+
+@mixin emit-theme($map, $scheme) {
+    color-scheme: $scheme;
+
+    @each $key, $value in $map {
+        --color-#{$key}: #{$value};
+    }
+}
+
+:root,
+[data-theme='dark'] {
+    @include emit-theme($theme-dark, dark);
+}
+
+[data-theme='light'] {
+    @include emit-theme($theme-light, light);
+}

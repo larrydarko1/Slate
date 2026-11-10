@@ -29,7 +29,7 @@
     padding: 0 $space-6;
     border-radius: $border-radius-md;
     background: transparent;
-    color: $text-muted;
+    color: $color-text-muted;
     font-size: $font-size-base;
     font-weight: $font-weight-medium;
 
@@ -42,12 +42,12 @@
     }
 
     &:hover {
-        background: $bg-hover;
-        color: $text-primary;
+        background: $color-bg-hover;
+        color: $color-text;
     }
 
     &:active {
-        background: $bg-selected;
+        background: $color-bg-pressed;
     }
 
     // Extra room on the trailing side, where the label sits.
@@ -69,8 +69,8 @@
 // replaced the pair of `!important`s this rule used to carry.
 .tb.tb-active,
 .tb-active.tb {
-    background: $accent-color-alpha;
-    color: $accent-color;
+    background: $color-accent-subtle;
+    color: $color-accent;
 }
 
 // Custom-colour footer, shared by the ColorPicker dropdown and the Toolbar
@@ -81,11 +81,11 @@
     gap: $space-7;
     margin-top: $space-5;
     padding-top: $space-5;
-    border-top: $border-width-thin $border-color;
+    border-top: $border-width-thin $color-border;
 }
 
 .color-custom-label {
     font-size: $font-size-sm;
-    color: $text-muted;
+    color: $color-text-muted;
     font-weight: $font-weight-medium;
 }

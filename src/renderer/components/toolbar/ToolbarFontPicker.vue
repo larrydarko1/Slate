@@ -133,8 +133,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     top: 100%;
     left: 0;
     margin-top: $space-3;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
+    background: $color-bg-surface;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
     box-shadow: $shadow-lg;
     padding: $space-3;
@@ -151,7 +151,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     border: none;
     border-radius: $border-radius;
     background: transparent;
-    color: $text-primary;
+    color: $color-text;
     font-size: $font-size-md;
     text-align: left;
     cursor: pointer;
@@ -159,11 +159,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     white-space: nowrap;
 
     &:hover {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 
     &.active {
-        background: $accent-color-alpha;
+        background: $color-accent-subtle;
         font-weight: $font-weight-semibold;
     }
 }

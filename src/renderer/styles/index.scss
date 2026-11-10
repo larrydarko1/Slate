@@ -3,11 +3,10 @@
 
 // ── Architecture ──────────────────────────────────────────────────────────────
 // index.scss       → this file; `@use`s every partial that emits
-//   _tokens.scss     → colours that are the same in every theme
-//   _themes.scss     → theme palettes, as CSS custom properties
+//   _theme.scss      → emits the theme maps as CSS custom properties
 //   _base.scss       → reset, element defaults, drag regions, scrollbar
 //   components/      → classes shared by 2+ unrelated components
-// _variables.scss  → design tokens, theme aliases and mixins. EMITS NOTHING, and
+// _variables.scss  → design tokens, theme maps, aliases and mixins. EMITS NOTHING, and
 //                    is the only module electron.vite.config.ts injects into
 //                    every SFC
 
@@ -19,7 +18,6 @@
 // Nothing `@use`s this file, so it forwards nothing: a `@forward` here would do
 // nothing.
 
-@use '@/renderer/styles/tokens';
-@use '@/renderer/styles/themes';
+@use '@/renderer/styles/theme';
 @use '@/renderer/styles/base';
 @use '@/renderer/styles/components';

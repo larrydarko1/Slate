@@ -290,8 +290,8 @@ function cssVar(name: string): string {
 
 function readThemeColors(): { textPrimary: string; textMuted: string; borderColor: string } {
     return {
-        textPrimary: cssVar('--text-primary'),
-        textMuted: cssVar('--text-muted'),
-        borderColor: cssVar('--border-color'),
+        textPrimary: cssVar('--color-text'),
+        textMuted: cssVar('--color-text-muted'),
+        borderColor: cssVar('--color-border'),
     };
 }

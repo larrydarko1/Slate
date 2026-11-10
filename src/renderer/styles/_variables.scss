@@ -1,9 +1,8 @@
 // Design tokens — every `$`-name and mixin the app is allowed to use.
-// Owns: the typography, size, motion, depth and opacity scales, the SCSS
-// aliases that point at the theme custom properties, and the mixins.
-// Does NOT own: the palettes themselves (_themes.scss), which are the only part
-// of the design system that changes at runtime.
-// electron.vite.config.ts injects this file into all 15 SFC compilations. Nothing
+// Owns: the typography, size, motion, depth and opacity scales, the theme maps,
+// the `$color-*` aliases that point at their custom properties, and the mixins.
+// Does NOT own: turning the maps into CSS (_theme.scss).
+// electron.vite.config.ts injects this file into every SFC compilation. Nothing
 // here emits a byte of CSS, which is what makes that safe.
 
 // ── Typography ────────────────────────────────────────────────────────────────
@@ -176,82 +175,180 @@ $z-modal-raised: 1001;
 $z-tooltip: 1002;
 $z-tooltip-raised: 1003;
 
-// ── Theme aliases ─────────────────────────────────────────────────────────────
+// ── Theme maps ────────────────────────────────────────────────────────────────
 
-// Each one is a `var()` reference, not a colour. That is deliberate: it is what
-// lets a component write `$bg-primary` and still repaint on a theme switch.
-// The consequence is that these must NEVER be passed to a SCSS colour function
-// (`rgba`, `darken`, `color.adjust`) — Sass sees the literal text `var(--…)`
-// and fails. Use CSS `color-mix()` instead:
-//   color-mix(in srgb, $accent-color 12%, transparent)
+// One map per theme; _theme.scss emits each key as `--color-<key>`. Every key
+// appears in both maps, and scss-standards fails on one that doesn't: a key
+// missing from light would fall through to the dark value for light users only.
 
-$text1: var(--text1);
-$text2: var(--text2);
-$text3: var(--text3);
-$text-primary: var(--text-primary);
-$text-muted: var(--text-muted);
-$base1: var(--base1);
-$base2: var(--base2);
-$base3: var(--base3);
-$base4: var(--base4);
-$bg-primary: var(--bg-primary);
-$bg-secondary: var(--bg-secondary);
-$bg-tertiary: var(--bg-tertiary);
-$bg-hover: var(--bg-hover);
-$bg-selected: var(--bg-selected);
-$border-color: var(--border-color);
-$accent-color: var(--accent-color);
-$accent-color-alpha: var(--accent-color-alpha);
-$danger-color: var(--danger-color);
-$danger-color-alpha: var(--danger-color-alpha);
-$scrollbar-thumb: var(--scrollbar-thumb);
-$scrollbar-thumb-hover: var(--scrollbar-thumb-hover);
-$shadow-sm: var(--shadow-sm);
-$shadow-md: var(--shadow-md);
-$shadow-lg: var(--shadow-lg);
+$theme-dark: (
+    'text': #fafafa,
+    'text-muted': #71717a,
+    'text-faint': #3f3f46,
+    'on-accent': #fff,
+    'bg-surface': #18181b,
+    'bg-chrome': #1c1c1f,
+    'bg-subtle': #27272a,
+    'bg-hover': #2c2c30,
+    'bg-pressed': #3f3f46,
+    'border': #2e2e33,
+    'accent': #3e61b4,
+    'accent-subtle': rgb(62 97 180 / 12%),
+    'danger': #ef4444,
+    'danger-subtle': rgb(239 68 68 / 12%),
+    'scrollbar': #3f3f46,
+    'scrollbar-hover': #52525b,
+    'shadow-sm': rgb(0 0 0 / 20%),
+    'shadow-md': rgb(0 0 0 / 30%),
+    'shadow-lg': rgb(0 0 0 / 40%),
+    'note-bg': #3d3100,
+    'note-border': #78600a,
+    'note-text': #fef3c7,
+    'note-placeholder': #b89f4a,
+    'note-accent': #f5a623,
+    'note-accent-hover': #e09510,
+    'note-muted': #b89f4a,
+    'type-text': #3b82f6,
+    'type-text-subtle': rgb(59 130 246 / 12%),
+    'type-number': #6366f1,
+    'type-number-subtle': rgb(99 102 241 / 12%),
+    'type-currency': #10b981,
+    'type-currency-subtle': rgb(16 185 129 / 12%),
+    'type-percent': #22c55e,
+    'type-percent-subtle': rgb(34 197 94 / 12%),
+    'type-date': #f59e0b,
+    'type-date-subtle': rgb(245 158 11 / 12%),
+    'type-boolean': #8b5cf6,
+    'type-boolean-subtle': rgb(139 92 246 / 12%),
+    'formula-bg': rgb(245 158 11 / 12%),
+    'formula-border': rgb(245 158 11 / 30%),
+    'formula-text': #fbbf24,
+    'formula-dot': #f59e0b,
+    'scrim-faint': rgb(0 0 0 / 4%),
+    'scrim-soft': rgb(0 0 0 / 8%),
+    'scrim-medium': rgb(0 0 0 / 12%),
+    'scrim-heavy': rgb(0 0 0 / 16%),
+    'scrim-strong': rgb(0 0 0 / 25%),
+    'glass-soft': rgb(255 255 255 / 20%),
+    'glass': rgb(255 255 255 / 30%),
+    'glass-strong': rgb(255 255 255 / 70%),
+);
 
-// Sticky notes — their own paper palette, not the surface tokens.
-$note-bg: var(--note-bg);
-$note-border: var(--note-border);
-$note-text: var(--note-text);
-$note-placeholder: var(--note-placeholder);
-$note-accent: var(--note-accent);
-$note-accent-hover: var(--note-accent-hover);
-$note-on-accent: var(--note-on-accent);
-$note-muted: var(--note-muted);
+$theme-light: (
+    'text': #1a1a1a,
+    'text-muted': #71717a,
+    'text-faint': #c8c8c8,
+    'on-accent': #fff,
+    'bg-surface': #fff,
+    'bg-chrome': #fafafa,
+    'bg-subtle': #f4f4f5,
+    'bg-hover': #f0f0f1,
+    'bg-pressed': #e4e4e7,
+    'border': #e4e4e7,
+    'accent': #3e61b4,
+    'accent-subtle': rgb(62 97 180 / 8%),
+    'danger': #ef4444,
+    'danger-subtle': rgb(239 68 68 / 10%),
+    'scrollbar': #d4d4d8,
+    'scrollbar-hover': #a1a1aa,
+    'shadow-sm': rgb(0 0 0 / 4%),
+    'shadow-md': rgb(0 0 0 / 6%),
+    'shadow-lg': rgb(0 0 0 / 8%),
+    'note-bg': #fef9e7,
+    'note-border': #f0d96c,
+    'note-text': #3d3100,
+    'note-placeholder': #b89f4a,
+    'note-accent': #f5a623,
+    'note-accent-hover': #e09510,
+    'note-muted': #b89f4a,
+    'type-text': #3b82f6,
+    'type-text-subtle': rgb(59 130 246 / 12%),
+    'type-number': #6366f1,
+    'type-number-subtle': rgb(99 102 241 / 12%),
+    'type-currency': #10b981,
+    'type-currency-subtle': rgb(16 185 129 / 12%),
+    'type-percent': #22c55e,
+    'type-percent-subtle': rgb(34 197 94 / 12%),
+    'type-date': #f59e0b,
+    'type-date-subtle': rgb(245 158 11 / 12%),
+    'type-boolean': #8b5cf6,
+    'type-boolean-subtle': rgb(139 92 246 / 12%),
+    'formula-bg': rgb(245 158 11 / 10%),
+    'formula-border': rgb(245 158 11 / 35%),
+    'formula-text': #b45309,
+    'formula-dot': #f59e0b,
+    'scrim-faint': rgb(0 0 0 / 4%),
+    'scrim-soft': rgb(0 0 0 / 8%),
+    'scrim-medium': rgb(0 0 0 / 12%),
+    'scrim-heavy': rgb(0 0 0 / 16%),
+    'scrim-strong': rgb(0 0 0 / 25%),
+    'glass-soft': rgb(255 255 255 / 20%),
+    'glass': rgb(255 255 255 / 30%),
+    'glass-strong': rgb(255 255 255 / 70%),
+);
 
-// Cell value types — the swatch a formula result or a cell format is tagged
-// with. Fixed hues rather than theme colours: they encode meaning, and the
-// meaning does not change with the theme.
-$type-text: var(--type-text);
-$type-text-alpha: var(--type-text-alpha);
-$type-number: var(--type-number);
-$type-number-alpha: var(--type-number-alpha);
-$type-currency: var(--type-currency);
-$type-currency-alpha: var(--type-currency-alpha);
-$type-percent: var(--type-percent);
-$type-percent-alpha: var(--type-percent-alpha);
-$type-date: var(--type-date);
-$type-date-alpha: var(--type-date-alpha);
-$type-boolean: var(--type-boolean);
-$type-boolean-alpha: var(--type-boolean-alpha);
+// ── Colour aliases ────────────────────────────────────────────────────────────
 
-// Overlay scrims and the fills painted over the sheet's own surface.
-$scrim-faint: var(--scrim-faint);
-$scrim-soft: var(--scrim-soft);
-$scrim-medium: var(--scrim-medium);
-$scrim-heavy: var(--scrim-heavy);
-$scrim-strong: var(--scrim-strong);
-$on-accent: var(--on-accent);
-$glass-soft: var(--glass-soft);
-$glass: var(--glass);
-$glass-strong: var(--glass-strong);
+// Each one is a `var()` reference, not a colour, which is what lets a component
+// repaint on a theme switch. So never pass one to a Sass colour function
+// (`rgba`, `darken`, `color.adjust`); use CSS `color-mix()`:
+//   color-mix(in srgb, $color-accent 12%, transparent)
 
-// Formula-mode badge on the canvas tab strip.
-$formula-bg: var(--formula-bg);
-$formula-border: var(--formula-border);
-$formula-text: var(--formula-text);
-$formula-dot: var(--formula-dot);
+$color-text: var(--color-text);
+$color-text-muted: var(--color-text-muted);
+$color-text-faint: var(--color-text-faint);
+$color-on-accent: var(--color-on-accent);
+$color-bg-surface: var(--color-bg-surface);
+$color-bg-chrome: var(--color-bg-chrome);
+$color-bg-subtle: var(--color-bg-subtle);
+$color-bg-hover: var(--color-bg-hover);
+$color-bg-pressed: var(--color-bg-pressed);
+$color-border: var(--color-border);
+$color-accent: var(--color-accent);
+$color-accent-subtle: var(--color-accent-subtle);
+$color-danger: var(--color-danger);
+$color-danger-subtle: var(--color-danger-subtle);
+$color-scrollbar: var(--color-scrollbar);
+$color-scrollbar-hover: var(--color-scrollbar-hover);
+$color-shadow-sm: var(--color-shadow-sm);
+$color-shadow-md: var(--color-shadow-md);
+$color-shadow-lg: var(--color-shadow-lg);
+$color-note-bg: var(--color-note-bg);
+$color-note-border: var(--color-note-border);
+$color-note-text: var(--color-note-text);
+$color-note-placeholder: var(--color-note-placeholder);
+$color-note-accent: var(--color-note-accent);
+$color-note-accent-hover: var(--color-note-accent-hover);
+$color-note-muted: var(--color-note-muted);
+$color-type-text: var(--color-type-text);
+$color-type-text-subtle: var(--color-type-text-subtle);
+$color-type-number: var(--color-type-number);
+$color-type-number-subtle: var(--color-type-number-subtle);
+$color-type-currency: var(--color-type-currency);
+$color-type-currency-subtle: var(--color-type-currency-subtle);
+$color-type-percent: var(--color-type-percent);
+$color-type-percent-subtle: var(--color-type-percent-subtle);
+$color-type-date: var(--color-type-date);
+$color-type-date-subtle: var(--color-type-date-subtle);
+$color-type-boolean: var(--color-type-boolean);
+$color-type-boolean-subtle: var(--color-type-boolean-subtle);
+$color-formula-bg: var(--color-formula-bg);
+$color-formula-border: var(--color-formula-border);
+$color-formula-text: var(--color-formula-text);
+$color-formula-dot: var(--color-formula-dot);
+$color-scrim-faint: var(--color-scrim-faint);
+$color-scrim-soft: var(--color-scrim-soft);
+$color-scrim-medium: var(--color-scrim-medium);
+$color-scrim-heavy: var(--color-scrim-heavy);
+$color-scrim-strong: var(--color-scrim-strong);
+$color-glass-soft: var(--color-glass-soft);
+$color-glass: var(--color-glass);
+$color-glass-strong: var(--color-glass-strong);
+
+// Shadows fork by strength, not shape, so the geometry stays here.
+$shadow-sm: 0 1px 2px $color-shadow-sm;
+$shadow-md: 0 2px 8px $color-shadow-md;
+$shadow-lg: 0 4px 16px $color-shadow-lg;
 
 // ── Mixins ────────────────────────────────────────────────────────────────────
 // The multi-declaration patterns that were being retyped by hand. A mixin

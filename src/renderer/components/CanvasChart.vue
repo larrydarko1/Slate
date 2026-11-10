@@ -150,13 +150,13 @@ ChartJS.register(
     display: flex;
     flex-direction: column;
     overflow: visible;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
+    background: $color-bg-surface;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
     box-shadow: $shadow-sm;
 
     &:hover:not(.active) {
-        border-color: $text-muted;
+        border-color: $color-text-muted;
     }
 }
 
@@ -165,7 +165,7 @@ ChartJS.register(
     padding: $space-5 $space-9 0;
     font-size: $font-size-md;
     font-weight: $font-weight-semibold;
-    color: $text-primary;
+    color: $color-text;
     min-height: $size-17;
 }
 
@@ -179,7 +179,7 @@ ChartJS.register(
     padding: 0;
 
     &::placeholder {
-        color: $text-muted;
+        color: $color-text-muted;
     }
 }
 
@@ -203,7 +203,7 @@ ChartJS.register(
     justify-content: center;
     height: 100%;
     text-align: center;
-    color: $text-muted;
+    color: $color-text-muted;
 }
 
 .chart-empty-icon {

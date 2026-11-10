@@ -149,8 +149,8 @@ function onCustomColor(e: Event): void {
     top: 100%;
     left: 0;
     margin-top: $space-3;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
+    background: $color-bg-surface;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-xl;
     box-shadow: $shadow-lg;
     padding: $space-9;
@@ -166,7 +166,7 @@ function onCustomColor(e: Event): void {
 .color-dropdown-header {
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
-    color: $text-muted;
+    color: $color-text-muted;
     margin-bottom: $space-7;
     letter-spacing: $letter-spacing-wide;
 }
@@ -182,7 +182,7 @@ function onCustomColor(e: Event): void {
     width: $size-13;
     height: $size-13;
     border-radius: $border-radius-sm;
-    border: $border-width-thin $scrim-soft;
+    border: $border-width-thin $color-scrim-soft;
     cursor: pointer;
     transition:
         transform $duration-quick,
@@ -192,16 +192,16 @@ function onCustomColor(e: Event): void {
     &:hover {
         transform: scale(1.2);
         z-index: $z-base;
-        box-shadow: 0 $size-0 $size-3 $scrim-strong;
+        box-shadow: 0 $size-0 $size-3 $color-scrim-strong;
     }
 
     &.active {
-        outline: 2px solid $accent-color;
+        outline: 2px solid $color-accent;
         outline-offset: 1px;
     }
 
     &.is-light {
-        border-color: $scrim-strong;
+        border-color: $color-scrim-strong;
     }
 }
 
@@ -214,21 +214,21 @@ function onCustomColor(e: Event): void {
     border: none;
     border-radius: $border-radius;
     background: transparent;
-    color: $text-muted;
+    color: $color-text-muted;
     font-size: $font-size-sm;
     cursor: pointer;
     transition: background $duration-quick;
 
     &:hover {
-        background: $bg-hover;
-        color: $text-primary;
+        background: $color-bg-hover;
+        color: $color-text;
     }
 }
 
 .color-custom-input {
     width: $size-17;
     height: $size-14;
-    border: $border-width-thin $border-color;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-sm;
     padding: $space-0;
     cursor: pointer;

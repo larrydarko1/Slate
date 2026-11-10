@@ -1,7 +1,7 @@
 // Global reset and element defaults.
 // Owns: box-sizing, the document-level typography, the Electron drag regions,
 // the scrollbar, and the focus/selection treatment.
-// Does NOT own: the palette it paints with (_themes.scss) or anything scoped
+// Does NOT own: the palette it paints with (_theme.scss) or anything scoped
 // to a single component.
 // Reached only through index.scss, which main.ts imports exactly once. Every
 // rule below is unscoped, so a second import would emit all of it twice.
@@ -22,8 +22,8 @@
     font-family: $font-family;
     line-height: $line-height-base;
     font-weight: $font-weight-normal;
-    color: $text1;
-    background-color: $bg-primary;
+    color: $color-text;
+    background-color: $color-bg-surface;
     font-synthesis: none;
     text-rendering: optimizelegibility;
     -webkit-font-smoothing: antialiased;
@@ -118,24 +118,24 @@ a,
 }
 
 ::-webkit-scrollbar-thumb {
-    background: $scrollbar-thumb;
+    background: $color-scrollbar;
     border-radius: $border-radius-xs;
     transition: background $transition-slow;
 
     &:hover {
-        background: $scrollbar-thumb-hover;
+        background: $color-scrollbar-hover;
     }
 }
 
 // ── Focus & Selection ─────────────────────────────────────────────────────────
 
 :focus-visible {
-    outline: $border-width-thick $accent-color;
+    outline: $border-width-thick $color-accent;
     outline-offset: -$size-1;
     border-radius: $border-radius-sm;
 }
 
 ::selection {
-    background: $accent-color-alpha;
-    color: $text1;
+    background: $color-accent-subtle;
+    color: $color-text;
 }
