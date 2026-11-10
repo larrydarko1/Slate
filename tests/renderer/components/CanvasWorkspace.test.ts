@@ -71,13 +71,6 @@ describe('CanvasWorkspace', () => {
         expect(style).toContain('scale(2)');
     });
 
-    it('scales the grid background with the zoom', async () => {
-        ss.setZoom(2);
-        await wrapper.vm.$nextTick();
-        const style = wrapper.get('.canvas-bg').attributes('style') ?? '';
-        expect(style).toContain('48px 48px');
-    });
-
     describe('panning', () => {
         it('moves the canvas with a drag on the background', async () => {
             await wrapper.get('.canvas-bg').trigger('mousedown', { button: 0, clientX: 0, clientY: 0 });

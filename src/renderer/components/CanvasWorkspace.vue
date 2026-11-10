@@ -14,15 +14,6 @@ const contentStyle = computed((): { transform: string; transformOrigin: string }
     transformOrigin: '0 0',
 }));
 
-const bgStyle = computed((): { backgroundPosition: string; backgroundSize: string } => {
-    const zoom = ss.canvasZoom.value;
-    const size = 24 * zoom;
-    return {
-        backgroundPosition: `${ss.canvasOffset.value.x}px ${ss.canvasOffset.value.y}px`,
-        backgroundSize: `${size}px ${size}px`,
-    };
-});
-
 // ── Canvas panning ──
 
 let panState: { startX: number; startY: number; origX: number; origY: number } | null = null;
@@ -99,9 +90,7 @@ function onWheel(e: WheelEvent): void {
         @mousedown="onCanvasMouseDown"
         @wheel="onWheel">
         <!-- Grid dot pattern background -->
-        <div
-            class="canvas-bg"
-            :style="bgStyle"></div>
+        <div class="canvas-bg"></div>
 
         <!-- Pannable content layer -->
         <div
@@ -159,7 +148,6 @@ function onWheel(e: WheelEvent): void {
     inset: 0;
     z-index: 0;
     background-color: $color-bg;
-    background-size: 24px 24px;
     pointer-events: all;
 }
 
