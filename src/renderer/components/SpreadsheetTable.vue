@@ -2,6 +2,8 @@
 import { computed, nextTick, ref, toRef, watch, useTemplateRef } from 'vue';
 
 import ContextMenu from '@/renderer/components/ContextMenu.vue';
+import IconCloseSmall from '@/renderer/components/icons/IconCloseSmall.vue';
+import IconPlus from '@/renderer/components/icons/IconPlus.vue';
 import CellDisplay from '@/renderer/components/table/CellDisplay.vue';
 import CellSettingsPanel from '@/renderer/components/table/CellSettingsPanel.vue';
 import NoteEditor from '@/renderer/components/table/NoteEditor.vue';
@@ -351,17 +353,15 @@ watch(
                 <button
                     class="table-close-btn"
                     title="Delete table"
-                    @click.stop="$emit('remove')"
-                    >×</button
-                >
+                    aria-label="Delete table"
+                    @click.stop="$emit('remove')">
+                    <IconCloseSmall />
+                </button>
             </div>
 
             <!-- Table grid -->
             <div class="table-grid-wrapper">
-                <table
-                    class="table-grid"
-                    cellpadding="0"
-                    cellspacing="0">
+                <table class="table-grid">
                     <thead>
                         <tr>
                             <th
@@ -405,7 +405,7 @@ watch(
                                 class="add-col-header"
                                 title="Drag to add columns"
                                 @mousedown.stop.prevent="startAddColDrag($event)">
-                                <span class="add-handle add-handle-col">≡</span>
+                                <IconPlus class="add-handle" />
                             </th>
                         </tr>
                     </thead>
@@ -520,7 +520,7 @@ watch(
                                 :colspan="table.columns.length + 2"
                                 title="Drag to add rows"
                                 @mousedown.stop.prevent="startAddRowDrag($event)">
-                                <span class="add-handle add-handle-row">≡</span>
+                                <IconPlus class="add-handle" />
                             </td>
                         </tr>
                     </tbody>
@@ -566,16 +566,12 @@ watch(
     position: relative;
     border-radius: $border-radius-lg;
     overflow: hidden;
-    box-shadow: $shadow-md;
     border: $border-width-thin $color-border;
     background: $color-bg-surface;
     outline: none;
-    transition:
-        box-shadow $duration-base,
-        border-color $duration-base;
+    transition: border-color $duration-base;
 
     &.active {
-        box-shadow: $shadow-lg;
         border-color: $color-accent;
     }
 
@@ -601,10 +597,9 @@ watch(
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: $size-18;
-    padding: 0 $space-3;
-    background: $color-accent;
-    color: $color-on-accent;
+    height: $size-19;
+    padding: 0 $space-1 0 $space-3;
+    color: $color-text;
     cursor: grab;
     user-select: none;
 
@@ -621,38 +616,38 @@ watch(
 }
 
 .table-name-input {
-    border: none;
+    border: $border-width-thin $color-accent;
     outline: none;
-    background: $color-glass-soft;
-    color: $color-on-accent;
-    font-size: $font-size-base;
+    background: $color-bg-surface;
+    color: $color-text;
+    font: inherit;
     font-weight: $font-weight-semibold;
     border-radius: $border-radius-sm;
-    padding: $space-0 $space-2;
-    width: $size-23;
-
-    &::selection {
-        background: $color-glass;
-    }
+    padding: $space-0 $space-1;
+    width: $size-29;
 }
 
 .table-close-btn {
-    width: $size-13;
-    height: $size-13;
+    width: $size-15;
+    height: $size-15;
     border: none;
     border-radius: $border-radius-sm;
     background: transparent;
-    color: $color-glass-strong;
-    font-size: $font-size-lg;
-    line-height: $line-height-none;
+    color: $color-text-muted;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+
+    svg {
+        width: $size-9;
+        height: $size-9;
+    }
 
     &:hover {
-        background: $color-glass-soft;
-        color: $color-on-accent;
+        background: $color-danger-subtle;
+        color: $color-danger;
     }
 }
 
@@ -665,6 +660,10 @@ watch(
 .table-grid {
     border-collapse: collapse;
     table-layout: fixed;
+
+    :where(th, td) {
+        padding: 0;
+    }
 }
 
 .corner-cell {
@@ -682,7 +681,7 @@ watch(
     }
 
     &.all-selected {
-        background: $color-accent;
+        background: color-mix(in srgb, $color-accent 16%, $color-bg-chrome);
     }
 }
 
@@ -705,8 +704,9 @@ watch(
     }
 
     &.col-selected {
-        background: $color-accent;
-        color: $color-on-accent;
+        background: color-mix(in srgb, $color-accent 16%, $color-bg-chrome);
+        color: $color-accent;
+        font-weight: $font-weight-semibold;
     }
 }
 
@@ -760,8 +760,9 @@ watch(
     }
 
     &.row-selected {
-        background: $color-accent;
-        color: $color-on-accent;
+        background: color-mix(in srgb, $color-accent 16%, $color-bg-chrome);
+        color: $color-accent;
+        font-weight: $font-weight-semibold;
     }
 }
 
@@ -805,7 +806,7 @@ watch(
     }
 
     &.lifted {
-        opacity: 0.4;
+        opacity: $opacity-low;
     }
 
     &.merged-cell {
@@ -818,7 +819,7 @@ watch(
     }
 
     &:hover:not(.selected, .in-selection) {
-        background: $color-accent-subtle;
+        background: $color-bg-hover;
     }
 }
 
@@ -862,15 +863,11 @@ watch(
     width: $size-7;
     height: $size-7;
     background: $color-accent;
-    border: 1.5px solid $color-on-accent;
-    border-radius: $border-radius-sm;
+    border: $border-width-thin $color-bg-surface;
+    border-radius: $border-radius-round;
     cursor: crosshair;
     z-index: $z-raised-high;
     pointer-events: auto;
-
-    @include dark {
-        border-color: $color-bg-surface;
-    }
 }
 
 /* ––––– Row / Column reorder drop indicators ––––– */
@@ -921,19 +918,9 @@ tr.reorder-row-drop-after > td {
 }
 
 .add-handle {
-    font-size: $font-size-base;
-    font-weight: $font-weight-semibold;
+    width: $size-8;
+    height: $size-8;
     color: $color-text-muted;
-    line-height: 2;
-    letter-spacing: 1px;
-}
-
-.add-handle-row {
-    display: inline-block;
-    transform: rotate(90deg);
-}
-
-.add-handle-col {
-    display: inline-block;
+    vertical-align: middle;
 }
 </style>

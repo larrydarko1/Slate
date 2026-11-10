@@ -193,9 +193,6 @@ $theme-dark: (
     'scrim-medium': rgb(0 0 0 / 12%),
     'scrim-heavy': rgb(0 0 0 / 16%),
     'scrim-strong': rgb(0 0 0 / 25%),
-    'glass-soft': rgb(255 255 255 / 20%),
-    'glass': rgb(255 255 255 / 30%),
-    'glass-strong': rgb(255 255 255 / 70%),
 );
 
 $theme-light: (
@@ -229,9 +226,6 @@ $theme-light: (
     'scrim-medium': rgb(0 0 0 / 12%),
     'scrim-heavy': rgb(0 0 0 / 16%),
     'scrim-strong': rgb(0 0 0 / 25%),
-    'glass-soft': rgb(255 255 255 / 20%),
-    'glass': rgb(255 255 255 / 30%),
-    'glass-strong': rgb(255 255 255 / 70%),
 );
 
 // ── Colour aliases ────────────────────────────────────────────────────────────
@@ -271,9 +265,6 @@ $color-scrim-soft: var(--color-scrim-soft);
 $color-scrim-medium: var(--color-scrim-medium);
 $color-scrim-heavy: var(--color-scrim-heavy);
 $color-scrim-strong: var(--color-scrim-strong);
-$color-glass-soft: var(--color-glass-soft);
-$color-glass: var(--color-glass);
-$color-glass-strong: var(--color-glass-strong);
 
 // Shadows fork by strength, not shape, so the geometry stays here.
 $shadow-sm: 0 1px 2px $color-shadow-sm;
