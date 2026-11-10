@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The "Unsaved changes" notice in the tab bar is grey instead of amber, so yellow now only ever marks a note.
 - Menus, toolbars and cells use 13px text, up from 12px, and the spacing around controls follows one 4px grid.
 - The toolbar shows New, Open, Save, Merge and Unmerge as icons, with their names on hover, so the whole toolbar fits a smaller window. With a text box selected it shows only the controls that apply to text boxes. Toolbar buttons now have names that screen readers announce, and bold, italic and alignment report whether they are on.
+- A range a formula or chart refers to is outlined once around its outside, instead of with a box around every cell in it.
 - Decimal and percent numbers show at most two decimals, so `=AVERAGE` of three cells shows 0.67 rather than 0.6666666667, and a typed 3.14159 shows 3.14. The full number is kept and used in formulas, and the toolbar's decimal buttons show more or fewer digits.
 - Formatting and lint rules now come from the shared `@larrydarko/lint-config` package.
 - Filling or pasting a formula now shifts its references into other tables as well, so `=Sales::B2` filled down becomes `=Sales::B3`. Anchor the reference with `$` to keep it fixed.

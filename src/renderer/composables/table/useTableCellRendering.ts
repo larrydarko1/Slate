@@ -77,11 +77,25 @@ export function useTableCellRendering(
         return match !== undefined ? match.color : null;
     }
 
+    function findHighlightColor(ci: number, ri: number): string | null {
+        return findRefHighlightColor(ci, ri) ?? findChartHighlightColor(ci, ri);
+    }
+
+    // A cell draws only the edges its neighbours don't share, so a referenced
+    // range reads as one outline rather than a box round every cell in it.
     function cellRefStyle(ci: number, ri: number): Record<string, string> | undefined {
-        const color = findRefHighlightColor(ci, ri) ?? findChartHighlightColor(ci, ri);
+        const color = findHighlightColor(ci, ri);
         if (color === null) return undefined;
+        const edges = [
+            { col: ci, row: ri - 1, shadow: 'inset 0 2px 0' },
+            { col: ci, row: ri + 1, shadow: 'inset 0 -2px 0' },
+            { col: ci - 1, row: ri, shadow: 'inset 2px 0 0' },
+            { col: ci + 1, row: ri, shadow: 'inset -2px 0 0' },
+        ]
+            .filter(({ col, row }): boolean => findHighlightColor(col, row) !== color)
+            .map(({ shadow }): string => `${shadow} ${color}`);
         return {
-            boxShadow: `inset 0 0 0 2px ${color}`,
+            boxShadow: edges.length > 0 ? edges.join(', ') : 'none',
             background: `${color}12`,
         };
     }
