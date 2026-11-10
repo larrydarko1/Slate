@@ -11,21 +11,16 @@ $font-family: -apple-system, blinkmacsystemfont, 'Inter', 'Segoe UI', roboto, ox
 $font-family-mono: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
 
 $font-weight-normal: 400;
-$font-weight-medium: 500;
 $font-weight-semibold: 600;
-$font-weight-bold: 700;
 
 // rem, not em: these are the sizes em is measured AGAINST, so anchoring them to
 // the element's own font-size would make each one depend on its parent's.
-$font-size-2xs: 0.5625rem; // 9px
-$font-size-xs: 0.625rem; // 10px
+// Interface text is 13px: Slate is a data-dense tool, so the chrome stays small
+// enough to leave the canvas the room (ui-design.instructions.md → Typography).
 $font-size-sm: 0.6875rem; // 11px
-$font-size-base: 0.75rem; // 12px — the app's working size, not the browser's
-$font-size-md: 0.8125rem; // 13px
-$font-size-lg: 0.875rem; // 14px
-$font-size-xl: 1rem; // 16px
-$font-size-2xl: 1.125rem; // 18px
-$font-size-4xl: 2rem; // 32px
+$font-size-base: 0.8125rem; // 13px
+$font-size-lg: 0.9375rem; // 15px
+$font-size-xl: 1.25rem; // 20px
 
 $line-height-none: 1;
 $line-height-base: 1.5;
@@ -83,38 +78,24 @@ $border-width-thick: $size-1 solid;
 // ── Spacing ───────────────────────────────────────────────────────────────────
 
 // rem, so one anchor governs the whole app. `em` would tie a control's padding
-// to its own label — and Slate's chrome runs at 11-12px beside a canvas grid
-// drawn in device pixels, so font-relative geometry would drift out of step
-// with the sheet it sits next to. See the note in .stylelintrc.mjs.
-// The ladder is 1px-granular because it was derived from the values already in
-// the components rather than imposed on them; collapsing the thin rungs
-// ($space-6, -8, -10) is a design pass, not a mechanical one.
-$space-0: 0.0625rem; // 1px
-$space-1: 0.125rem; // 2px
-$space-2: 0.1875rem; // 3px
-$space-3: 0.25rem; // 4px
-$space-4: 0.3125rem; // 5px
-$space-5: 0.375rem; // 6px
-$space-6: 0.4375rem; // 7px
-$space-7: 0.5rem; // 8px
-$space-8: 0.5625rem; // 9px
-$space-9: 0.625rem; // 10px
-$space-10: 0.6875rem; // 11px
-$space-11: 0.75rem; // 12px
-$space-12: 1rem; // 16px
+// to its own label — and Slate's chrome sits beside a canvas grid drawn in
+// device pixels, so font-relative geometry would drift out of step with the
+// sheet it sits next to. See the note in .stylelintrc.mjs.
+// A 4px grid; $space-0 is the half step for optical nudges, not layout.
+$space-0: 0.125rem; // 2px
+$space-1: 0.25rem; // 4px
+$space-2: 0.5rem; // 8px
+$space-3: 0.75rem; // 12px
+$space-4: 1rem; // 16px
+$space-5: 1.5rem; // 24px
 
 // ── Radius ────────────────────────────────────────────────────────────────────
 
-$border-radius-hairline: 0.0625rem; // 1px
-$border-radius-2xs: 0.125rem; // 2px
-$border-radius-xs: 0.1875rem; // 3px
+// Controls inside an object take sm, buttons and inputs md, the objects and
+// menus themselves lg.
 $border-radius-sm: 0.25rem; // 4px
-$border-radius: 0.3125rem; // 5px
 $border-radius-md: 0.375rem; // 6px
 $border-radius-lg: 0.5rem; // 8px
-$border-radius-xl: 0.625rem; // 10px
-$border-radius-2xl: 0.75rem; // 12px
-$border-radius-3xl: 0.6875rem; // 11px
 
 // Every element that reached for `border-radius: 50%` is square, so a pill
 // radius renders identically — and unlike 50% it stays a capsule rather than

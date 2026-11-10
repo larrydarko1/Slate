@@ -223,7 +223,7 @@ watch(
     display: flex;
     align-items: center;
     height: $size-19;
-    padding: 0 $space-11;
+    padding: 0 $space-3;
     background: $color-bg-chrome;
     border-bottom: $border-width-thin $color-border;
     flex-shrink: 0;
@@ -239,7 +239,7 @@ watch(
 
     @include truncate;
 
-    padding-right: $space-7;
+    padding-right: $space-2;
     letter-spacing: $letter-spacing-tight;
 }
 
@@ -248,13 +248,13 @@ watch(
 }
 
 .type-badge {
-    font-size: $font-size-2xs;
-    font-weight: $font-weight-bold;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
     letter-spacing: 0.03em;
-    padding: $space-0 $space-4;
-    border-radius: $border-radius-xs;
+    padding: $space-0 $space-1;
+    border-radius: $border-radius-sm;
     white-space: nowrap;
-    margin-right: $space-5;
+    margin-right: $space-2;
     flex-shrink: 0;
     line-height: 1.7778;
     border: $border-width-thin $color-border;
@@ -265,7 +265,7 @@ watch(
     width: $size-0;
     height: $size-11;
     background: $color-border;
-    margin-right: $space-7;
+    margin-right: $space-2;
     flex-shrink: 0;
 }
 
@@ -273,12 +273,12 @@ watch(
     flex: 1;
     display: flex;
     align-items: center;
-    gap: $space-5;
+    gap: $space-2;
 }
 
 .fx-label {
     font-size: $font-size-sm;
-    font-weight: $font-weight-bold;
+    font-weight: $font-weight-semibold;
     color: $color-text-muted;
     flex-shrink: 0;
 }
@@ -298,7 +298,7 @@ watch(
     font-size: $font-size-base;
     font-family: $font-family;
     color: $color-text;
-    padding: $space-1 0;
+    padding: $space-0 0;
     position: relative;
     z-index: $z-base;
 
@@ -324,7 +324,7 @@ watch(
     pointer-events: none;
     font-size: $font-size-base;
     font-family: $font-family-mono;
-    padding: $space-1 0;
+    padding: $space-0 0;
     white-space: nowrap;
     overflow: hidden;
     z-index: 0;
@@ -340,7 +340,7 @@ watch(
 
 .ref-badge {
     display: inline;
-    border-radius: $border-radius-xs;
+    border-radius: $border-radius-sm;
     box-shadow: inset 0 0 0 $size-0;
     font-weight: $font-weight-semibold;
     font-size: $font-size-base;
@@ -355,7 +355,7 @@ watch(
     width: $size-16;
     height: $size-14;
     border: $border-width-thin $color-border;
-    border-radius: $border-radius;
+    border-radius: $border-radius-md;
     background: $color-bg-chrome;
     color: $color-text-muted;
     cursor: pointer;

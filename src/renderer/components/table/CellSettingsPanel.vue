@@ -100,9 +100,9 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
 .cell-settings {
     position: absolute;
     top: 0;
-    left: calc(100% + #{$space-7});
+    left: calc(100% + #{$space-2});
     width: $size-28;
-    padding: $space-7;
+    padding: $space-2;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
     background: $color-bg-surface;
@@ -113,7 +113,7 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
 }
 
 .cell-settings-title {
-    margin: 0 0 $space-7;
+    margin: 0 0 $space-2;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
     color: $color-text;
@@ -125,8 +125,8 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
     display: grid;
     grid-template-columns: 1fr 1fr;
     align-items: center;
-    gap: $space-1 $space-5;
-    margin-bottom: $space-5;
+    gap: $space-0 $space-2;
+    margin-bottom: $space-2;
 
     label {
         color: $color-text-muted;
@@ -135,7 +135,7 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
 
     input {
         min-width: 0;
-        padding: $space-1 $space-3;
+        padding: $space-0 $space-1;
         border: $border-width-thin $color-border;
         border-radius: $border-radius-sm;
         background: $color-bg-chrome;
@@ -153,12 +153,12 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
     grid-column: 1 / -1;
     margin: 0;
     color: $color-danger;
-    font-size: $font-size-xs;
+    font-size: $font-size-sm;
 }
 
 .cell-settings-hint {
-    margin: $space-7 0 0;
+    margin: $space-2 0 0;
     color: $color-text-muted;
-    font-size: $font-size-xs;
+    font-size: $font-size-sm;
 }
 </style>

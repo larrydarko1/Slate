@@ -35,7 +35,7 @@ defineEmits<{
     z-index: $z-tooltip;
     max-width: $size-26;
     min-width: $size-22;
-    padding: $space-7 $space-11;
+    padding: $space-2 $space-3;
     background: $color-note-bg;
     color: $color-note-text;
     border: $border-width-thin $color-note-border;

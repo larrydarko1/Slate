@@ -122,7 +122,7 @@ function onCustomColor(e: Event): void {
 }
 
 .color-btn {
-    padding-right: $space-1;
+    padding-right: $space-0;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     position: relative;
@@ -134,11 +134,11 @@ function onCustomColor(e: Event): void {
     left: $size-5;
     right: $size-5;
     height: 2.5px;
-    border-radius: $border-radius-hairline;
+    border-radius: $border-radius-sm;
 }
 
 .color-chevron {
-    padding: 0 $space-2;
+    padding: 0 $space-1;
     min-width: $size-10;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
@@ -148,12 +148,12 @@ function onCustomColor(e: Event): void {
     position: absolute;
     top: 100%;
     left: 0;
-    margin-top: $space-3;
+    margin-top: $space-1;
     background: $color-bg-elevated;
     border: $border-width-thin $color-border;
-    border-radius: $border-radius-xl;
+    border-radius: $border-radius-lg;
     box-shadow: $shadow-lg;
-    padding: $space-9;
+    padding: $space-3;
     z-index: $z-popover;
     width: $size-31;
 
@@ -167,15 +167,15 @@ function onCustomColor(e: Event): void {
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
     color: $color-text-muted;
-    margin-bottom: $space-7;
+    margin-bottom: $space-2;
     letter-spacing: $letter-spacing-wide;
 }
 
 .color-grid {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
-    gap: $space-2;
-    margin-bottom: $space-7;
+    gap: $space-1;
+    margin-bottom: $space-2;
 }
 
 .color-swatch {
@@ -208,11 +208,11 @@ function onCustomColor(e: Event): void {
 .color-clear-btn {
     display: flex;
     align-items: center;
-    gap: $space-5;
+    gap: $space-2;
     width: 100%;
-    padding: $space-4 $space-5;
+    padding: $space-1 $space-2;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $border-radius-md;
     background: transparent;
     color: $color-text-muted;
     font-size: $font-size-sm;
@@ -240,7 +240,7 @@ function onCustomColor(e: Event): void {
 
     &::-webkit-color-swatch {
         border: none;
-        border-radius: $border-radius-2xs;
+        border-radius: $border-radius-sm;
     }
 }
 </style>

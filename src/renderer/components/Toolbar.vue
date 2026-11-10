@@ -653,12 +653,12 @@ onBeforeUnmount((): void => {
     display: flex;
     align-items: center;
     height: $size-21;
-    padding: 0 $space-9;
+    padding: 0 $space-3;
     background: $color-bg-chrome;
     border-bottom: $border-width-thin $color-border;
     user-select: none;
     flex-shrink: 0;
-    gap: $space-1;
+    gap: $space-0;
     overflow: visible;
     position: relative;
     z-index: $z-dropdown;
@@ -668,7 +668,7 @@ onBeforeUnmount((): void => {
     width: $size-0;
     height: $size-11;
     background: $color-border;
-    margin: 0 $space-5;
+    margin: 0 $space-2;
     flex-shrink: 0;
 }
 
@@ -681,7 +681,7 @@ onBeforeUnmount((): void => {
 .toolbar-logo {
     display: flex;
     align-items: center;
-    padding: 0 $space-3;
+    padding: 0 $space-1;
     flex-shrink: 0;
     color: $color-text;
     opacity: $opacity-mid;
@@ -709,7 +709,7 @@ onBeforeUnmount((): void => {
     color: $color-text;
     background: $color-bg-chrome;
     border-radius: $border-radius-sm;
-    padding: 0 $space-3;
+    padding: 0 $space-1;
     user-select: none;
 }
 
@@ -721,7 +721,7 @@ onBeforeUnmount((): void => {
     background: $color-bg-surface;
     color: $color-text;
     font-size: $font-size-sm;
-    padding: 0 $space-3;
+    padding: 0 $space-1;
     cursor: pointer;
     outline: none;
 

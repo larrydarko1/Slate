@@ -161,7 +161,7 @@ function finishTextEdit(): void {
 .textbox-display {
     width: 100%;
     height: 100%;
-    padding: $space-7 $space-9;
+    padding: $space-2 $space-3;
     white-space: pre-wrap;
     overflow-wrap: break-word;
     overflow: hidden;
@@ -173,8 +173,8 @@ function finishTextEdit(): void {
 .textbox-placeholder {
     position: absolute;
     inset: 0;
-    padding: $space-7 $space-9;
-    font-size: $font-size-lg;
+    padding: $space-2 $space-3;
+    font-size: $font-size-base;
     color: $color-text-muted;
     pointer-events: none;
     line-height: $line-height-base;
@@ -183,7 +183,7 @@ function finishTextEdit(): void {
 .textbox-editor {
     width: 100%;
     height: 100%;
-    padding: $space-7 $space-9;
+    padding: $space-2 $space-3;
     border: none;
     outline: none;
     background: transparent;

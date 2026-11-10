@@ -202,7 +202,7 @@ function onGridToggle(e: Event): void {
     background: $color-bg-surface;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    padding: $space-7;
+    padding: $space-2;
     box-shadow: $shadow-md;
     z-index: $z-canvas-chrome;
     max-height: $size-35;
@@ -211,9 +211,9 @@ function onGridToggle(e: Event): void {
 }
 
 .config-section {
-    margin-bottom: $space-7;
+    margin-bottom: $space-2;
     border-bottom: $border-width-thin $color-border;
-    padding-bottom: $space-5;
+    padding-bottom: $space-2;
 }
 
 .config-section-header {
@@ -222,10 +222,10 @@ function onGridToggle(e: Event): void {
     justify-content: space-between;
     font-weight: $font-weight-semibold;
     color: $color-text-muted;
-    font-size: $font-size-xs;
+    font-size: $font-size-sm;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: $space-3;
+    margin-bottom: $space-1;
 }
 
 .add-series-btn {
@@ -238,7 +238,7 @@ function onGridToggle(e: Event): void {
     border: $border-width-thin $color-border;
     background: $color-bg-chrome;
     color: $color-text-muted;
-    font-size: $font-size-md;
+    font-size: $font-size-base;
     font-weight: $font-weight-semibold;
     cursor: pointer;
     padding: 0;
@@ -257,12 +257,12 @@ function onGridToggle(e: Event): void {
 .ref-field {
     display: flex;
     align-items: center;
-    gap: $space-3;
-    padding: $space-2 $space-3;
+    gap: $space-1;
+    padding: $space-1 $space-1;
     border: $border-width-thin $color-border;
-    border-radius: $border-radius;
+    border-radius: $border-radius-md;
     background: $color-bg-chrome;
-    margin-bottom: $space-3;
+    margin-bottom: $space-1;
     cursor: text;
     transition:
         border-color $duration-base,
@@ -298,7 +298,7 @@ function onGridToggle(e: Event): void {
     &::placeholder {
         color: $color-text-muted;
         font-family: inherit;
-        font-size: $font-size-xs;
+        font-size: $font-size-sm;
     }
 }
 
@@ -312,7 +312,7 @@ function onGridToggle(e: Event): void {
     border: none;
     background: transparent;
     color: $color-text-muted;
-    font-size: $font-size-md;
+    font-size: $font-size-base;
     cursor: pointer;
     padding: 0;
     flex-shrink: 0;
@@ -328,30 +328,30 @@ function onGridToggle(e: Event): void {
 }
 
 .ref-empty-hint {
-    font-size: $font-size-xs;
+    font-size: $font-size-sm;
     color: $color-text-muted;
     text-align: center;
-    padding: $space-3;
+    padding: $space-1;
 }
 
 .config-row {
     display: flex;
     align-items: flex-start;
-    gap: $space-5;
-    margin-bottom: $space-5;
+    gap: $space-2;
+    margin-bottom: $space-2;
 
     > label:first-child {
         flex: 0 0 50px;
         font-weight: $font-weight-semibold;
         color: $color-text-muted;
-        padding-top: $space-1;
+        padding-top: $space-0;
         font-size: $font-size-sm;
     }
 
     select {
         flex: 1;
         font-size: $font-size-sm;
-        padding: $space-1 $space-3;
+        padding: $space-0 $space-1;
         border: $border-width-thin $color-border;
         border-radius: $border-radius-sm;
         background: $color-bg-chrome;
@@ -359,13 +359,13 @@ function onGridToggle(e: Event): void {
     }
 
     input[type='checkbox'] {
-        margin-top: $space-2;
+        margin-top: $space-1;
     }
 }
 
 .config-hint {
-    font-size: $font-size-xs;
+    font-size: $font-size-sm;
     color: $color-text-muted;
-    padding-top: $space-2;
+    padding-top: $space-1;
 }
 </style>

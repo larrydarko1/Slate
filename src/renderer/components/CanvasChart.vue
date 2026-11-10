@@ -162,8 +162,8 @@ ChartJS.register(
 
 .chart-title-bar {
     flex: 0 0 auto;
-    padding: $space-5 $space-9 0;
-    font-size: $font-size-md;
+    padding: $space-2 $space-3 0;
+    font-size: $font-size-base;
     font-weight: $font-weight-semibold;
     color: $color-text;
     min-height: $size-17;
@@ -192,7 +192,7 @@ ChartJS.register(
 .chart-body {
     flex: 1;
     min-height: 0;
-    padding: $space-3 $space-7 $space-7;
+    padding: $space-1 $space-2 $space-2;
     position: relative;
 }
 
@@ -207,14 +207,14 @@ ChartJS.register(
 }
 
 .chart-empty-icon {
-    font-size: $font-size-4xl;
-    margin: 0 0 $space-3;
+    font-size: $font-size-xl;
+    margin: 0 0 $space-1;
 }
 
 .chart-empty-text {
-    font-size: $font-size-md;
+    font-size: $font-size-base;
     font-weight: $font-weight-semibold;
-    margin: 0 0 $space-1;
+    margin: 0 0 $space-0;
 }
 
 .chart-empty-sub {

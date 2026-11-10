@@ -23,15 +23,15 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: $space-4;
+    gap: $space-1;
     min-width: $size-18;
     height: $size-18;
-    padding: 0 $space-6;
+    padding: 0 $space-2;
     border-radius: $border-radius-md;
     background: transparent;
     color: $color-text-muted;
     font-size: $font-size-base;
-    font-weight: $font-weight-medium;
+    font-weight: $font-weight-normal;
 
     // The toolbar is the window's drag handle, so its own controls have to opt
     // back out or a mousedown on one moves the window instead of pressing it.
@@ -52,11 +52,11 @@
 
     // Extra room on the trailing side, where the label sits.
     &.has-label {
-        padding: 0 $space-9 0 $space-6;
+        padding: 0 $space-3 0 $space-2;
 
         span {
             font-size: $font-size-base;
-            font-weight: $font-weight-medium;
+            font-weight: $font-weight-normal;
             letter-spacing: $letter-spacing-tight;
         }
     }
@@ -78,14 +78,14 @@
 .color-custom-row {
     display: flex;
     align-items: center;
-    gap: $space-7;
-    margin-top: $space-5;
-    padding-top: $space-5;
+    gap: $space-2;
+    margin-top: $space-2;
+    padding-top: $space-2;
     border-top: $border-width-thin $color-border;
 }
 
 .color-custom-label {
     font-size: $font-size-sm;
     color: $color-text-muted;
-    font-weight: $font-weight-medium;
+    font-weight: $font-weight-normal;
 }

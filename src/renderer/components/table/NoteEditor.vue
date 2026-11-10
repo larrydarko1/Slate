@@ -86,7 +86,7 @@ watch(
     width: $size-26;
     background: $color-note-bg;
     border: $border-width-thin $color-note-border;
-    border-radius: $border-radius-xl;
+    border-radius: $border-radius-lg;
     box-shadow:
         0 8px 32px $color-scrim-heavy,
         0 0 0 1px $color-scrim-faint;
@@ -99,7 +99,7 @@ watch(
     width: 100%;
     min-height: $size-22;
     max-height: $size-25;
-    padding: $space-9 $space-11;
+    padding: $space-3 $space-3;
     border: none;
     outline: none;
     resize: vertical;
@@ -117,8 +117,8 @@ watch(
 .note-editor-actions {
     display: flex;
     align-items: center;
-    padding: $space-5 $space-7;
-    gap: $space-5;
+    padding: $space-2 $space-2;
+    gap: $space-2;
     border-top: $border-width-thin $color-note-border;
 }
 
@@ -129,7 +129,7 @@ watch(
 .note-editor-cancel,
 .note-editor-save,
 .note-editor-delete {
-    padding: $space-3 $space-11;
+    padding: $space-1 $space-3;
     border: none;
     border-radius: $border-radius-md;
     font-size: $font-size-sm;

@@ -167,8 +167,8 @@ function starLabel(stars: number): string {
 
 .cell-text {
     display: block;
-    padding: 0 $space-5;
-    line-height: 2.1667;
+    padding: 0 $space-2;
+    line-height: $size-16;
     font-size: $font-size-base;
     color: $color-text;
 
@@ -180,7 +180,7 @@ function starLabel(stars: number): string {
     }
 
     &.bold {
-        font-weight: $font-weight-bold;
+        font-weight: $font-weight-semibold;
     }
 
     &.italic {
@@ -234,7 +234,7 @@ function starLabel(stars: number): string {
     width: $size-10;
     height: $size-10;
     border: $border-width-thin $color-text-muted;
-    border-radius: $border-radius-xs;
+    border-radius: $border-radius-sm;
     color: $color-accent;
     transition:
         background $transition-quick,
@@ -338,7 +338,7 @@ function starLabel(stars: number): string {
     height: $size-15;
     padding: 0;
     border: none;
-    border-radius: $border-radius-xs;
+    border-radius: $border-radius-sm;
     background: transparent;
     color: $color-text-muted;
     cursor: pointer;
@@ -380,7 +380,7 @@ function starLabel(stars: number): string {
     height: $size-11;
     padding: 0;
     border: none;
-    border-radius: $border-radius-xs;
+    border-radius: $border-radius-sm;
     background: transparent;
     color: $color-accent;
     cursor: pointer;

@@ -564,7 +564,7 @@ watch(
 
 .spreadsheet-table {
     position: relative;
-    border-radius: $border-radius-xl;
+    border-radius: $border-radius-lg;
     overflow: hidden;
     box-shadow: $shadow-md;
     border: $border-width-thin $color-border;
@@ -602,7 +602,7 @@ watch(
     align-items: center;
     justify-content: space-between;
     height: $size-18;
-    padding: 0 $space-9;
+    padding: 0 $space-3;
     background: $color-accent;
     color: $color-on-accent;
     cursor: grab;
@@ -627,8 +627,8 @@ watch(
     color: $color-on-accent;
     font-size: $font-size-base;
     font-weight: $font-weight-semibold;
-    border-radius: $border-radius-xs;
-    padding: $space-1 $space-5;
+    border-radius: $border-radius-sm;
+    padding: $space-0 $space-2;
     width: $size-23;
 
     &::selection {
@@ -643,7 +643,7 @@ watch(
     border-radius: $border-radius-sm;
     background: transparent;
     color: $color-glass-strong;
-    font-size: $font-size-xl;
+    font-size: $font-size-lg;
     line-height: $line-height-none;
     cursor: pointer;
     display: flex;
@@ -697,7 +697,7 @@ watch(
     color: $color-text-muted;
     text-align: center;
     user-select: none;
-    padding: 0 $space-3;
+    padding: 0 $space-1;
     cursor: pointer;
 
     &:hover:not(.col-selected) {
@@ -748,11 +748,11 @@ watch(
     border-bottom: $border-width-thin $color-grid;
     border-right: $border-width-thin $color-grid;
     font-size: $font-size-sm;
-    font-weight: $font-weight-medium;
+    font-weight: $font-weight-normal;
     color: $color-text-muted;
     text-align: center;
     user-select: none;
-    padding: 0 $space-3;
+    padding: 0 $space-1;
     cursor: pointer;
 
     &:hover:not(.row-selected) {
@@ -829,7 +829,7 @@ watch(
     height: 100%;
     border: none;
     outline: none;
-    padding: 0 $space-5;
+    padding: 0 $space-2;
     font-size: $font-size-base;
     font-family: inherit;
     color: $color-text;
@@ -863,7 +863,7 @@ watch(
     height: $size-7;
     background: $color-accent;
     border: 1.5px solid $color-on-accent;
-    border-radius: $border-radius-hairline;
+    border-radius: $border-radius-sm;
     cursor: crosshair;
     z-index: $z-raised-high;
     pointer-events: auto;
@@ -922,7 +922,7 @@ tr.reorder-row-drop-after > td {
 
 .add-handle {
     font-size: $font-size-base;
-    font-weight: $font-weight-bold;
+    font-weight: $font-weight-semibold;
     color: $color-text-muted;
     line-height: 2;
     letter-spacing: 1px;

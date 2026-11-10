@@ -75,8 +75,8 @@ function onItemClick(item: MenuItem): void {
     min-width: $size-24;
     background: $color-bg-elevated;
     border: $border-width-thin $color-border;
-    border-radius: $border-radius-xl;
-    padding: $space-3;
+    border-radius: $border-radius-lg;
+    padding: $space-1;
     box-shadow:
         $shadow-lg,
         0 0 0 1px $color-scrim-faint;
@@ -84,7 +84,7 @@ function onItemClick(item: MenuItem): void {
 }
 
 .context-menu-item {
-    padding: $space-5 $space-11;
+    padding: $space-2 $space-3;
     font-size: $font-size-base;
     color: $color-text;
     cursor: pointer;
@@ -97,7 +97,7 @@ function onItemClick(item: MenuItem): void {
 
     &.separator {
         height: $size-0;
-        margin: $space-2 $space-5;
+        margin: $space-1 $space-2;
         padding: 0;
         background: $color-border;
         cursor: default;

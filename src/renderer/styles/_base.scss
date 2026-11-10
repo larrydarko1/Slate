@@ -119,7 +119,7 @@ a,
 
 ::-webkit-scrollbar-thumb {
     background: $color-scrollbar;
-    border-radius: $border-radius-xs;
+    border-radius: $border-radius-sm;
     transition: background $transition-slow;
 
     &:hover {

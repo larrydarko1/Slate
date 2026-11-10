@@ -112,7 +112,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 }
 
 .font-selector-btn {
-    gap: $space-3;
+    gap: $space-1;
     max-width: $size-23;
 
     .chevron {
@@ -132,12 +132,12 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     position: absolute;
     top: 100%;
     left: 0;
-    margin-top: $space-3;
+    margin-top: $space-1;
     background: $color-bg-elevated;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
     box-shadow: $shadow-lg;
-    padding: $space-3;
+    padding: $space-1;
     z-index: $z-popover;
     min-width: $size-24;
     max-height: $size-34;
@@ -147,12 +147,12 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 .font-option {
     display: block;
     width: 100%;
-    padding: $space-4 $space-9;
+    padding: $space-1 $space-3;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $border-radius-md;
     background: transparent;
     color: $color-text;
-    font-size: $font-size-md;
+    font-size: $font-size-base;
     text-align: left;
     cursor: pointer;
     transition: background $duration-quick;

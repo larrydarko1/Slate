@@ -169,14 +169,14 @@ function onWheel(e: WheelEvent): void {
 }
 
 .empty-title {
-    font-size: $font-size-2xl;
+    font-size: $font-size-lg;
     font-weight: $font-weight-semibold;
     color: $color-text-muted;
-    margin: 0 0 $space-3;
+    margin: 0 0 $space-1;
 }
 
 .empty-sub {
-    font-size: $font-size-md;
+    font-size: $font-size-base;
     color: $color-text-muted;
     margin: 0;
 }
