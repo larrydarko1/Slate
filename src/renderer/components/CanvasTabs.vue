@@ -558,10 +558,7 @@ function ctxDelete(): void {
     font-weight: $font-weight-medium;
     padding: 0 $space-8;
     height: $size-14;
-    border-radius: $border-radius-3xl;
-    background: $color-formula-bg;
-    border: $border-width-thin $color-formula-border;
-    color: $color-formula-text;
+    color: $color-text-muted;
     flex-shrink: 0;
     margin-right: $space-7;
     cursor: default;
@@ -572,7 +569,7 @@ function ctxDelete(): void {
         width: $size-5;
         height: $size-5;
         border-radius: $border-radius-round;
-        background: $color-formula-dot;
+        background: $color-text-muted;
         flex-shrink: 0;
     }
 }

@@ -207,10 +207,6 @@ $theme-dark: (
     'note-text': #f2e4a6,
     'note-muted': #c9b975,
     'note-accent': #e2b23c,
-    'formula-bg': rgb(245 158 11 / 12%),
-    'formula-border': rgb(245 158 11 / 30%),
-    'formula-text': #fbbf24,
-    'formula-dot': #f59e0b,
     'scrim-faint': rgb(0 0 0 / 4%),
     'scrim-soft': rgb(0 0 0 / 8%),
     'scrim-medium': rgb(0 0 0 / 12%),
@@ -247,10 +243,6 @@ $theme-light: (
     'note-text': #47390a,
     'note-muted': #6e5b1c,
     'note-accent': #b07600,
-    'formula-bg': rgb(245 158 11 / 10%),
-    'formula-border': rgb(245 158 11 / 35%),
-    'formula-text': #b45309,
-    'formula-dot': #f59e0b,
     'scrim-faint': rgb(0 0 0 / 4%),
     'scrim-soft': rgb(0 0 0 / 8%),
     'scrim-medium': rgb(0 0 0 / 12%),
@@ -293,10 +285,6 @@ $color-note-border: var(--color-note-border);
 $color-note-text: var(--color-note-text);
 $color-note-muted: var(--color-note-muted);
 $color-note-accent: var(--color-note-accent);
-$color-formula-bg: var(--color-formula-bg);
-$color-formula-border: var(--color-formula-border);
-$color-formula-text: var(--color-formula-text);
-$color-formula-dot: var(--color-formula-dot);
 $color-scrim-faint: var(--color-scrim-faint);
 $color-scrim-soft: var(--color-scrim-soft);
 $color-scrim-medium: var(--color-scrim-medium);
