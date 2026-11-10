@@ -250,13 +250,13 @@ watch(
 .type-badge {
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
-    letter-spacing: 0.03em;
-    padding: $space-0 $space-1;
+    letter-spacing: $letter-spacing-wide;
+    padding: 0 $space-1;
     border-radius: $border-radius-sm;
     white-space: nowrap;
     margin-right: $space-2;
     flex-shrink: 0;
-    line-height: 1.7778;
+    line-height: $size-12;
     border: $border-width-thin $color-border;
     color: $color-text-muted;
 }

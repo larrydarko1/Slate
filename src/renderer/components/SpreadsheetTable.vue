@@ -786,8 +786,8 @@ watch(
     }
 
     &.selected {
-        outline: 2px solid $color-accent;
-        outline-offset: -1px;
+        outline: $border-width-thick $color-accent;
+        outline-offset: -$size-0;
         z-index: $z-raised-high;
         overflow: visible;
     }
@@ -800,8 +800,8 @@ watch(
     &.in-fill,
     &.in-move {
         background: $color-accent-subtle;
-        outline: 1px dashed $color-accent;
-        outline-offset: -1px;
+        outline: $size-0 dashed $color-accent;
+        outline-offset: -$size-0;
         z-index: $z-base;
     }
 

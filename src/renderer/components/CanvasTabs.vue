@@ -342,8 +342,8 @@ function ctxDelete(): void {
     }
 
     &.formula-source {
-        outline: 2px solid $color-accent;
-        outline-offset: -2px;
+        outline: $border-width-thick $color-accent;
+        outline-offset: -$size-1;
         color: $color-accent;
     }
 

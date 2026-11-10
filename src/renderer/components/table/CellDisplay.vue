@@ -203,7 +203,7 @@ function starLabel(stars: number): string {
     &.type-url {
         color: $color-accent;
         text-decoration: underline;
-        text-underline-offset: 2px;
+        text-underline-offset: $size-1;
         cursor: default;
     }
 }

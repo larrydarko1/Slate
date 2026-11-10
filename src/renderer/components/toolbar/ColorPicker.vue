@@ -133,7 +133,7 @@ function onCustomColor(e: Event): void {
     bottom: $size-2;
     left: $size-5;
     right: $size-5;
-    height: 2.5px;
+    height: $size-2;
     border-radius: $border-radius-sm;
 }
 
@@ -188,12 +188,12 @@ function onCustomColor(e: Event): void {
 
     &:hover {
         outline: $border-width-thin $color-text-muted;
-        outline-offset: 1px;
+        outline-offset: $size-0;
     }
 
     &.active {
-        outline: 2px solid $color-accent;
-        outline-offset: 1px;
+        outline: $border-width-thick $color-accent;
+        outline-offset: $size-0;
     }
 
     &.is-light {
