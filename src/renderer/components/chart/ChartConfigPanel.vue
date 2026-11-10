@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useId } from 'vue';
 
+import IconCloseSmall from '@/renderer/components/icons/IconCloseSmall.vue';
+import IconPlus from '@/renderer/components/icons/IconPlus.vue';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 import {
     type ChartObject,
@@ -115,9 +117,10 @@ function onGridToggle(e: Event): void {
                 <button
                     v-if="chart.dataSource?.labelRef"
                     class="ref-clear"
-                    title="Clear"
+                    title="Clear labels"
+                    aria-label="Clear labels"
                     @click.stop="clearRef('labels')">
-                    ×
+                    <IconCloseSmall />
                 </button>
             </div>
         </div>
@@ -129,9 +132,10 @@ function onGridToggle(e: Event): void {
                 <button
                     class="add-series-btn"
                     title="Add series"
-                    @click="ss.addChartSeries()"
-                    >+</button
-                >
+                    aria-label="Add series"
+                    @click="ss.addChartSeries()">
+                    <IconPlus />
+                </button>
             </div>
             <div
                 v-for="(sref, i) in chart.dataSource?.seriesRefs ?? []"
@@ -154,9 +158,10 @@ function onGridToggle(e: Event): void {
                 <button
                     class="ref-clear"
                     title="Remove series"
-                    @click.stop="ss.removeChartSeries(i)"
-                    >×</button
-                >
+                    aria-label="Remove series"
+                    @click.stop="ss.removeChartSeries(i)">
+                    <IconCloseSmall />
+                </button>
             </div>
             <div
                 v-if="!chart.dataSource?.seriesRefs?.length"
@@ -230,7 +235,7 @@ function onGridToggle(e: Event): void {
     color: $color-text-muted;
     font-size: $font-size-sm;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: $letter-spacing-wide;
     margin-bottom: $space-1;
 }
 
@@ -244,19 +249,20 @@ function onGridToggle(e: Event): void {
     border: $border-width-thin $color-border;
     background: $color-bg-chrome;
     color: $color-text-muted;
-    font-size: $font-size-base;
-    font-weight: $font-weight-semibold;
     cursor: pointer;
     padding: 0;
-    line-height: $line-height-none;
     transition:
         background $duration-base,
         color $duration-base;
 
+    svg {
+        width: $size-8;
+        height: $size-8;
+    }
+
     &:hover {
-        background: $color-accent;
-        color: $color-on-accent;
-        border-color: $color-accent;
+        background: $color-bg-hover;
+        color: $color-text;
     }
 }
 
@@ -318,14 +324,17 @@ function onGridToggle(e: Event): void {
     border: none;
     background: transparent;
     color: $color-text-muted;
-    font-size: $font-size-base;
     cursor: pointer;
     padding: 0;
     flex-shrink: 0;
-    line-height: $line-height-none;
     transition:
         background $duration-base,
         color $duration-base;
+
+    svg {
+        width: $size-8;
+        height: $size-8;
+    }
 
     &:hover {
         background: $color-danger-subtle;

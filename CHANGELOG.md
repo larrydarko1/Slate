@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Menus, dropdowns and pop-ups share one shadow and one row height, and menu items are in sentence case ("Insert row above"). Charts and the current canvas tab no longer have a shadow, and colour swatches are outlined on hover instead of growing.
 - An empty canvas offers Add table and Add text box buttons instead of telling you where to click.
 - The add-canvas button sits right after the last tab, and the tab bar's icon buttons have names screen readers announce.
-- Charts use the app's font, lighter gridlines and round legend keys. An empty chart shows a chart icon instead of an emoji, and the delete buttons on charts and text boxes have names screen readers announce.
+- Charts use the app's font, lighter gridlines and round legend keys. An empty chart shows a chart icon instead of an emoji, and the delete buttons on charts and text boxes, and the chart panel's add and remove buttons, have names screen readers announce.
 - Decimal and percent numbers show at most two decimals, so `=AVERAGE` of three cells shows 0.67 rather than 0.6666666667, and a typed 3.14159 shows 3.14. The full number is kept and used in formulas, and the toolbar's decimal buttons show more or fewer digits.
 - Formatting and lint rules now come from the shared `@larrydarko/lint-config` package.
 - Filling or pasting a formula now shifts its references into other tables as well, so `=Sales::B2` filled down becomes `=Sales::B3`. Anchor the reference with `$` to keep it fixed.
