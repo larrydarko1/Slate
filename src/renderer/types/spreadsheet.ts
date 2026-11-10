@@ -17,8 +17,12 @@ export type Cell = {
     cellType: CellDataType; // Detected / assigned data type
     computedType?: CellDataType; // Resolved type after formula evaluation
     format?: CellFormat;
+    limits?: ControlLimits; // A stepper's own limits; without them it uses the defaults
     note?: string; // User-added note / comment on the cell
 };
+
+/** The lowest and highest value a stepper holds, and how far one step moves it. */
+export type ControlLimits = { min: number; max: number; step: number };
 
 export type CellFormat = {
     bold?: boolean;

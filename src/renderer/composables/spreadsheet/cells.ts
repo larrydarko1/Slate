@@ -3,7 +3,12 @@
  * Owns: findCell, setCellValue, display/raw values, type/format ops, cell notes.
  * Does NOT own: editing state (useEditing.ts), selection (useSelection.ts).
  */
-import { findControlValue, findTypedControlValue, isControlType } from '@/renderer/composables/spreadsheet/controls';
+import {
+    findControlValue,
+    findTypedControlValue,
+    isControlType,
+    limitsOf,
+} from '@/renderer/composables/spreadsheet/controls';
 import type { CellDataType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import {
     detectType,
@@ -78,7 +83,7 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
             delete cell.computed;
             delete cell.computedType;
 
-            const kept = control === null ? null : findTypedControlValue(control, raw);
+            const kept = control === null ? null : findTypedControlValue(control, raw, limitsOf(cell));
             if (control !== null && kept !== null) {
                 cell.value = kept.value;
                 cell.cellType = control;
@@ -260,7 +265,9 @@ function retype(cell: Cell, newType: CellDataType): void {
         return;
     }
     if (isControlType(newType)) {
-        const converted = findControlValue(newType, cell.value);
+        // A typed TRUE is held as 1, which would otherwise become one star or a stepper's 1
+        const value = cell.cellType === 'boolean' ? isCheckedValue(cell.value) : cell.value;
+        const converted = findControlValue(newType, value, limitsOf(cell));
         if (converted === null) return;
         cell.value = converted.value;
         cell.cellType = newType;

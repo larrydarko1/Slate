@@ -1,5 +1,5 @@
-import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { mount, type DOMWrapper, type VueWrapper } from '@vue/test-utils';
+import { assert, describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import SpreadsheetTable from '@/renderer/components/SpreadsheetTable.vue';
 import { useSpreadsheet, SPREADSHEET_KEY, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
@@ -188,6 +188,16 @@ describe('SpreadsheetTable', () => {
             expect(ss.tables.value[0]!.name).toBe('Renamed');
         });
 
+        it('types into the name, not into the selected cell', async () => {
+            await wrapper.findAll('.cell')[0]!.trigger('mousedown');
+            await wrapper.find('.table-name').trigger('dblclick');
+            await wrapper.vm.$nextTick();
+            const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true, cancelable: true });
+            wrapper.find('.table-name-input').element.dispatchEvent(event);
+            expect(ss.isEditing.value).toBe(false);
+            expect(event.defaultPrevented).toBe(false);
+        });
+
         // The button only emits; whether to confirm is the parent's call.
         it('asks the parent to remove the table', async () => {
             await wrapper.find('.table-close-btn').trigger('click');
@@ -351,6 +361,167 @@ describe('SpreadsheetTable', () => {
             await wrapper.vm.$nextTick();
             expect(wrapper.findAll('.cell')[1]!.find('.cell-rating').exists()).toBe(false);
             expect(wrapper.findAll('.cell')[1]!.text()).toBe('7');
+        });
+    });
+
+    describe('stepper cells', () => {
+        const buttons = (col: number) => wrapper.findAll('.cell')[col]!.findAll('.cell-stepper-btn');
+        const select = async (col: number) => wrapper.findAll('.cell')[col]!.trigger('mousedown');
+
+        beforeEach(async () => {
+            ss.setCellValue(id, 0, 0, '5');
+            ss.setCellType(id, 0, 0, 'stepper');
+            await wrapper.vm.$nextTick();
+        });
+
+        it('shows only the number until the cell is selected', async () => {
+            expect(buttons(0)).toHaveLength(0);
+            expect(wrapper.findAll('.cell')[0]!.text()).toBe('5');
+            await select(0);
+            expect(buttons(0).map((button) => button.attributes('aria-label'))).toEqual(['Step down', 'Step up']);
+            expect(wrapper.findAll('.cell')[0]!.text()).toBe('5');
+        });
+
+        it('steps by the button clicked', async () => {
+            await select(0);
+            await buttons(0)[1]!.trigger('click');
+            await buttons(0)[1]!.trigger('click');
+            expect(ss.findCell(id, 0, 0)?.value).toBe(7);
+            await buttons(0)[0]!.trigger('click');
+            expect(wrapper.findAll('.cell')[0]!.text()).toBe('6');
+        });
+
+        it('turns off the button that would pass a limit', async () => {
+            ss.setCellValue(id, 0, 0, '100');
+            await select(0);
+            expect(buttons(0)[1]!.attributes('disabled')).toBeDefined();
+            expect(buttons(0)[0]!.attributes('disabled')).toBeUndefined();
+        });
+
+        it('does not open the editor when a button is double-clicked', async () => {
+            await select(0);
+            await buttons(0)[1]!.trigger('dblclick');
+            expect(ss.isEditing.value).toBe(false);
+        });
+
+        it('steps with Alt+Up and Alt+Down instead of moving', async () => {
+            await select(0);
+            await wrapper.find('.table-grid-wrapper').trigger('keydown', { key: 'ArrowUp', altKey: true });
+            expect(ss.findCell(id, 0, 0)?.value).toBe(6);
+            await wrapper.find('.table-grid-wrapper').trigger('keydown', { key: 'ArrowDown', altKey: true });
+            expect(ss.findCell(id, 0, 0)?.value).toBe(5);
+            expect(ss.activeCell.value).toMatchObject({ col: 0, row: 0 });
+        });
+
+        it('types a digit into the cell, since a stepper holds any number', async () => {
+            await select(0);
+            await wrapper.find('.table-grid-wrapper').trigger('keydown', { key: '3' });
+            expect(ss.isEditing.value).toBe(true);
+        });
+
+        it('shows a formula stepper as its number, with no buttons', async () => {
+            ss.setCellValue(id, 1, 0, '=2+3');
+            ss.setCellType(id, 1, 0, 'stepper');
+            await select(1);
+            expect(buttons(1)).toHaveLength(0);
+            expect(wrapper.findAll('.cell')[1]!.text()).toBe('5');
+        });
+    });
+
+    describe('stepper settings panel', () => {
+        const panel = () => wrapper.find('.cell-settings');
+        const select = async (col: number) => wrapper.findAll('.cell')[col]!.trigger('mousedown');
+
+        function field(label: string): DOMWrapper<HTMLInputElement> {
+            const forId = panel()
+                .findAll('label')
+                .find((candidate) => candidate.text() === label)
+                ?.attributes('for');
+            assert.isDefined(forId);
+            return panel().find<HTMLInputElement>(`[id="${forId}"]`);
+        }
+
+        async function enter(label: string, value: string): Promise<void> {
+            await field(label).setValue(value);
+            await field(label).trigger('change');
+        }
+
+        beforeEach(async () => {
+            ss.setCellValue(id, 0, 0, '50');
+            ss.setCellType(id, 0, 0, 'stepper');
+            ss.setCellValue(id, 1, 0, '7');
+            await wrapper.vm.$nextTick();
+        });
+
+        it("shows the selected stepper's limits, and nothing for another cell", async () => {
+            await select(1);
+            expect(panel().exists()).toBe(false);
+            await select(0);
+            expect(panel().find('h2').text()).toBe('Stepper');
+            expect(['Minimum', 'Maximum', 'Step'].map((label) => field(label).element.value)).toEqual([
+                '0',
+                '100',
+                '1',
+            ]);
+        });
+
+        it('applies a changed limit, moving the value inside it', async () => {
+            await select(0);
+            await enter('Maximum', '20');
+            expect(ss.findCell(id, 0, 0)).toMatchObject({ value: 20, limits: { min: 0, max: 20, step: 1 } });
+            expect(wrapper.findAll('.cell')[0]!.find('.cell-stepper-value').text()).toBe('20');
+        });
+
+        it('steps by a changed step', async () => {
+            await select(0);
+            await enter('Step', '5');
+            await wrapper.findAll('.cell')[0]!.findAll('.cell-stepper-btn')[1]!.trigger('click');
+            expect(ss.findCell(id, 0, 0)?.value).toBe(55);
+        });
+
+        it('says what is wrong with a maximum not above the minimum, and changes nothing', async () => {
+            await select(0);
+            await enter('Maximum', '0');
+            const error = panel().find('[role="alert"]');
+            expect(error.text()).toBe('Must be more than the minimum');
+            expect(field('Maximum').attributes('aria-invalid')).toBe('true');
+            expect(field('Maximum').attributes('aria-describedby')).toBe(error.attributes('id'));
+            expect(ss.findCell(id, 0, 0)?.limits).toBeUndefined();
+        });
+
+        it('asks for a number when a field is cleared', async () => {
+            await select(0);
+            await enter('Step', '');
+            expect(panel().find('[role="alert"]').text()).toBe('Enter a number');
+            expect(field('Step').element.value).toBe('');
+            expect(ss.findCell(id, 0, 0)?.limits).toBeUndefined();
+        });
+
+        it("shows the next stepper's limits, without the last one's error", async () => {
+            ss.setCellValue(id, 0, 1, '15');
+            ss.findCell(id, 0, 1)!.limits = { min: 10, max: 20, step: 5 };
+            ss.setCellType(id, 0, 1, 'stepper');
+            await select(0);
+            await enter('Maximum', '0');
+            ss.selectCell(id, 0, 1);
+            await wrapper.vm.$nextTick();
+            expect(panel().find('[role="alert"]').exists()).toBe(false);
+            expect(field('Maximum').element.value).toBe('20');
+        });
+
+        it('keeps keys typed into a field out of the table', async () => {
+            await select(0);
+            await field('Minimum').trigger('keydown', { key: '5' });
+            await field('Minimum').trigger('keydown', { key: 'ArrowUp', altKey: true });
+            expect(ss.isEditing.value).toBe(false);
+            expect(ss.findCell(id, 0, 0)?.value).toBe(50);
+        });
+
+        it('keeps the selection when the panel is clicked', async () => {
+            await select(0);
+            await field('Minimum').trigger('mousedown');
+            expect(ss.activeCell.value).toMatchObject({ col: 0, row: 0 });
+            expect(panel().exists()).toBe(true);
         });
     });
 });

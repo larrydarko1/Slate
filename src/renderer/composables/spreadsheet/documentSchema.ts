@@ -13,6 +13,7 @@
  */
 import { z } from 'zod';
 
+import { findLimitsProblem } from '@/renderer/composables/spreadsheet/controls';
 import { type CellDataType, detectType } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import {
     type Canvas,
@@ -45,6 +46,7 @@ const CellDataTypeSchema = z.enum([
     'boolean',
     'checkbox',
     'rating',
+    'stepper',
     'url',
     'empty',
 ]);
@@ -63,6 +65,10 @@ const CellFormatSchema = z.object({
     decimalPlaces: z.number().exactOptional(),
 });
 
+const ControlLimitsSchema = z
+    .object({ min: z.number(), max: z.number(), step: z.number() })
+    .refine((limits): boolean => findLimitsProblem(limits) === null);
+
 const CellSchema = z
     .object({
         value: CellValueSchema.default(null),
@@ -71,6 +77,7 @@ const CellSchema = z
         cellType: CellDataTypeSchema.exactOptional(),
         computedType: CellDataTypeSchema.exactOptional(),
         format: CellFormatSchema.exactOptional(),
+        limits: ControlLimitsSchema.exactOptional(),
         note: z.string().exactOptional(),
     })
     .transform(({ cellType, ...cell }): Cell => ({ ...cell, cellType: cellType ?? inferCellType(cell.value) }));

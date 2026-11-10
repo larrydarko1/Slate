@@ -19,6 +19,7 @@ const typeOptions: { value: CellDataType; label: string; short: string }[] = [
     { value: 'date', label: 'Date', short: 'DATE' },
     { value: 'checkbox', label: 'Checkbox', short: '✓' },
     { value: 'rating', label: 'Star rating', short: '★' },
+    { value: 'stepper', label: 'Stepper', short: '±' },
 ];
 
 const ss = injectSpreadsheet();
@@ -35,7 +36,13 @@ const currentCellType = computed<CellDataType>(() => {
 
 const supportsDecimals = computed(() => {
     const cellType = currentCellType.value;
-    return cellType === 'float' || cellType === 'percent' || cellType === 'currency_eur' || cellType === 'currency_usd';
+    return (
+        cellType === 'float' ||
+        cellType === 'percent' ||
+        cellType === 'currency_eur' ||
+        cellType === 'currency_usd' ||
+        cellType === 'stepper'
+    );
 });
 
 const currentTypeLabel = computed(() => {
@@ -228,7 +235,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     }
 
     &.badge-checkbox,
-    &.badge-rating {
+    &.badge-rating,
+    &.badge-stepper {
         background: $type-boolean-alpha;
         color: $type-boolean;
     }

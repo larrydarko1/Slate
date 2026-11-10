@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import IconCheck from '@/renderer/components/icons/IconCheck.vue';
+import IconChevronDown from '@/renderer/components/icons/IconChevronDown.vue';
 import IconExternalLink from '@/renderer/components/icons/IconExternalLink.vue';
 import IconStar from '@/renderer/components/icons/IconStar.vue';
 import { MAX_RATING } from '@/renderer/composables/spreadsheet/controls';
@@ -17,6 +18,7 @@ defineEmits<{
     openUrl: [url: string];
     toggle: [];
     rate: [stars: number];
+    step: [direction: -1 | 1];
 }>();
 
 function starLabel(stars: number): string {
@@ -104,6 +106,42 @@ function starLabel(stars: number): string {
             </button>
         </span>
     </span>
+    <!-- Stepper cell, while selected; mousedown prevented as on the checkbox -->
+    <span
+        v-else-if="control?.type === 'stepper'"
+        class="cell-text cell-stepper"
+        :style="textStyle">
+        <span
+            class="cell-stepper-value"
+            :class="textClass"
+            :title="text">
+            {{ text }}
+        </span>
+        <button
+            type="button"
+            class="cell-stepper-btn"
+            tabindex="-1"
+            aria-label="Step down"
+            title="Step down (Alt+↓)"
+            :disabled="!control.canStepDown"
+            @mousedown.prevent
+            @click.stop="$emit('step', -1)"
+            @dblclick.stop>
+            <IconChevronDown />
+        </button>
+        <button
+            type="button"
+            class="cell-stepper-btn step-up"
+            tabindex="-1"
+            aria-label="Step up"
+            title="Step up (Alt+↑)"
+            :disabled="!control.canStepUp"
+            @mousedown.prevent
+            @click.stop="$emit('step', 1)"
+            @dblclick.stop>
+            <IconChevronDown />
+        </button>
+    </span>
     <span
         v-else
         class="cell-text"
@@ -157,7 +195,8 @@ function starLabel(stars: number): string {
     &.type-integer,
     &.type-float,
     &.type-percent,
-    &.type-date {
+    &.type-date,
+    &.type-stepper {
         font-feature-settings: 'tnum' 1;
     }
 
@@ -272,6 +311,58 @@ function starLabel(stars: number): string {
 
     svg {
         fill: none;
+    }
+}
+
+/* ––– Stepper ––– */
+
+.cell-stepper {
+    display: flex;
+    align-items: center;
+    padding-right: 0;
+}
+
+.cell-stepper-value {
+    flex: 1;
+    min-width: 0;
+
+    @include truncate;
+}
+
+.cell-stepper-btn {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: $size-12;
+    height: $size-15;
+    padding: 0;
+    border: none;
+    border-radius: $border-radius-xs;
+    background: transparent;
+    color: $text-muted;
+    cursor: pointer;
+    transition:
+        background $transition-quick,
+        color $transition-quick;
+
+    &:hover:not(:disabled) {
+        background: $accent-color-alpha;
+        color: $accent-color;
+    }
+
+    &:disabled {
+        opacity: $opacity-subtle;
+        cursor: default;
+    }
+
+    &.step-up svg {
+        transform: rotate(180deg);
+    }
+
+    svg {
+        width: $size-9;
+        height: $size-9;
     }
 }
 

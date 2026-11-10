@@ -8,7 +8,7 @@ import type { SpreadsheetFormulaEngine } from '@/renderer/composables/spreadshee
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import { growToMerges } from '@/renderer/composables/spreadsheet/merge';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-import type { Cell, CellFormat, CellRect, SelectionRange } from '@/renderer/types/spreadsheet';
+import type { Cell, CellFormat, CellRect, ControlLimits, SelectionRange } from '@/renderer/types/spreadsheet';
 import { generateId, createEmptyCell } from '@/renderer/types/spreadsheet';
 
 export type SpreadsheetClipboard = {
@@ -40,6 +40,7 @@ type ClipboardCell = {
     format?: CellFormat;
     // The raw text alone would be read back as whatever it looks like, so 50% would paste as 0.5
     cellType?: CellDataType;
+    limits?: ControlLimits;
 };
 
 /** A run of numbers or dates rising by a constant step, the way a fill continues it. */
@@ -68,6 +69,7 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
                 // holding `undefined` are different things to the paste side.
                 if (cell?.format !== undefined) copied.format = { ...cell.format };
                 if (cell !== null && cell.cellType !== 'empty') copied.cellType = cell.cellType;
+                if (cell?.limits !== undefined) copied.limits = { ...cell.limits };
                 rowCells.push(copied);
                 tsvCols.push(deps.getDisplayValue(sr.tableId, colIdx, rowIdx));
             }
@@ -148,6 +150,7 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
                         shiftIfMoved(entry.raw, colIdx, rowIdx),
                     );
                     if (entry.cellType !== undefined) {
+                        setCellLimits(tableId, startCol + colIdx, startRow + rowIdx, entry.limits);
                         deps.setCellType(tableId, startCol + colIdx, startRow + rowIdx, entry.cellType);
                     }
                     if (entry.format !== undefined) {
@@ -241,6 +244,7 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
                 deps.setCellValue(tableId, colIdx, rowIdx, deps.getRawValue(tableId, srcC, srcR));
             }
             if (!continuesSeries && srcCell.cellType !== 'empty') {
+                setCellLimits(tableId, colIdx, rowIdx, srcCell.limits);
                 deps.setCellType(tableId, colIdx, rowIdx, srcCell.cellType);
             }
             if (srcCell.format !== undefined) {
@@ -330,6 +334,17 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
         state.activeCell.value = { tableId, col: dest.startCol, row: dest.startRow };
         deps.recalculate();
         return true;
+    }
+
+    /**
+     * Gives a copied cell its source's limits, or none, before its type: they
+     * decide whether the value fits the stepper it is becoming.
+     */
+    function setCellLimits(tableId: string, col: number, row: number, limits: ControlLimits | undefined): void {
+        const cell = deps.findCell(tableId, col, row);
+        if (cell === null) return;
+        if (limits === undefined) delete cell.limits;
+        else cell.limits = { ...limits };
     }
 
     return { copyCells, cutCells, pasteCells, fillCells, moveCells };
