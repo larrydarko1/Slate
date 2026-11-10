@@ -12,20 +12,6 @@ import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/help
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
 import type { Cell, CellValue, ControlLimits } from '@/renderer/types/spreadsheet';
 
-type ControlType = Extract<CellDataType, 'checkbox' | 'rating' | 'stepper'>;
-
-/** A value a control can hold, wrapped so that an empty control (null) differs from "no fit". */
-type ControlValue = { value: CellValue };
-
-/** Reads a value as one control would hold it, or null when that control cannot hold it. */
-type ControlConverter = (value: string | number | boolean, limits: ControlLimits) => ControlValue | null;
-
-/** The key a control is given; Alt tells stepping a stepper apart from moving the selection. */
-type ControlKeyPress = { key: string; altKey: boolean };
-
-/** One step down or up. */
-type StepDirection = -1 | 1;
-
 /** Why a set of limits cannot be used, and which of its fields to fix. */
 export type LimitsProblem = { field: keyof ControlLimits; message: string };
 
@@ -39,6 +25,20 @@ export type SpreadsheetControls = {
     findActiveLimits: () => ControlLimits | null;
     setSelectionLimits: (limits: ControlLimits) => void;
 };
+
+type ControlType = Extract<CellDataType, 'checkbox' | 'rating' | 'stepper'>;
+
+/** A value a control can hold, wrapped so that an empty control (null) differs from "no fit". */
+type ControlValue = { value: CellValue };
+
+/** Reads a value as one control would hold it, or null when that control cannot hold it. */
+type ControlConverter = (value: string | number | boolean, limits: ControlLimits) => ControlValue | null;
+
+/** The key a control is given; Alt tells stepping a stepper apart from moving the selection. */
+type ControlKeyPress = { key: string; altKey: boolean };
+
+/** One step down or up. */
+type StepDirection = -1 | 1;
 
 type ControlsDeps = {
     findCell: (tableId: string, col: number, row: number) => Cell | null;
