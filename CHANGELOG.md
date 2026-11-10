@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Toolbar buttons that do nothing yet, such as the colour buttons before a cell is selected or the decimal buttons on a text cell, now look turned off. Before, they looked the same as working buttons and lit up on hover.
 - In a narrow window the right end of the toolbar, the theme switch included, was cut off with no way to reach it. The toolbar now wraps onto a second row instead.
 - The cells a chart reads were outlined, and its series marked in the chart panel, in colours that did not match the lines it drew: the second series' cells were red while its line was orange. Each series is now outlined in its own line colour.
 - Typing a new name for a table while one of its cells is selected now types into the name. Before, each key went to the selected cell instead, opening it for editing and leaving the name unchanged.

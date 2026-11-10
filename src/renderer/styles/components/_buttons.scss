@@ -67,6 +67,16 @@
     color: $color-accent;
 }
 
+// Last, and as specific as `.tb:hover`, so neither hover nor a pressed toggle
+// can make a disabled button look live.
+.tb:disabled,
+.tb:disabled:hover,
+.tb:disabled:active {
+    background: transparent;
+    color: $color-text-disabled;
+    cursor: default;
+}
+
 // Custom-colour footer, shared by the ColorPicker dropdown and the Toolbar
 // border-colour row that reuses its slot.
 .color-custom-row {

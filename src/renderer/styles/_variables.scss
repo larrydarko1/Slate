@@ -165,6 +165,7 @@ $z-tooltip-raised: 1003;
 $theme-dark: (
     'text': #e3e6eb,
     'text-muted': #8e97a5,
+    'text-disabled': #5a626e,
     'on-accent': #0c1430,
     'bg': #121418,
     'bg-chrome': #181b20,
@@ -194,6 +195,7 @@ $theme-dark: (
 $theme-light: (
     'text': #1b2029,
     'text-muted': #5b6573,
+    'text-disabled': #a3abb6,
     'on-accent': #fff,
     'bg': #e9ecf0,
     'bg-chrome': #f5f6f8,
@@ -229,6 +231,7 @@ $theme-light: (
 
 $color-text: var(--color-text);
 $color-text-muted: var(--color-text-muted);
+$color-text-disabled: var(--color-text-disabled);
 $color-on-accent: var(--color-on-accent);
 $color-bg: var(--color-bg);
 $color-bg-chrome: var(--color-bg-chrome);
