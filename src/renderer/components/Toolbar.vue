@@ -161,7 +161,6 @@ onMounted((): void => {
     padding: 0 $space-1;
     flex-shrink: 0;
     color: $color-text-muted;
-    -webkit-app-region: no-drag;
 
     svg {
         height: $size-21;

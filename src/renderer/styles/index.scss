@@ -4,7 +4,7 @@
 // ── Architecture ──────────────────────────────────────────────────────────────
 // index.scss       → this file; `@use`s every partial that emits
 //   _theme.scss      → emits the theme maps as CSS custom properties
-//   _base.scss       → reset, element defaults, drag regions, scrollbar
+//   _base.scss       → reset, element defaults, scrollbar
 //   components/      → classes shared by 2+ unrelated components
 // _variables.scss  → design tokens, theme maps, aliases and mixins. EMITS NOTHING, and
 //                    is the only module electron.vite.config.ts injects into

@@ -299,7 +299,6 @@ function ctxDelete(): void {
     padding: 0 $space-1;
     gap: $space-0;
     user-select: none;
-    -webkit-app-region: no-drag;
 }
 
 .canvas-tabs-scroll {
@@ -565,7 +564,6 @@ function ctxDelete(): void {
     flex-shrink: 0;
     margin-right: $space-2;
     cursor: default;
-    -webkit-app-region: no-drag;
 
     &::before {
         content: '';

@@ -227,7 +227,6 @@ watch(
     background: $color-bg-chrome;
     border-bottom: $border-width-thin $color-border;
     flex-shrink: 0;
-    -webkit-app-region: no-drag;
 }
 
 .cell-ref {

@@ -168,7 +168,7 @@ slate/
 │       │   ├── index.scss         #     Entry point — imported once by main.ts
 │       │   ├── _variables.scss    #     Scales, theme maps, aliases & mixins — injected into every SFC
 │       │   ├── _theme.scss        #     Emits the theme maps as CSS custom properties
-│       │   ├── _base.scss         #     Document typography, Electron drag regions
+│       │   ├── _base.scss         #     Document typography, element defaults
 │       │   └── components/        #     Shared button, canvas & placeholder styles
 │       ├── components/            #   Vue components
 │       │   ├── SpreadsheetTable.vue    # Table grid, cell editing, keyboard nav

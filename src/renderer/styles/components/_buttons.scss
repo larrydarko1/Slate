@@ -41,10 +41,6 @@
     font-size: $font-size-base;
     font-weight: $font-weight-normal;
 
-    // The toolbar is the window's drag handle, so its own controls have to opt
-    // back out or a mousedown on one moves the window instead of pressing it.
-    -webkit-app-region: no-drag;
-
     svg {
         flex-shrink: 0;
     }
