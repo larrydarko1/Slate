@@ -204,6 +204,7 @@ function ctxDelete(): void {
                         v-if="ss.canvases.value.length > 1"
                         class="canvas-tab-close"
                         title="Remove canvas"
+                        :aria-label="`Remove ${canvas.name}`"
                         @click.stop="confirmRemove(canvas.id, canvas.name)">
                         <IconCloseSmall
                             width="10"
@@ -216,6 +217,7 @@ function ctxDelete(): void {
             class="canvas-tab-add"
             :disabled="ss.canvases.value.length >= maxCanvases"
             :title="ss.canvases.value.length >= maxCanvases ? `Maximum ${maxCanvases} canvases` : 'Add canvas'"
+            aria-label="Add canvas"
             @click="ss.addCanvas()">
             <IconPlus
                 width="12"
@@ -234,6 +236,7 @@ function ctxDelete(): void {
             <button
                 class="zoom-btn"
                 title="Zoom out (⌘−)"
+                aria-label="Zoom out"
                 :disabled="ss.canvasZoom.value <= 0.25"
                 @click="ss.zoomOut()">
                 <IconZoomOut
@@ -249,6 +252,7 @@ function ctxDelete(): void {
             <button
                 class="zoom-btn"
                 title="Zoom in (⌘+)"
+                aria-label="Zoom in"
                 :disabled="ss.canvasZoom.value >= 4"
                 @click="ss.zoomIn()">
                 <IconZoomIn
@@ -303,7 +307,7 @@ function ctxDelete(): void {
     align-items: center;
     gap: $space-0;
     overflow-x: auto;
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
 
     &::-webkit-scrollbar {
