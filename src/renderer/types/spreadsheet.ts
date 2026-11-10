@@ -171,9 +171,18 @@ export const DEFAULT_CHART_COLORS = [
     '#ff9da7',
     '#9c755f',
     '#bab0ac',
-];
+] as const;
+
+/** Cells a chart reads its labels from are outlined in this grey: labels are not drawn in a colour of their own. */
+export const CHART_LABEL_COLOR = '#8e97a5';
 
 let _idCounter = 0;
+
+/** The colour a chart draws its nth series in, which is also the colour that series' cells are outlined in. */
+export function seriesColor(chart: ChartObject, index: number): string {
+    const scheme = chart.colorScheme.length > 0 ? chart.colorScheme : DEFAULT_CHART_COLORS;
+    return scheme[index % scheme.length] ?? DEFAULT_CHART_COLORS[0];
+}
 
 export function createDefaultCanvas(name: string): Canvas {
     return {

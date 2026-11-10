@@ -9,7 +9,7 @@ import { computed, ref, onMounted, onBeforeUnmount, type Component, type Compute
 import { Bar, Line, Pie, Doughnut, Scatter, Radar } from 'vue-chartjs';
 
 import type { SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
-import type { ChartObject } from '@/renderer/types/spreadsheet';
+import { type ChartObject, seriesColor } from '@/renderer/types/spreadsheet';
 
 // ── Composable ──────────────────────────────────────────────────────────────
 
@@ -116,7 +116,7 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
                     const usable = !Number.isNaN(asNumber) && asNumber !== 0;
                     return { x: usable ? asNumber : i, y: v };
                 });
-                const color = chart.value.colorScheme[entry.idx % chart.value.colorScheme.length];
+                const color = seriesColor(chart.value, entry.idx);
                 return { label: entry.name, data, backgroundColor: color, borderColor: color, borderWidth: 1 };
             });
             return { datasets };
@@ -132,9 +132,7 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
                 datasets: [
                     {
                         data: allData,
-                        backgroundColor: allData.map(
-                            (_, i) => chart.value.colorScheme[i % chart.value.colorScheme.length],
-                        ),
+                        backgroundColor: allData.map((_, i) => seriesColor(chart.value, i)),
                         borderWidth: 1,
                     },
                 ],
@@ -144,7 +142,7 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
         // Radar
         if (chartType === 'radar') {
             const datasets = seriesEntries.map((entry) => {
-                const color = chart.value.colorScheme[entry.idx % chart.value.colorScheme.length];
+                const color = seriesColor(chart.value, entry.idx);
                 return {
                     label: entry.name,
                     data: entry.data,
@@ -162,7 +160,7 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
 
         // Bar / Line / Area
         const datasets = seriesEntries.map((entry) => {
-            const color = chart.value.colorScheme[entry.idx % chart.value.colorScheme.length];
+            const color = seriesColor(chart.value, entry.idx);
             return {
                 label: entry.name,
                 data: entry.data,

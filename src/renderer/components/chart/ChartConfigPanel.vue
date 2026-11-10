@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { useId } from 'vue';
 
-import { chartRefColor } from '@/renderer/composables/spreadsheet/state';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
-import { type ChartObject, CHART_TYPES, LEGEND_POSITIONS } from '@/renderer/types/spreadsheet';
+import {
+    type ChartObject,
+    CHART_LABEL_COLOR,
+    CHART_TYPES,
+    LEGEND_POSITIONS,
+    seriesColor,
+} from '@/renderer/types/spreadsheet';
 
 const props = defineProps<{ chart: ChartObject }>();
 
@@ -14,7 +19,8 @@ const uid = useId();
 function refFieldStyle(mode: string): Record<string, string> {
     const isPicking = ss.chartSelectionMode.value === mode;
     if (!isPicking) return {};
-    const color = mode === 'labels' ? '#94a3b8' : chartRefColor(parseInt(mode.split(':')[1] ?? '0', 10));
+    const color =
+        mode === 'labels' ? CHART_LABEL_COLOR : seriesColor(props.chart, parseInt(mode.split(':')[1] ?? '0', 10));
     return {
         borderColor: color,
         boxShadow: `0 0 0 1px ${color}`,
@@ -98,7 +104,7 @@ function onGridToggle(e: Event): void {
                 @click="onRefFieldClick('labels')">
                 <span
                     class="ref-color-dot"
-                    :style="{ background: '#94a3b8' }"></span>
+                    :style="{ background: CHART_LABEL_COLOR }"></span>
                 <input
                     class="ref-input"
                     :value="chart.dataSource?.labelRef?.refString ?? ''"
@@ -137,7 +143,7 @@ function onGridToggle(e: Event): void {
                 @click="onRefFieldClick('series:' + i)">
                 <span
                     class="ref-color-dot"
-                    :style="{ background: chartRefColor(i) }"></span>
+                    :style="{ background: seriesColor(chart, i) }"></span>
                 <input
                     class="ref-input"
                     :value="sref.refString"
