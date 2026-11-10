@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, useTemplateRef } from 'vue';
 
 import ResizeHandles from '@/renderer/components/canvas/ResizeHandles.vue';
+import IconCloseSmall from '@/renderer/components/icons/IconCloseSmall.vue';
 import { useDragResize, type ResizeDir } from '@/renderer/composables/useDragResize';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 import type { TextBox } from '@/renderer/types/spreadsheet';
@@ -137,9 +138,10 @@ function finishTextEdit(): void {
             v-if="isActive && !isTextEditing"
             class="canvas-delete"
             title="Delete text box"
+            aria-label="Delete text box"
             @click.stop="ss.removeTextBox(textBox.id)"
             @mousedown.stop>
-            ×
+            <IconCloseSmall />
         </button>
     </div>
 </template>

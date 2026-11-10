@@ -38,8 +38,9 @@ const CHART_COMPONENTS: Record<string, Component> = {
 
 export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): ChartRendering {
     // Reactive theme tracking
-    // Chart.js renders to <canvas> and can't use CSS variables, so we resolve
-    // them to actual color values, re-read whenever data-theme changes on <html>.
+    // Chart.js renders to <canvas>, which inherits neither the theme's custom
+    // properties nor the app's font, so both are read off <html> and re-read
+    // whenever data-theme changes.
     const themeColors = ref(readThemeColors());
     let themeObserver: MutationObserver | null = null;
 
@@ -152,7 +153,7 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
                     borderWidth: 2,
                     fill: true,
                     pointBackgroundColor: color,
-                    pointBorderColor: '#fff',
+                    pointBorderWidth: 0,
                     pointRadius: 3,
                 };
             });
@@ -168,6 +169,10 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
                 backgroundColor: `${color}99`,
                 borderColor: color,
                 borderWidth: 2,
+                pointBackgroundColor: color,
+                pointBorderWidth: 0,
+                pointRadius: 3,
+                pointHoverRadius: 5,
                 fill: chartType === 'area',
                 tension: chartType === 'line' || chartType === 'area' ? 0.3 : 0,
             };
@@ -184,25 +189,27 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
         const isScatter = chartType === 'scatter';
         const isRadar = chartType === 'radar';
 
-        const { textPrimary, textMuted, borderColor } = themeColors.value;
+        const { textPrimary, textMuted, gridColor, fontFamily } = themeColors.value;
+        const tickFont = { family: fontFamily, size: 11 };
 
         let scales: NonNullable<ChartOptions['scales']> = {};
         if (isRadar) {
             scales = {
                 r: {
                     display: chart.value.showGrid,
-                    grid: { color: borderColor },
-                    angleLines: { color: borderColor },
-                    pointLabels: { color: textMuted, font: { size: 10 } },
-                    ticks: { color: textMuted, font: { size: 10 }, backdropColor: 'transparent' },
+                    grid: { color: gridColor },
+                    angleLines: { color: gridColor },
+                    pointLabels: { color: textMuted, font: tickFont },
+                    ticks: { color: textMuted, font: tickFont, backdropColor: 'transparent' },
                     beginAtZero: true,
                 },
             };
         } else if (!isPie) {
             const axis = {
                 display: chart.value.showGrid,
-                grid: { color: borderColor },
-                ticks: { color: textMuted, font: { size: 10 } },
+                grid: { color: gridColor },
+                border: { color: gridColor },
+                ticks: { color: textMuted, font: tickFont },
             };
             scales = {
                 // A scatter plot's x values are numbers, so its x axis is linear too.
@@ -219,7 +226,14 @@ export function useChartData(chart: Ref<ChartObject>, ss: SpreadsheetState): Cha
                 legend: {
                     display: chart.value.showLegend,
                     position: chart.value.legendPosition,
-                    labels: { color: textPrimary, font: { size: 11 } },
+                    labels: {
+                        color: textPrimary,
+                        font: { family: fontFamily, size: 12 },
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        boxWidth: 8,
+                        boxHeight: 8,
+                    },
                 },
                 title: { display: false },
                 tooltip: {
@@ -288,10 +302,11 @@ function cssVar(name: string): string {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-function readThemeColors(): { textPrimary: string; textMuted: string; borderColor: string } {
+function readThemeColors(): { textPrimary: string; textMuted: string; gridColor: string; fontFamily: string } {
     return {
         textPrimary: cssVar('--color-text'),
         textMuted: cssVar('--color-text-muted'),
-        borderColor: cssVar('--color-border'),
+        gridColor: cssVar('--color-grid'),
+        fontFamily: getComputedStyle(document.documentElement).fontFamily,
     };
 }

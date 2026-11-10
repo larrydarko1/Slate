@@ -40,11 +40,14 @@
     border-radius: $border-radius-round;
     background: $color-bg-surface;
     color: $color-text-muted;
-    font-size: $font-size-base;
-    line-height: $line-height-none;
     cursor: pointer;
     box-shadow: $shadow-popover;
     z-index: $z-sticky-high;
+
+    svg {
+        width: $size-8;
+        height: $size-8;
+    }
 
     &:hover {
         background: $color-danger-subtle;

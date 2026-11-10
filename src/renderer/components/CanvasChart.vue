@@ -17,6 +17,8 @@ import { computed, toRef } from 'vue';
 
 import ResizeHandles from '@/renderer/components/canvas/ResizeHandles.vue';
 import ChartConfigPanel from '@/renderer/components/chart/ChartConfigPanel.vue';
+import IconChart from '@/renderer/components/icons/IconChart.vue';
+import IconCloseSmall from '@/renderer/components/icons/IconCloseSmall.vue';
 import { useChartData } from '@/renderer/composables/useChartData';
 import { useDragResize, type ResizeDir } from '@/renderer/composables/useDragResize';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
@@ -118,7 +120,7 @@ ChartJS.register(
             <div
                 v-else
                 class="chart-empty">
-                <p class="chart-empty-icon">📊</p>
+                <IconChart class="chart-empty-icon" />
                 <p class="chart-empty-text">Select a data source</p>
                 <p class="chart-empty-sub">Click a reference field, then select cells on any table</p>
             </div>
@@ -138,9 +140,10 @@ ChartJS.register(
             v-if="isActive"
             class="canvas-delete"
             title="Delete chart"
+            aria-label="Delete chart"
             @click.stop="ss.removeChart(chart.id)"
             @mousedown.stop>
-            ×
+            <IconCloseSmall />
         </button>
     </div>
 </template>
@@ -206,8 +209,9 @@ ChartJS.register(
 }
 
 .chart-empty-icon {
-    font-size: $font-size-xl;
-    margin: 0 0 $space-1;
+    width: $size-15;
+    height: $size-15;
+    margin: 0 0 $space-2;
 }
 
 .chart-empty-text {
@@ -219,7 +223,6 @@ ChartJS.register(
 .chart-empty-sub {
     font-size: $font-size-sm;
     margin: 0;
-    opacity: $opacity-high;
 }
 
 // Resize handles
