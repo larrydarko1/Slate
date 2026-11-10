@@ -667,8 +667,9 @@ onBeforeUnmount((): void => {
 <style scoped lang="scss">
 .toolbar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    height: $size-21;
+    min-height: $size-21;
     padding: 0 $space-3;
     background: $color-bg-chrome;
     border-bottom: $border-width-thin $color-border;
