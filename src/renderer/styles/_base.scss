@@ -77,13 +77,14 @@ html,
 
 // ── Interactive elements ──────────────────────────────────────────────────────
 
+// Text fields are left out: they keep the text cursor, which says "type here".
 button,
-input,
-textarea,
 select,
 a,
 [role='button'],
-.clickable {
+.clickable,
+input[type='checkbox'],
+input[type='color'] {
     cursor: pointer;
 }
 
