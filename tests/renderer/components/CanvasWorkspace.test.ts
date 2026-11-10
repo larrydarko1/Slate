@@ -1,5 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { assert, describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import CanvasWorkspace from '@/renderer/components/CanvasWorkspace.vue';
 import { useSpreadsheet, SPREADSHEET_KEY, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
@@ -27,6 +27,16 @@ describe('CanvasWorkspace', () => {
 
     it('invites the user to start when the canvas is empty', () => {
         expect(wrapper.find('.canvas-empty').exists()).toBe(true);
+    });
+
+    it.each([
+        ['Add table', (): number => ss.tables.value.length],
+        ['Add text box', (): number => ss.textBoxes.value.length],
+    ])('offers "%s" on the empty canvas', async (label, count) => {
+        const button = wrapper.findAll('.canvas-empty button').find((candidate) => candidate.text() === label);
+        assert.isDefined(button);
+        await button.trigger('click');
+        expect(count()).toBe(1);
     });
 
     it('hides the empty state once something is on the canvas', async () => {
