@@ -35,14 +35,12 @@ defineEmits<{
     z-index: $z-tooltip;
     max-width: $size-26;
     min-width: $size-22;
-    padding: $space-7 $space-11;
-    background: $note-bg;
-    color: $note-text;
-    border: $border-width-thin $note-border;
+    padding: $space-2 $space-3;
+    background: $color-note-bg;
+    color: $color-note-text;
+    border: $border-width-thin $color-note-border;
     border-radius: $border-radius-lg;
-    box-shadow:
-        0 4px 16px $scrim-medium,
-        0 0 0 1px $scrim-faint;
+    box-shadow: $shadow-popover;
     font-size: $font-size-base;
     line-height: $line-height-base;
     pointer-events: auto;

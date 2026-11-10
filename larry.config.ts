@@ -9,12 +9,18 @@ import { defineConfig } from '@larrydarko/lint-config/config';
  * regrow to the old number.
  */
 const LENGTH_BASELINE: Record<string, number> = {
-    // 687 lines of template — one <button> per formatting control, each with its
-    // own inline SVG. Splitting means pulling the SVGs out, not the logic.
-    'src/renderer/components/Toolbar.vue': 859,
     // 265 lines of script and a 261-line template: neither half is over on its own.
     'src/renderer/components/SpreadsheetTable.vue': 517,
 };
+
+/** Where the palettes live, shared by the two gates that read them. */
+const THEMES = {
+    source: 'scss-maps',
+    file: 'src/renderer/styles/_variables.scss',
+    reference: 'dark',
+    mixinFile: 'src/renderer/styles/_theme.scss',
+    emitFile: 'src/renderer/styles/_theme.scss',
+} as const;
 
 export default defineConfig({
     family: 'electron',
@@ -45,7 +51,14 @@ export default defineConfig({
                 { files: /\.vue$/, require: 'none' },
             ],
         },
-        'contrast': { skip: 'No script ran it before larry upgrade.' },
+        // Every text colour on every surface it can sit on, in both themes. The accent is text too: formula
+        // references, links and the active tab are written in it.
+        'contrast': {
+            themes: THEMES,
+            text: ['text', 'text-muted', 'accent', 'danger'],
+            backgrounds: ['bg', 'bg-chrome', 'bg-surface', 'bg-elevated'],
+            scan: ['src/renderer'],
+        },
         // A dependency Electron loads indirectly (a native backend, a builder hook) looks unused to an import
         // graph: it goes under `ignoreDependencies` in knip.config.js with a reason, never in a raised
         // budget. Budgets are all zero and stay there.
@@ -75,9 +88,9 @@ export default defineConfig({
                     note: 'SFC markup — structural repetition is often cheaper than another component.',
                 },
             },
-            // The largest clone today is 132 tokens: the text-colour menu, which Toolbar.vue
-            // renders twice, once for cells and once for text boxes.
-            maxCloneTokens: 160,
+            // The largest clone today is 92 tokens: two of the chart reference updates in
+            // composables/spreadsheet/charts.ts.
+            maxCloneTokens: 100,
         },
         // `require` is three tags: `lang`, `charset`, and `appMount`, since renaming `#app` renders nothing
         // with no error. No `title`: src/main/index.ts sets `title: ''` on purpose. No viewport, theme-color
@@ -122,10 +135,7 @@ export default defineConfig({
         'refactoring': {},
         // `index.scss` is the entry, imported once by main.ts. `_variables.scss` is injected into every SFC
         // style block, each its own Sass compilation, so anything reachable from it that emits ships once per
-        // component; the mixins live there because a mixin emits nothing until included. The palettes are
-        // literal `[data-theme]` blocks in _themes.scss, plus a `:root` block for the frame painted before
-        // Toolbar.vue sets `data-theme`: a Sass map would be opaque to this gate and to stylelint. Colours
-        // the same in every theme live once in _tokens.scss.
+        // component: it holds the theme maps, and `_theme.scss` turns them into custom properties once.
         'scss-standards': {
             styles: 'src/renderer/styles',
             src: 'src/renderer',
@@ -134,12 +144,8 @@ export default defineConfig({
             injectedSpecifier: '@/renderer/styles/variables',
             emitters: [
                 {
-                    module: 'tokens',
-                    why: '_tokens.scss holds the colours that are the same in every theme. Un-@used, every `var()` naming one of them resolves to nothing.',
-                },
-                {
-                    module: 'themes',
-                    why: 'The palettes are CSS custom properties. Un-@used, every `var(--token)` in the app resolves to nothing.',
+                    module: 'theme',
+                    why: '_theme.scss is what turns the maps into custom properties. Un-@used, every `var(--color-*)` in the app resolves to nothing.',
                 },
                 {
                     module: 'base',
@@ -150,13 +156,7 @@ export default defineConfig({
                     why: 'components/ holds the classes shared across unrelated SFCs. Un-@used, every template naming one of them renders unstyled.',
                 },
             ],
-            themes: {
-                source: 'css-blocks',
-                file: 'src/renderer/styles/_themes.scss',
-                reference: 'dark',
-                selector: 'data-theme',
-                invariantFile: 'src/renderer/styles/_tokens.scss',
-            },
+            themes: THEMES,
         },
         'secrets': { skip: 'No script ran it before larry upgrade.' },
         // Tests mirror src/ under tests/, one top-level directory per src/ directory: add a new area to both

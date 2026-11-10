@@ -17,6 +17,8 @@ import { computed, toRef } from 'vue';
 
 import ResizeHandles from '@/renderer/components/canvas/ResizeHandles.vue';
 import ChartConfigPanel from '@/renderer/components/chart/ChartConfigPanel.vue';
+import IconChart from '@/renderer/components/icons/IconChart.vue';
+import IconCloseSmall from '@/renderer/components/icons/IconCloseSmall.vue';
 import { useChartData } from '@/renderer/composables/useChartData';
 import { useDragResize, type ResizeDir } from '@/renderer/composables/useDragResize';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
@@ -118,7 +120,7 @@ ChartJS.register(
             <div
                 v-else
                 class="chart-empty">
-                <p class="chart-empty-icon">📊</p>
+                <IconChart class="chart-empty-icon" />
                 <p class="chart-empty-text">Select a data source</p>
                 <p class="chart-empty-sub">Click a reference field, then select cells on any table</p>
             </div>
@@ -138,9 +140,10 @@ ChartJS.register(
             v-if="isActive"
             class="canvas-delete"
             title="Delete chart"
+            aria-label="Delete chart"
             @click.stop="ss.removeChart(chart.id)"
             @mousedown.stop>
-            ×
+            <IconCloseSmall />
         </button>
     </div>
 </template>
@@ -150,22 +153,21 @@ ChartJS.register(
     display: flex;
     flex-direction: column;
     overflow: visible;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
+    background: $color-bg-surface;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    box-shadow: $shadow-sm;
 
     &:hover:not(.active) {
-        border-color: $text-muted;
+        border-color: $color-text-muted;
     }
 }
 
 .chart-title-bar {
     flex: 0 0 auto;
-    padding: $space-5 $space-9 0;
-    font-size: $font-size-md;
+    padding: $space-2 $space-3 0;
+    font-size: $font-size-base;
     font-weight: $font-weight-semibold;
-    color: $text-primary;
+    color: $color-text;
     min-height: $size-17;
 }
 
@@ -179,7 +181,7 @@ ChartJS.register(
     padding: 0;
 
     &::placeholder {
-        color: $text-muted;
+        color: $color-text-muted;
     }
 }
 
@@ -192,7 +194,7 @@ ChartJS.register(
 .chart-body {
     flex: 1;
     min-height: 0;
-    padding: $space-3 $space-7 $space-7;
+    padding: $space-1 $space-2 $space-2;
     position: relative;
 }
 
@@ -203,24 +205,24 @@ ChartJS.register(
     justify-content: center;
     height: 100%;
     text-align: center;
-    color: $text-muted;
+    color: $color-text-muted;
 }
 
 .chart-empty-icon {
-    font-size: $font-size-4xl;
-    margin: 0 0 $space-3;
+    width: $size-15;
+    height: $size-15;
+    margin: 0 0 $space-2;
 }
 
 .chart-empty-text {
-    font-size: $font-size-md;
+    font-size: $font-size-base;
     font-weight: $font-weight-semibold;
-    margin: 0 0 $space-1;
+    margin: 0 0 $space-0;
 }
 
 .chart-empty-sub {
     font-size: $font-size-sm;
     margin: 0;
-    opacity: $opacity-high;
 }
 
 // Resize handles

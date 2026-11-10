@@ -23,12 +23,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- New colours in both themes. The greys have a slight blue tint, the highlight colour is a deeper blue, and each layer has its own shade: the canvas sits behind tables and charts, and menus sit above them. In the light theme, tables no longer sit white on a white canvas. All text now meets the WCAG AA contrast minimum (4.5:1) on every background it appears on.
+- The cell type tag in the formula bar and in the cell type menu is grey for every type. Its label already names the type, and the six colours it had meant nothing on their own.
+- The "Unsaved changes" notice in the tab bar is grey instead of amber, so yellow now only ever marks a note.
+- Menus, toolbars and cells use 13px text, up from 12px, and the spacing around controls follows one 4px grid.
+- The toolbar has two rows. The top row creates, opens and saves files, adds tables, text boxes and charts, and switches the theme. The row below formats what is selected, with the controls in the same order for cells and text boxes, so Bold is in the same place for both. With nothing selected the formatting controls stay in place, turned off, so selecting a cell no longer moves anything. With a text box selected the row shows only the controls that apply to text boxes. The font box keeps one width whatever font is chosen. New, Open, Save, Merge and Unmerge show as icons, with their names on hover. Toolbar buttons now have names that screen readers announce, and bold, italic and alignment report whether they are on. The text and fill colour buttons remember the last colour you used, on cells and text boxes alike.
+- A range a formula or chart refers to is outlined once around its outside, instead of with a box around every cell in it.
+- Tables have a plain title bar instead of a coloured one, and no drop shadow; the table you are working in is outlined in the highlight colour. Selected row and column headers are tinted rather than filled, and the add-row and add-column handles show a plus.
+- Menus, dropdowns and pop-ups share one shadow and one row height, and menu items are in sentence case ("Insert row above"). Charts and the current canvas tab no longer have a shadow, and colour swatches are outlined on hover instead of growing.
+- An empty canvas offers Add table and Add text box buttons instead of telling you where to click.
+- The add-canvas button sits right after the last tab, and the tab bar's icon buttons have names screen readers announce.
+- Charts use the app's font, lighter gridlines and round legend keys. An empty chart shows a chart icon instead of an emoji, and the delete buttons on charts and text boxes, and the chart panel's add and remove buttons, have names screen readers announce.
 - Decimal and percent numbers show at most two decimals, so `=AVERAGE` of three cells shows 0.67 rather than 0.6666666667, and a typed 3.14159 shows 3.14. The full number is kept and used in formulas, and the toolbar's decimal buttons show more or fewer digits.
 - Formatting and lint rules now come from the shared `@larrydarko/lint-config` package.
 - Filling or pasting a formula now shifts its references into other tables as well, so `=Sales::B2` filled down becomes `=Sales::B3`. Anchor the reference with `$` to keep it fixed.
 
 ### Fixed
 
+- The arrow beside the text, fill and border colour buttons had no name, so screen readers announced it only as "button". It is now named, for example "Fill color options", and says whether its palette is open.
+- The formula bar, chart title and chart reference fields showed a pointing hand instead of a text cursor, so they looked like buttons rather than places to type.
+- Toolbar buttons that do nothing yet, such as the colour buttons before a cell is selected or the decimal buttons on a text cell, now look turned off. Before, they looked the same as working buttons and lit up on hover.
+- In a narrow window the right end of the toolbar, the theme switch included, was cut off with no way to reach it. Both toolbar rows now fit the smallest window.
+- The cells a chart reads were outlined, and its series marked in the chart panel, in colours that did not match the lines it drew: the second series' cells were red while its line was orange. Each series is now outlined in its own line colour.
 - Typing a new name for a table while one of its cells is selected now types into the name. Before, each key went to the selected cell instead, opening it for editing and leaving the name unchanged.
 - Adding up TRUE/FALSE values gives a number. `=SUM` over a column of checkboxes now shows how many are ticked, and `=AVERAGE` the share that are, where before both showed TRUE. `=TRUE+TRUE` is 2 and `=-TRUE` is -1. A checkbox that has never been ticked now counts as FALSE in formulas, the same as one that was ticked and unticked. A formula that only refers to a checkbox, such as `=B2`, or compares values, such as `=A1>5`, still shows TRUE or FALSE.
 - Copying, pasting and filling cells keeps their type. Before, `$5` pasted as `5` and `50%` as `0.5`, and a number in a cell set to Text pasted as a number again. A formula cell given a type, such as a percentage, keeps it too.

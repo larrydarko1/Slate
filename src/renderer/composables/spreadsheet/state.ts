@@ -67,25 +67,9 @@ type Counters = {
 // exist — which is what lets the wrap helpers below fall back without asserting.
 const REF_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'] as const;
 
-const CHART_REF_COLORS = [
-    '#3b82f6',
-    '#ef4444',
-    '#22c55e',
-    '#f59e0b',
-    '#8b5cf6',
-    '#ec4899',
-    '#06b6d4',
-    '#f97316',
-] as const;
-
 /** The colour for the nth formula reference, wrapping round the palette. */
 export function refColor(i: number): string {
     return REF_COLORS[i % REF_COLORS.length] ?? REF_COLORS[0];
-}
-
-/** The colour for the nth chart series reference, wrapping round the palette. */
-export function chartRefColor(i: number): string {
-    return CHART_REF_COLORS[i % CHART_REF_COLORS.length] ?? CHART_REF_COLORS[0];
 }
 
 // ─── State factory ───────────────────────────────────────────────────────────

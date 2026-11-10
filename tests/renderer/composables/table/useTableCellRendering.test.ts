@@ -118,11 +118,22 @@ describe('useTableCellRendering', () => {
             expect(cellClass(0, 0)['formula-ref-highlight']).toBe(true);
         });
 
-        it('writes the highlight into the cell style', () => {
+        const edges = (ci: number, ri: number): string[] =>
+            (render.cellTdStyle(ci, ri)['boxShadow'] ?? '').split(', ').map((shadow) => shadow.split(' #')[0] ?? '');
+
+        it('draws all four edges round a single referenced cell', () => {
             ss.addChart();
             ss.setChartDataRef('labels', "'Table 1'::A1");
-            expect(render.cellTdStyle(0, 0)['boxShadow']).toContain('inset 0 0 0 2px');
+            expect(edges(0, 0)).toEqual(['inset 0 2px 0', 'inset 0 -2px 0', 'inset 2px 0 0', 'inset -2px 0 0']);
             expect(render.cellTdStyle(4, 4)['boxShadow']).toBeUndefined();
+        });
+
+        it('outlines a referenced range once, round its outside', () => {
+            ss.addChart();
+            ss.setChartDataRef('labels', "'Table 1'::A1:B3");
+            expect(edges(0, 0)).toEqual(['inset 0 2px 0', 'inset 2px 0 0']);
+            expect(edges(1, 2)).toEqual(['inset 0 -2px 0', 'inset -2px 0 0']);
+            expect(edges(0, 1)).toEqual(['inset 2px 0 0']);
         });
     });
 

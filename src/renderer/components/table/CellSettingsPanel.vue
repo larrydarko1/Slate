@@ -100,23 +100,23 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
 .cell-settings {
     position: absolute;
     top: 0;
-    left: calc(100% + #{$space-7});
+    left: calc(100% + #{$space-2});
     width: $size-28;
-    padding: $space-7;
-    border: $border-width-thin $border-color;
+    padding: $space-2;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    background: $bg-primary;
-    box-shadow: $shadow-md;
+    background: $color-bg-surface;
+    box-shadow: $shadow-popover;
     font-size: $font-size-sm;
     cursor: default;
     z-index: $z-canvas-chrome;
 }
 
 .cell-settings-title {
-    margin: 0 0 $space-7;
+    margin: 0 0 $space-2;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
-    color: $text-primary;
+    color: $color-text;
 }
 
 /* ––– Fields ––– */
@@ -125,26 +125,26 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
     display: grid;
     grid-template-columns: 1fr 1fr;
     align-items: center;
-    gap: $space-1 $space-5;
-    margin-bottom: $space-5;
+    gap: $space-0 $space-2;
+    margin-bottom: $space-2;
 
     label {
-        color: $text-muted;
+        color: $color-text-muted;
         font-weight: $font-weight-semibold;
     }
 
     input {
         min-width: 0;
-        padding: $space-1 $space-3;
-        border: $border-width-thin $border-color;
+        padding: $space-0 $space-1;
+        border: $border-width-thin $color-border;
         border-radius: $border-radius-sm;
-        background: $bg-secondary;
-        color: $text-primary;
+        background: $color-bg-chrome;
+        color: $color-text;
         font: inherit;
         font-variant-numeric: tabular-nums;
 
         &[aria-invalid='true'] {
-            border-color: $danger-color;
+            border-color: $color-danger;
         }
     }
 }
@@ -152,13 +152,13 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
 .cell-settings-error {
     grid-column: 1 / -1;
     margin: 0;
-    color: $danger-color;
-    font-size: $font-size-xs;
+    color: $color-danger;
+    font-size: $font-size-sm;
 }
 
 .cell-settings-hint {
-    margin: $space-7 0 0;
-    color: $text-muted;
-    font-size: $font-size-xs;
+    margin: $space-2 0 0;
+    color: $color-text-muted;
+    font-size: $font-size-sm;
 }
 </style>

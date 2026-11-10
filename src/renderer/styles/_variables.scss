@@ -1,9 +1,8 @@
 // Design tokens — every `$`-name and mixin the app is allowed to use.
-// Owns: the typography, size, motion, depth and opacity scales, the SCSS
-// aliases that point at the theme custom properties, and the mixins.
-// Does NOT own: the palettes themselves (_themes.scss), which are the only part
-// of the design system that changes at runtime.
-// electron.vite.config.ts injects this file into all 15 SFC compilations. Nothing
+// Owns: the typography, size, motion, depth and opacity scales, the theme maps,
+// the `$color-*` aliases that point at their custom properties, and the mixins.
+// Does NOT own: turning the maps into CSS (_theme.scss).
+// electron.vite.config.ts injects this file into every SFC compilation. Nothing
 // here emits a byte of CSS, which is what makes that safe.
 
 // ── Typography ────────────────────────────────────────────────────────────────
@@ -12,21 +11,16 @@ $font-family: -apple-system, blinkmacsystemfont, 'Inter', 'Segoe UI', roboto, ox
 $font-family-mono: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
 
 $font-weight-normal: 400;
-$font-weight-medium: 500;
 $font-weight-semibold: 600;
-$font-weight-bold: 700;
 
 // rem, not em: these are the sizes em is measured AGAINST, so anchoring them to
 // the element's own font-size would make each one depend on its parent's.
-$font-size-2xs: 0.5625rem; // 9px
-$font-size-xs: 0.625rem; // 10px
+// Interface text is 13px: Slate is a data-dense tool, so the chrome stays small
+// enough to leave the canvas the room (ui-design.instructions.md → Typography).
 $font-size-sm: 0.6875rem; // 11px
-$font-size-base: 0.75rem; // 12px — the app's working size, not the browser's
-$font-size-md: 0.8125rem; // 13px
-$font-size-lg: 0.875rem; // 14px
-$font-size-xl: 1rem; // 16px
-$font-size-2xl: 1.125rem; // 18px
-$font-size-4xl: 2rem; // 32px
+$font-size-base: 0.8125rem; // 13px
+$font-size-lg: 0.9375rem; // 15px
+$font-size-xl: 1.25rem; // 20px
 
 $line-height-none: 1;
 $line-height-base: 1.5;
@@ -84,38 +78,24 @@ $border-width-thick: $size-1 solid;
 // ── Spacing ───────────────────────────────────────────────────────────────────
 
 // rem, so one anchor governs the whole app. `em` would tie a control's padding
-// to its own label — and Slate's chrome runs at 11-12px beside a canvas grid
-// drawn in device pixels, so font-relative geometry would drift out of step
-// with the sheet it sits next to. See the note in .stylelintrc.mjs.
-// The ladder is 1px-granular because it was derived from the values already in
-// the components rather than imposed on them; collapsing the thin rungs
-// ($space-6, -8, -10) is a design pass, not a mechanical one.
-$space-0: 0.0625rem; // 1px
-$space-1: 0.125rem; // 2px
-$space-2: 0.1875rem; // 3px
-$space-3: 0.25rem; // 4px
-$space-4: 0.3125rem; // 5px
-$space-5: 0.375rem; // 6px
-$space-6: 0.4375rem; // 7px
-$space-7: 0.5rem; // 8px
-$space-8: 0.5625rem; // 9px
-$space-9: 0.625rem; // 10px
-$space-10: 0.6875rem; // 11px
-$space-11: 0.75rem; // 12px
-$space-12: 1rem; // 16px
+// to its own label — and Slate's chrome sits beside a canvas grid drawn in
+// device pixels, so font-relative geometry would drift out of step with the
+// sheet it sits next to. See the note in .stylelintrc.mjs.
+// A 4px grid; $space-0 is the half step for optical nudges, not layout.
+$space-0: 0.125rem; // 2px
+$space-1: 0.25rem; // 4px
+$space-2: 0.5rem; // 8px
+$space-3: 0.75rem; // 12px
+$space-4: 1rem; // 16px
+$space-5: 1.5rem; // 24px
 
 // ── Radius ────────────────────────────────────────────────────────────────────
 
-$border-radius-hairline: 0.0625rem; // 1px
-$border-radius-2xs: 0.125rem; // 2px
-$border-radius-xs: 0.1875rem; // 3px
+// Controls inside an object take sm, buttons and inputs md, the objects and
+// menus themselves lg.
 $border-radius-sm: 0.25rem; // 4px
-$border-radius: 0.3125rem; // 5px
 $border-radius-md: 0.375rem; // 6px
 $border-radius-lg: 0.5rem; // 8px
-$border-radius-xl: 0.625rem; // 10px
-$border-radius-2xl: 0.75rem; // 12px
-$border-radius-3xl: 0.6875rem; // 11px
 
 // Every element that reached for `border-radius: 50%` is square, so a pill
 // radius renders identically — and unlike 50% it stays a capsule rather than
@@ -176,82 +156,112 @@ $z-modal-raised: 1001;
 $z-tooltip: 1002;
 $z-tooltip-raised: 1003;
 
-// ── Theme aliases ─────────────────────────────────────────────────────────────
+// ── Theme maps ────────────────────────────────────────────────────────────────
 
-// Each one is a `var()` reference, not a colour. That is deliberate: it is what
-// lets a component write `$bg-primary` and still repaint on a theme switch.
-// The consequence is that these must NEVER be passed to a SCSS colour function
-// (`rgba`, `darken`, `color.adjust`) — Sass sees the literal text `var(--…)`
-// and fails. Use CSS `color-mix()` instead:
-//   color-mix(in srgb, $accent-color 12%, transparent)
+// One map per theme; _theme.scss emits each key as `--color-<key>`. Every key
+// appears in both maps, and scss-standards fails on one that doesn't: a key
+// missing from light would fall through to the dark value for light users only.
 
-$text1: var(--text1);
-$text2: var(--text2);
-$text3: var(--text3);
-$text-primary: var(--text-primary);
-$text-muted: var(--text-muted);
-$base1: var(--base1);
-$base2: var(--base2);
-$base3: var(--base3);
-$base4: var(--base4);
-$bg-primary: var(--bg-primary);
-$bg-secondary: var(--bg-secondary);
-$bg-tertiary: var(--bg-tertiary);
-$bg-hover: var(--bg-hover);
-$bg-selected: var(--bg-selected);
-$border-color: var(--border-color);
-$accent-color: var(--accent-color);
-$accent-color-alpha: var(--accent-color-alpha);
-$danger-color: var(--danger-color);
-$danger-color-alpha: var(--danger-color-alpha);
-$scrollbar-thumb: var(--scrollbar-thumb);
-$scrollbar-thumb-hover: var(--scrollbar-thumb-hover);
-$shadow-sm: var(--shadow-sm);
-$shadow-md: var(--shadow-md);
-$shadow-lg: var(--shadow-lg);
+$theme-dark: (
+    'text': #e3e6eb,
+    'text-muted': #8e97a5,
+    'text-disabled': #5a626e,
+    'on-accent': #0c1430,
+    'bg': #121418,
+    'bg-chrome': #181b20,
+    'bg-surface': #1c2026,
+    'bg-elevated': #252a32,
+    'bg-hover': rgb(227 230 235 / 8%),
+    'bg-pressed': rgb(227 230 235 / 14%),
+    'border': #363d48,
+    'grid': #262b33,
+    'accent': #7f9df0,
+    'accent-subtle': rgb(127 157 240 / 16%),
+    'danger': #f07468,
+    'danger-subtle': rgb(240 116 104 / 14%),
+    'scrollbar': #3a414c,
+    'scrollbar-hover': #4e5663,
+    'shadow-near': rgb(0 0 0 / 30%),
+    'shadow-far': rgb(0 0 0 / 45%),
+    'note-bg': #453b14,
+    'note-border': #6b5a1e,
+    'note-text': #f2e4a6,
+    'note-muted': #c9b975,
+    'note-accent': #e2b23c,
+    'scrim-soft': rgb(0 0 0 / 8%),
+    'scrim-strong': rgb(0 0 0 / 25%),
+);
 
-// Sticky notes — their own paper palette, not the surface tokens.
-$note-bg: var(--note-bg);
-$note-border: var(--note-border);
-$note-text: var(--note-text);
-$note-placeholder: var(--note-placeholder);
-$note-accent: var(--note-accent);
-$note-accent-hover: var(--note-accent-hover);
-$note-on-accent: var(--note-on-accent);
-$note-muted: var(--note-muted);
+$theme-light: (
+    'text': #1b2029,
+    'text-muted': #5b6573,
+    'text-disabled': #a3abb6,
+    'on-accent': #fff,
+    'bg': #e9ecf0,
+    'bg-chrome': #f5f6f8,
+    'bg-surface': #fff,
+    'bg-elevated': #fff,
+    'bg-hover': rgb(27 32 41 / 6%),
+    'bg-pressed': rgb(27 32 41 / 11%),
+    'border': #c9cfd8,
+    'grid': #e5e8ed,
+    'accent': #2b52c4,
+    'accent-subtle': rgb(43 82 196 / 10%),
+    'danger': #bf3a2f,
+    'danger-subtle': rgb(191 58 47 / 10%),
+    'scrollbar': #c5ccd5,
+    'scrollbar-hover': #9aa3af,
+    'shadow-near': rgb(20 28 36 / 8%),
+    'shadow-far': rgb(20 28 36 / 14%),
+    'note-bg': #fbeeb2,
+    'note-border': #e3cc6a,
+    'note-text': #47390a,
+    'note-muted': #6e5b1c,
+    'note-accent': #b07600,
+    'scrim-soft': rgb(0 0 0 / 8%),
+    'scrim-strong': rgb(0 0 0 / 25%),
+);
 
-// Cell value types — the swatch a formula result or a cell format is tagged
-// with. Fixed hues rather than theme colours: they encode meaning, and the
-// meaning does not change with the theme.
-$type-text: var(--type-text);
-$type-text-alpha: var(--type-text-alpha);
-$type-number: var(--type-number);
-$type-number-alpha: var(--type-number-alpha);
-$type-currency: var(--type-currency);
-$type-currency-alpha: var(--type-currency-alpha);
-$type-percent: var(--type-percent);
-$type-percent-alpha: var(--type-percent-alpha);
-$type-date: var(--type-date);
-$type-date-alpha: var(--type-date-alpha);
-$type-boolean: var(--type-boolean);
-$type-boolean-alpha: var(--type-boolean-alpha);
+// ── Colour aliases ────────────────────────────────────────────────────────────
 
-// Overlay scrims and the fills painted over the sheet's own surface.
-$scrim-faint: var(--scrim-faint);
-$scrim-soft: var(--scrim-soft);
-$scrim-medium: var(--scrim-medium);
-$scrim-heavy: var(--scrim-heavy);
-$scrim-strong: var(--scrim-strong);
-$on-accent: var(--on-accent);
-$glass-soft: var(--glass-soft);
-$glass: var(--glass);
-$glass-strong: var(--glass-strong);
+// Each one is a `var()` reference, not a colour, which is what lets a component
+// repaint on a theme switch. So never pass one to a Sass colour function
+// (`rgba`, `darken`, `color.adjust`); use CSS `color-mix()`:
+//   color-mix(in srgb, $color-accent 12%, transparent)
 
-// Formula-mode badge on the canvas tab strip.
-$formula-bg: var(--formula-bg);
-$formula-border: var(--formula-border);
-$formula-text: var(--formula-text);
-$formula-dot: var(--formula-dot);
+$color-text: var(--color-text);
+$color-text-muted: var(--color-text-muted);
+$color-text-disabled: var(--color-text-disabled);
+$color-on-accent: var(--color-on-accent);
+$color-bg: var(--color-bg);
+$color-bg-chrome: var(--color-bg-chrome);
+$color-bg-surface: var(--color-bg-surface);
+$color-bg-elevated: var(--color-bg-elevated);
+$color-bg-hover: var(--color-bg-hover);
+$color-bg-pressed: var(--color-bg-pressed);
+$color-border: var(--color-border);
+$color-grid: var(--color-grid);
+$color-accent: var(--color-accent);
+$color-accent-subtle: var(--color-accent-subtle);
+$color-danger: var(--color-danger);
+$color-danger-subtle: var(--color-danger-subtle);
+$color-scrollbar: var(--color-scrollbar);
+$color-scrollbar-hover: var(--color-scrollbar-hover);
+$color-shadow-near: var(--color-shadow-near);
+$color-shadow-far: var(--color-shadow-far);
+$color-note-bg: var(--color-note-bg);
+$color-note-border: var(--color-note-border);
+$color-note-text: var(--color-note-text);
+$color-note-muted: var(--color-note-muted);
+$color-note-accent: var(--color-note-accent);
+$color-scrim-soft: var(--color-scrim-soft);
+$color-scrim-strong: var(--color-scrim-strong);
+
+// One shadow, for what floats above the canvas: menus, dropdowns, popovers
+// and panels. Canvas objects sit on it and are separated by their border.
+$shadow-popover:
+    0 1px 3px $color-shadow-near,
+    0 8px 20px $color-shadow-far;
 
 // ── Mixins ────────────────────────────────────────────────────────────────────
 // The multi-declaration patterns that were being retyped by hand. A mixin

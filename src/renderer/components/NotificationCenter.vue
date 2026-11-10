@@ -41,8 +41,8 @@ const { notifications, dismiss, pause, resume } = useNotifications();
 <style scoped lang="scss">
 .notification-center {
     position: fixed;
-    right: $space-12;
-    bottom: $space-12;
+    right: $space-4;
+    bottom: $space-4;
     z-index: $z-tooltip-raised;
     pointer-events: none;
 }
@@ -50,7 +50,7 @@ const { notifications, dismiss, pause, resume } = useNotifications();
 .notification-list {
     display: flex;
     flex-direction: column;
-    gap: $space-5;
+    gap: $space-2;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -59,14 +59,14 @@ const { notifications, dismiss, pause, resume } = useNotifications();
 .notification {
     display: flex;
     align-items: flex-start;
-    gap: $space-5;
+    gap: $space-2;
     width: $size-33;
-    padding: $space-5 $space-5 $space-5 $space-11;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
-    border-radius: $border-radius-xl;
-    box-shadow: $shadow-lg;
-    color: $text-primary;
+    padding: $space-2 $space-2 $space-2 $space-3;
+    background: $color-bg-elevated;
+    border: $border-width-thin $color-border;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow-popover;
+    color: $color-text;
     font-size: $font-size-base;
     pointer-events: auto;
 }
@@ -74,7 +74,7 @@ const { notifications, dismiss, pause, resume } = useNotifications();
 .notification-message {
     flex: 1;
     margin: 0;
-    padding-top: $space-4;
+    padding-top: $space-1;
     line-height: $line-height-base;
     overflow-wrap: anywhere;
 }
@@ -89,6 +89,6 @@ const { notifications, dismiss, pause, resume } = useNotifications();
 .notification-enter-from,
 .notification-leave-to {
     opacity: 0;
-    transform: translateY($space-5);
+    transform: translateY($space-2);
 }
 </style>

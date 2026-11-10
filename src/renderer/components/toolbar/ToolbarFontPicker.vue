@@ -77,6 +77,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
             class="font-selector-wrapper">
             <button
                 class="tb has-label font-selector-btn"
+                :disabled="!hasActiveCell && !hasActiveTextBox"
                 title="Font family"
                 @click="toggleFontMenu">
                 <span
@@ -109,11 +110,15 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 <style scoped lang="scss">
 .font-selector-wrapper {
     position: relative;
+    flex: 1;
+    min-width: 0;
 }
 
 .font-selector-btn {
-    gap: $space-3;
-    max-width: $size-23;
+    justify-content: space-between;
+    gap: $space-1;
+    width: 100%;
+    max-width: $size-26;
 
     .chevron {
         opacity: $opacity-mid;
@@ -125,19 +130,19 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 .font-selector-label {
     @include truncate;
 
-    max-width: $size-24;
+    min-width: 0;
 }
 
 .font-dropdown {
     position: absolute;
     top: 100%;
     left: 0;
-    margin-top: $space-3;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
+    margin-top: $space-1;
+    background: $color-bg-elevated;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    box-shadow: $shadow-lg;
-    padding: $space-3;
+    box-shadow: $shadow-popover;
+    padding: $space-1;
     z-index: $z-popover;
     min-width: $size-24;
     max-height: $size-34;
@@ -147,23 +152,23 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 .font-option {
     display: block;
     width: 100%;
-    padding: $space-4 $space-9;
+    padding: $space-1 $space-2;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $border-radius-md;
     background: transparent;
-    color: $text-primary;
-    font-size: $font-size-md;
+    color: $color-text;
+    font-size: $font-size-base;
     text-align: left;
     cursor: pointer;
     transition: background $duration-quick;
     white-space: nowrap;
 
     &:hover {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 
     &.active {
-        background: $accent-color-alpha;
+        background: $color-accent-subtle;
         font-weight: $font-weight-semibold;
     }
 }

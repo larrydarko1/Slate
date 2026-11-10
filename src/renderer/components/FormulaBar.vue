@@ -62,10 +62,6 @@ const typeShortLabel = computed((): 'INT' | 'DEC' | '€' | '$' | 'DATE' | 'ABC'
     }
 });
 
-const typeBadgeClass = computed(() => ({
-    [`type-${currentCellType.value.replace('_', '-')}`]: true,
-}));
-
 const hasFormula = computed((): boolean => {
     if (activeCell.value === null) return false;
     const cell = ss.findCell(activeCell.value.tableId, activeCell.value.col, activeCell.value.row);
@@ -159,7 +155,6 @@ watch(
         <div
             v-if="activeCell"
             class="type-badge"
-            :class="typeBadgeClass"
             :title="typeLabel">
             {{ typeShortLabel }}
         </div>
@@ -228,11 +223,10 @@ watch(
     display: flex;
     align-items: center;
     height: $size-19;
-    padding: 0 $space-11;
-    background: $bg-secondary;
-    border-bottom: $border-width-thin $border-color;
+    padding: 0 $space-3;
+    background: $color-bg-chrome;
+    border-bottom: $border-width-thin $color-border;
     flex-shrink: 0;
-    -webkit-app-region: no-drag;
 }
 
 .cell-ref {
@@ -240,75 +234,37 @@ watch(
     max-width: $size-24;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
-    color: $text-muted;
+    color: $color-text-muted;
 
     @include truncate;
 
-    padding-right: $space-7;
+    padding-right: $space-2;
     letter-spacing: $letter-spacing-tight;
 }
 
 .cell-ref-empty {
-    color: $text3;
+    color: $color-text-muted;
 }
 
 .type-badge {
-    font-size: $font-size-2xs;
-    font-weight: $font-weight-bold;
-    letter-spacing: 0.03em;
-    padding: $space-0 $space-4;
-    border-radius: $border-radius-xs;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    letter-spacing: $letter-spacing-wide;
+    padding: 0 $space-1;
+    border-radius: $border-radius-sm;
     white-space: nowrap;
-    margin-right: $space-5;
+    margin-right: $space-2;
     flex-shrink: 0;
-    line-height: 1.7778;
-    background: $bg-tertiary;
-    color: $text-muted;
-
-    &.type-integer {
-        background: $type-text-alpha;
-        color: $type-text;
-    }
-
-    &.type-float {
-        background: $type-number-alpha;
-        color: $type-number;
-    }
-
-    &.type-currency-eur {
-        background: $type-currency-alpha;
-        color: $type-currency;
-    }
-
-    &.type-currency-usd {
-        background: $type-percent-alpha;
-        color: $type-percent;
-    }
-
-    &.type-text {
-        background: $type-date-alpha;
-        color: $type-date;
-    }
-
-    &.type-boolean,
-    &.type-checkbox,
-    &.type-rating,
-    &.type-stepper {
-        background: $type-boolean-alpha;
-        color: $type-boolean;
-    }
-
-    &.type-date {
-        background: $type-date-alpha;
-        color: $type-date;
-    }
+    line-height: $size-12;
+    border: $border-width-thin $color-border;
+    color: $color-text-muted;
 }
 
 .formula-separator {
     width: $size-0;
     height: $size-11;
-    background: $border-color;
-    margin-right: $space-7;
+    background: $color-border;
+    margin-right: $space-2;
     flex-shrink: 0;
 }
 
@@ -316,15 +272,14 @@ watch(
     flex: 1;
     display: flex;
     align-items: center;
-    gap: $space-5;
+    gap: $space-2;
 }
 
 .fx-label {
     font-size: $font-size-sm;
-    font-weight: $font-weight-bold;
-    color: $accent-color;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
     flex-shrink: 0;
-    opacity: $opacity-higher;
 }
 
 .formula-input-container {
@@ -341,18 +296,18 @@ watch(
     background: transparent;
     font-size: $font-size-base;
     font-family: $font-family;
-    color: $text-primary;
-    padding: $space-1 0;
+    color: $color-text;
+    padding: $space-0 0;
     position: relative;
     z-index: $z-base;
 
     &.has-rich-overlay {
         color: transparent;
-        caret-color: $text-primary;
+        caret-color: $color-text;
     }
 
     &::placeholder {
-        color: $text3;
+        color: $color-text-muted;
     }
 
     &:disabled {
@@ -368,23 +323,23 @@ watch(
     pointer-events: none;
     font-size: $font-size-base;
     font-family: $font-family-mono;
-    padding: $space-1 0;
+    padding: $space-0 0;
     white-space: nowrap;
     overflow: hidden;
     z-index: 0;
 }
 
 .formula-eq {
-    color: $text-muted;
+    color: $color-text-muted;
 }
 
 .formula-text {
-    color: $text-primary;
+    color: $color-text;
 }
 
 .ref-badge {
     display: inline;
-    border-radius: $border-radius-xs;
+    border-radius: $border-radius-sm;
     box-shadow: inset 0 0 0 $size-0;
     font-weight: $font-weight-semibold;
     font-size: $font-size-base;
@@ -398,23 +353,23 @@ watch(
     justify-content: center;
     width: $size-16;
     height: $size-14;
-    border: $border-width-thin $border-color;
-    border-radius: $border-radius;
-    background: $bg-tertiary;
-    color: $text-muted;
+    border: $border-width-thin $color-border;
+    border-radius: $border-radius-md;
+    background: $color-bg-chrome;
+    color: $color-text-muted;
     cursor: pointer;
     flex-shrink: 0;
     transition: all $duration-base;
 
     &:hover:not(:disabled) {
-        background: $bg-hover;
-        color: $text-primary;
+        background: $color-bg-hover;
+        color: $color-text;
     }
 
     &.active {
-        background: $accent-color;
-        border-color: $accent-color;
-        color: $on-accent;
+        background: $color-accent;
+        border-color: $color-accent;
+        color: $color-on-accent;
     }
 
     &:disabled {

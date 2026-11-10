@@ -65,6 +65,9 @@ function onCustomColor(e: Event): void {
         <button
             class="tb color-chevron"
             :disabled="disabled"
+            :title="`${label} options`"
+            :aria-label="`${label} options`"
+            :aria-expanded="open"
             @click.stop="toggleDropdown">
             <IconChevronDown
                 width="8"
@@ -122,7 +125,7 @@ function onCustomColor(e: Event): void {
 }
 
 .color-btn {
-    padding-right: $space-1;
+    padding-right: $space-0;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     position: relative;
@@ -133,12 +136,16 @@ function onCustomColor(e: Event): void {
     bottom: $size-2;
     left: $size-5;
     right: $size-5;
-    height: 2.5px;
-    border-radius: $border-radius-hairline;
+    height: $size-2;
+    border-radius: $border-radius-sm;
+}
+
+.color-btn:disabled .color-indicator {
+    opacity: $opacity-subtle;
 }
 
 .color-chevron {
-    padding: 0 $space-2;
+    padding: 0 $space-1;
     min-width: $size-10;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
@@ -148,12 +155,12 @@ function onCustomColor(e: Event): void {
     position: absolute;
     top: 100%;
     left: 0;
-    margin-top: $space-3;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
-    border-radius: $border-radius-xl;
-    box-shadow: $shadow-lg;
-    padding: $space-9;
+    margin-top: $space-1;
+    background: $color-bg-elevated;
+    border: $border-width-thin $color-border;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow-popover;
+    padding: $space-3;
     z-index: $z-popover;
     width: $size-31;
 
@@ -166,69 +173,65 @@ function onCustomColor(e: Event): void {
 .color-dropdown-header {
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
-    color: $text-muted;
-    margin-bottom: $space-7;
+    color: $color-text-muted;
+    margin-bottom: $space-2;
     letter-spacing: $letter-spacing-wide;
 }
 
 .color-grid {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
-    gap: $space-2;
-    margin-bottom: $space-7;
+    gap: $space-1;
+    margin-bottom: $space-2;
 }
 
 .color-swatch {
     width: $size-13;
     height: $size-13;
     border-radius: $border-radius-sm;
-    border: $border-width-thin $scrim-soft;
+    border: $border-width-thin $color-scrim-soft;
     cursor: pointer;
-    transition:
-        transform $duration-quick,
-        box-shadow $duration-quick;
     padding: 0;
 
     &:hover {
-        transform: scale(1.2);
-        z-index: $z-base;
-        box-shadow: 0 $size-0 $size-3 $scrim-strong;
+        outline: $border-width-thin $color-text-muted;
+        outline-offset: $size-0;
     }
 
     &.active {
-        outline: 2px solid $accent-color;
-        outline-offset: 1px;
+        outline: $border-width-thick $color-accent;
+        outline-offset: $size-0;
     }
 
     &.is-light {
-        border-color: $scrim-strong;
+        border-color: $color-scrim-strong;
     }
 }
 
 .color-clear-btn {
     display: flex;
     align-items: center;
-    gap: $space-5;
+    gap: $space-2;
     width: 100%;
-    padding: $space-4 $space-5;
+    padding: $space-1 $space-2;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $border-radius-md;
     background: transparent;
-    color: $text-muted;
+    color: $color-text-muted;
     font-size: $font-size-sm;
     cursor: pointer;
     transition: background $duration-quick;
 
     &:hover {
-        background: $bg-hover;
-        color: $text-primary;
+        background: $color-bg-hover;
+        color: $color-text;
     }
 }
 
 .color-custom-input {
     width: $size-17;
     height: $size-14;
-    border: $border-width-thin $border-color;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-sm;
     padding: $space-0;
     cursor: pointer;
@@ -240,7 +243,7 @@ function onCustomColor(e: Event): void {
 
     &::-webkit-color-swatch {
         border: none;
-        border-radius: $border-radius-2xs;
+        border-radius: $border-radius-sm;
     }
 }
 </style>

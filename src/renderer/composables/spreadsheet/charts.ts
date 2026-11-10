@@ -7,9 +7,14 @@
 import { formatCellDisplay } from '@/renderer/composables/spreadsheet/engine/cellTypes';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
-import { chartRefColor } from '@/renderer/composables/spreadsheet/state';
 import type { Cell, ChartObject, SpreadsheetTable, CellValue } from '@/renderer/types/spreadsheet';
-import { createDefaultChart, indexToColumnLetter, columnLetterToIndex } from '@/renderer/types/spreadsheet';
+import {
+    CHART_LABEL_COLOR,
+    createDefaultChart,
+    indexToColumnLetter,
+    columnLetterToIndex,
+    seriesColor,
+} from '@/renderer/types/spreadsheet';
 
 export type SpreadsheetCharts = {
     addChart: () => void;
@@ -332,31 +337,19 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
         if (chart?.dataSource == null) return [];
 
         const ds = chart.dataSource;
-        const highlights: { tableId: string; col: number; row: number; color: string }[] = [];
-
-        if (ds.labelRef !== null && ds.labelRef.refString !== '') {
-            const refs = splitChartRefs(ds.labelRef.refString);
-            for (const ref of refs) {
+        const highlightsOf = (
+            refString: string,
+            color: string,
+        ): { tableId: string; col: number; row: number; color: string }[] =>
+            splitChartRefs(refString).flatMap((ref) => {
                 const resolved = resolveChartRef(ref);
-                if (resolved !== null) {
-                    highlights.push(...highlightsFromResolved(resolved, '#94a3b8'));
-                }
-            }
-        }
+                return resolved === null ? [] : highlightsFromResolved(resolved, color);
+            });
 
-        ds.seriesRefs.forEach((sref, i): void => {
-            if (sref.refString === '') return;
-            const refs = splitChartRefs(sref.refString);
-            const color = chartRefColor(i);
-            for (const ref of refs) {
-                const resolved = resolveChartRef(ref);
-                if (resolved !== null) {
-                    highlights.push(...highlightsFromResolved(resolved, color));
-                }
-            }
-        });
-
-        return highlights;
+        return [
+            ...highlightsOf(ds.labelRef?.refString ?? '', CHART_LABEL_COLOR),
+            ...ds.seriesRefs.flatMap((sref, i) => highlightsOf(sref.refString, seriesColor(chart, i))),
+        ];
     }
 
     function addChartSeries(): void {

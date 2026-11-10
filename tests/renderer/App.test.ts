@@ -62,22 +62,22 @@ describe('App', () => {
     describe('toolbar wiring', () => {
         // One table already exists: App seeds it on mount.
         it('adds a table', async () => {
-            await byTitle('Add Table').trigger('click');
+            await byTitle('Add table').trigger('click');
             expect(wrapper.findAll('.spreadsheet-table')).toHaveLength(2);
         });
 
         it('adds a text box', async () => {
-            await byTitle('Add Text Box').trigger('click');
+            await byTitle('Add text box').trigger('click');
             expect(wrapper.find('.canvas-textbox').exists()).toBe(true);
         });
 
         it('adds a chart', async () => {
-            await byTitle('Add Chart').trigger('click');
+            await byTitle('Add chart').trigger('click');
             expect(wrapper.find('.canvas-chart').exists()).toBe(true);
         });
 
         it('clears the canvas on new file', async () => {
-            await byTitle('Add Table').trigger('click');
+            await byTitle('Add table').trigger('click');
             await byTitle('New (⌘N)').trigger('click');
             await flushPromises();
             expect(api.showConfirmDialog).toHaveBeenCalledWith(expect.objectContaining({ confirmLabel: 'New File' }));
@@ -86,7 +86,7 @@ describe('App', () => {
 
         it('keeps the canvas when the new-file confirmation is declined', async () => {
             vi.mocked(api.showConfirmDialog).mockResolvedValue(false);
-            await byTitle('Add Table').trigger('click');
+            await byTitle('Add table').trigger('click');
             await byTitle('New (⌘N)').trigger('click');
             await flushPromises();
             expect(wrapper.findAll('.spreadsheet-table')).toHaveLength(2);

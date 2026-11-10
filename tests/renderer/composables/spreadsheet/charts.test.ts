@@ -273,6 +273,15 @@ describe('charts', () => {
             expect(colours.size).toBe(2);
         });
 
+        it('highlights each series in the colour the chart draws it in', () => {
+            ss.addChartSeries();
+            ss.setChartDataRef('series:0', 'Table 1::B1');
+            ss.addChartSeries();
+            ss.setChartDataRef('series:1', 'Table 1::C1');
+            const scheme = ss.charts.value[0]!.colorScheme;
+            expect(ss.getChartDataHighlights().map((h) => h.color)).toEqual([scheme[0], scheme[1]]);
+        });
+
         it('returns nothing with no chart selected', () => {
             ss.removeChart(chartId);
             expect(ss.getChartDataHighlights()).toEqual([]);

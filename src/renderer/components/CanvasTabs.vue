@@ -204,6 +204,7 @@ function ctxDelete(): void {
                         v-if="ss.canvases.value.length > 1"
                         class="canvas-tab-close"
                         title="Remove canvas"
+                        :aria-label="`Remove ${canvas.name}`"
                         @click.stop="confirmRemove(canvas.id, canvas.name)">
                         <IconCloseSmall
                             width="10"
@@ -216,6 +217,7 @@ function ctxDelete(): void {
             class="canvas-tab-add"
             :disabled="ss.canvases.value.length >= maxCanvases"
             :title="ss.canvases.value.length >= maxCanvases ? `Maximum ${maxCanvases} canvases` : 'Add canvas'"
+            aria-label="Add canvas"
             @click="ss.addCanvas()">
             <IconPlus
                 width="12"
@@ -234,6 +236,7 @@ function ctxDelete(): void {
             <button
                 class="zoom-btn"
                 title="Zoom out (⌘−)"
+                aria-label="Zoom out"
                 :disabled="ss.canvasZoom.value <= 0.25"
                 @click="ss.zoomOut()">
                 <IconZoomOut
@@ -249,6 +252,7 @@ function ctxDelete(): void {
             <button
                 class="zoom-btn"
                 title="Zoom in (⌘+)"
+                aria-label="Zoom in"
                 :disabled="ss.canvasZoom.value >= 4"
                 @click="ss.zoomIn()">
                 <IconZoomIn
@@ -290,20 +294,19 @@ function ctxDelete(): void {
     align-items: center;
     height: $size-19;
     min-height: $size-19;
-    background: $bg-tertiary;
-    border-top: $border-width-thin $border-color;
-    padding: 0 $space-3;
-    gap: $space-1;
+    background: $color-bg-chrome;
+    border-top: $border-width-thin $color-border;
+    padding: 0 $space-1;
+    gap: $space-0;
     user-select: none;
-    -webkit-app-region: no-drag;
 }
 
 .canvas-tabs-scroll {
     display: flex;
     align-items: center;
-    gap: $space-1;
+    gap: $space-0;
     overflow-x: auto;
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
 
     &::-webkit-scrollbar {
@@ -314,12 +317,12 @@ function ctxDelete(): void {
 .canvas-tab {
     display: flex;
     align-items: center;
-    gap: $space-3;
-    padding: $space-3 $space-9;
+    gap: $space-1;
+    padding: $space-1 $space-3;
     border-radius: $border-radius-md;
     font-size: $font-size-base;
-    font-weight: $font-weight-medium;
-    color: $text-muted;
+    font-weight: $font-weight-normal;
+    color: $color-text-muted;
     cursor: pointer;
     white-space: nowrap;
     transition:
@@ -328,20 +331,19 @@ function ctxDelete(): void {
     position: relative;
 
     &:hover {
-        background: $bg-hover;
-        color: $text-primary;
+        background: $color-bg-hover;
+        color: $color-text;
     }
 
     &.active {
-        background: $bg-primary;
-        color: $text-primary;
-        box-shadow: $shadow-sm;
+        background: $color-bg-surface;
+        color: $color-text;
     }
 
     &.formula-source {
-        outline: 2px solid $accent-color;
-        outline-offset: -2px;
-        color: $accent-color;
+        outline: $border-width-thick $color-accent;
+        outline-offset: -$size-1;
+        color: $color-accent;
     }
 
     &.dragging {
@@ -355,8 +357,8 @@ function ctxDelete(): void {
         top: $size-3;
         bottom: $size-3;
         width: $size-1;
-        background: $accent-color;
-        border-radius: $border-radius-hairline;
+        background: $color-accent;
+        border-radius: $border-radius-sm;
         pointer-events: none;
     }
 
@@ -377,12 +379,12 @@ function ctxDelete(): void {
 
 .canvas-tab-rename {
     background: transparent;
-    border: $border-width-thin $accent-color;
-    border-radius: $border-radius-xs;
-    color: $text-primary;
+    border: $border-width-thin $color-accent;
+    border-radius: $border-radius-sm;
+    color: $color-text;
     font-size: $font-size-base;
-    font-weight: $font-weight-medium;
-    padding: 0 $space-3;
+    font-weight: $font-weight-normal;
+    padding: 0 $space-1;
     width: $size-22;
     outline: none;
     font-family: inherit;
@@ -397,7 +399,7 @@ function ctxDelete(): void {
     border-radius: $border-radius-sm;
     border: none;
     background: transparent;
-    color: $text-muted;
+    color: $color-text-muted;
     padding: 0;
     cursor: pointer;
     opacity: $opacity-none;
@@ -411,8 +413,8 @@ function ctxDelete(): void {
     }
 
     &:hover {
-        background: $danger-color-alpha;
-        color: $danger-color;
+        background: $color-danger-subtle;
+        color: $color-danger;
     }
 }
 
@@ -425,7 +427,7 @@ function ctxDelete(): void {
     border-radius: $border-radius-md;
     border: none;
     background: transparent;
-    color: $text-muted;
+    color: $color-text-muted;
     cursor: pointer;
     flex-shrink: 0;
     transition:
@@ -434,8 +436,8 @@ function ctxDelete(): void {
     padding: 0;
 
     &:hover:not(:disabled) {
-        background: $bg-hover;
-        color: $text-primary;
+        background: $color-bg-hover;
+        color: $color-text;
     }
 
     &:disabled {
@@ -451,9 +453,9 @@ function ctxDelete(): void {
 .zoom-controls {
     display: flex;
     align-items: center;
-    gap: $space-1;
+    gap: $space-0;
     flex-shrink: 0;
-    margin-right: $space-7;
+    margin-right: $space-2;
 }
 
 .zoom-btn {
@@ -462,10 +464,10 @@ function ctxDelete(): void {
     justify-content: center;
     width: $size-14;
     height: $size-14;
-    border-radius: $border-radius;
+    border-radius: $border-radius-md;
     border: none;
     background: transparent;
-    color: $text-muted;
+    color: $color-text-muted;
     cursor: pointer;
     padding: 0;
     transition:
@@ -473,8 +475,8 @@ function ctxDelete(): void {
         color $duration-base;
 
     &:hover:not(:disabled) {
-        background: $bg-hover;
-        color: $text-primary;
+        background: $color-bg-hover;
+        color: $color-text;
     }
 
     &:disabled {
@@ -485,14 +487,14 @@ function ctxDelete(): void {
 
 .zoom-label {
     font-size: $font-size-sm;
-    font-weight: $font-weight-medium;
-    color: $text-muted;
+    font-weight: $font-weight-normal;
+    color: $color-text-muted;
     min-width: $size-21;
     text-align: center;
     border: none;
     background: transparent;
     cursor: pointer;
-    padding: $space-1 $space-3;
+    padding: $space-0 $space-1;
     border-radius: $border-radius-sm;
     font-family: inherit;
     transition:
@@ -500,8 +502,8 @@ function ctxDelete(): void {
         color $duration-base;
 
     &:hover {
-        background: $bg-hover;
-        color: $text-primary;
+        background: $color-bg-hover;
+        color: $color-text;
     }
 }
 
@@ -515,36 +517,36 @@ function ctxDelete(): void {
 .canvas-ctx-menu {
     position: fixed;
     z-index: $z-modal-raised;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
+    background: $color-bg-elevated;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    box-shadow: $shadow-lg;
-    padding: $space-3;
+    box-shadow: $shadow-popover;
+    padding: $space-1;
     min-width: $size-23;
 
     button {
         display: block;
         width: 100%;
         text-align: left;
-        padding: $space-5 $space-11;
+        padding: $space-1 $space-2;
         font-size: $font-size-base;
-        font-weight: $font-weight-medium;
+        font-weight: $font-weight-normal;
         border: none;
         background: transparent;
-        color: $text-primary;
-        border-radius: $border-radius;
+        color: $color-text;
+        border-radius: $border-radius-md;
         cursor: pointer;
         font-family: inherit;
 
         &:hover {
-            background: $bg-hover;
+            background: $color-bg-hover;
         }
 
         &.danger {
-            color: $danger-color;
+            color: $color-danger;
 
             &:hover {
-                background: $danger-color-alpha;
+                background: $color-danger-subtle;
             }
         }
     }
@@ -553,26 +555,22 @@ function ctxDelete(): void {
 .unsaved-message {
     display: inline-flex;
     align-items: center;
-    gap: $space-5;
+    gap: $space-2;
     font-size: $font-size-sm;
-    font-weight: $font-weight-medium;
-    padding: 0 $space-8;
+    font-weight: $font-weight-normal;
+    padding: 0 $space-2;
     height: $size-14;
-    border-radius: $border-radius-3xl;
-    background: $formula-bg;
-    border: $border-width-thin $formula-border;
-    color: $formula-text;
+    color: $color-text-muted;
     flex-shrink: 0;
-    margin-right: $space-7;
+    margin-right: $space-2;
     cursor: default;
-    -webkit-app-region: no-drag;
 
     &::before {
         content: '';
         width: $size-5;
         height: $size-5;
         border-radius: $border-radius-round;
-        background: $formula-dot;
+        background: $color-text-muted;
         flex-shrink: 0;
     }
 }

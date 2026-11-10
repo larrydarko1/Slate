@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { useId } from 'vue';
 
-import { chartRefColor } from '@/renderer/composables/spreadsheet/state';
+import IconCloseSmall from '@/renderer/components/icons/IconCloseSmall.vue';
+import IconPlus from '@/renderer/components/icons/IconPlus.vue';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
-import { type ChartObject, CHART_TYPES, LEGEND_POSITIONS } from '@/renderer/types/spreadsheet';
+import {
+    type ChartObject,
+    CHART_LABEL_COLOR,
+    CHART_TYPES,
+    LEGEND_POSITIONS,
+    seriesColor,
+} from '@/renderer/types/spreadsheet';
 
 const props = defineProps<{ chart: ChartObject }>();
 
@@ -14,7 +21,8 @@ const uid = useId();
 function refFieldStyle(mode: string): Record<string, string> {
     const isPicking = ss.chartSelectionMode.value === mode;
     if (!isPicking) return {};
-    const color = mode === 'labels' ? '#94a3b8' : chartRefColor(parseInt(mode.split(':')[1] ?? '0', 10));
+    const color =
+        mode === 'labels' ? CHART_LABEL_COLOR : seriesColor(props.chart, parseInt(mode.split(':')[1] ?? '0', 10));
     return {
         borderColor: color,
         boxShadow: `0 0 0 1px ${color}`,
@@ -98,7 +106,7 @@ function onGridToggle(e: Event): void {
                 @click="onRefFieldClick('labels')">
                 <span
                     class="ref-color-dot"
-                    :style="{ background: '#94a3b8' }"></span>
+                    :style="{ background: CHART_LABEL_COLOR }"></span>
                 <input
                     class="ref-input"
                     :value="chart.dataSource?.labelRef?.refString ?? ''"
@@ -109,9 +117,10 @@ function onGridToggle(e: Event): void {
                 <button
                     v-if="chart.dataSource?.labelRef"
                     class="ref-clear"
-                    title="Clear"
+                    title="Clear labels"
+                    aria-label="Clear labels"
                     @click.stop="clearRef('labels')">
-                    ×
+                    <IconCloseSmall />
                 </button>
             </div>
         </div>
@@ -123,9 +132,10 @@ function onGridToggle(e: Event): void {
                 <button
                     class="add-series-btn"
                     title="Add series"
-                    @click="ss.addChartSeries()"
-                    >+</button
-                >
+                    aria-label="Add series"
+                    @click="ss.addChartSeries()">
+                    <IconPlus />
+                </button>
             </div>
             <div
                 v-for="(sref, i) in chart.dataSource?.seriesRefs ?? []"
@@ -137,7 +147,7 @@ function onGridToggle(e: Event): void {
                 @click="onRefFieldClick('series:' + i)">
                 <span
                     class="ref-color-dot"
-                    :style="{ background: chartRefColor(i) }"></span>
+                    :style="{ background: seriesColor(chart, i) }"></span>
                 <input
                     class="ref-input"
                     :value="sref.refString"
@@ -148,9 +158,10 @@ function onGridToggle(e: Event): void {
                 <button
                     class="ref-clear"
                     title="Remove series"
-                    @click.stop="ss.removeChartSeries(i)"
-                    >×</button
-                >
+                    aria-label="Remove series"
+                    @click.stop="ss.removeChartSeries(i)">
+                    <IconCloseSmall />
+                </button>
             </div>
             <div
                 v-if="!chart.dataSource?.seriesRefs?.length"
@@ -199,11 +210,11 @@ function onGridToggle(e: Event): void {
     top: 0;
     right: -$size-31;
     width: $size-30;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
+    background: $color-bg-surface;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    padding: $space-7;
-    box-shadow: $shadow-md;
+    padding: $space-2;
+    box-shadow: $shadow-popover;
     z-index: $z-canvas-chrome;
     max-height: $size-35;
     overflow-y: auto;
@@ -211,9 +222,9 @@ function onGridToggle(e: Event): void {
 }
 
 .config-section {
-    margin-bottom: $space-7;
-    border-bottom: $border-width-thin $border-color;
-    padding-bottom: $space-5;
+    margin-bottom: $space-2;
+    border-bottom: $border-width-thin $color-border;
+    padding-bottom: $space-2;
 }
 
 .config-section-header {
@@ -221,11 +232,11 @@ function onGridToggle(e: Event): void {
     align-items: center;
     justify-content: space-between;
     font-weight: $font-weight-semibold;
-    color: $text-muted;
-    font-size: $font-size-xs;
+    color: $color-text-muted;
+    font-size: $font-size-sm;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: $space-3;
+    letter-spacing: $letter-spacing-wide;
+    margin-bottom: $space-1;
 }
 
 .add-series-btn {
@@ -235,45 +246,46 @@ function onGridToggle(e: Event): void {
     width: $size-12;
     height: $size-12;
     border-radius: $border-radius-sm;
-    border: $border-width-thin $border-color;
-    background: $bg-secondary;
-    color: $text-muted;
-    font-size: $font-size-md;
-    font-weight: $font-weight-semibold;
+    border: $border-width-thin $color-border;
+    background: $color-bg-chrome;
+    color: $color-text-muted;
     cursor: pointer;
     padding: 0;
-    line-height: $line-height-none;
     transition:
         background $duration-base,
         color $duration-base;
 
+    svg {
+        width: $size-8;
+        height: $size-8;
+    }
+
     &:hover {
-        background: $accent-color;
-        color: $on-accent;
-        border-color: $accent-color;
+        background: $color-bg-hover;
+        color: $color-text;
     }
 }
 
 .ref-field {
     display: flex;
     align-items: center;
-    gap: $space-3;
-    padding: $space-2 $space-3;
-    border: $border-width-thin $border-color;
-    border-radius: $border-radius;
-    background: $bg-secondary;
-    margin-bottom: $space-3;
+    gap: $space-1;
+    padding: $space-1 $space-1;
+    border: $border-width-thin $color-border;
+    border-radius: $border-radius-md;
+    background: $color-bg-chrome;
+    margin-bottom: $space-1;
     cursor: text;
     transition:
         border-color $duration-base,
         box-shadow $duration-base;
 
     &:hover {
-        border-color: $text-muted;
+        border-color: $color-text-muted;
     }
 
     &.picking {
-        background: $bg-primary;
+        background: $color-bg-surface;
     }
 }
 
@@ -291,14 +303,14 @@ function onGridToggle(e: Event): void {
     background: transparent;
     font-size: $font-size-sm;
     font-family: $font-family;
-    color: $text-primary;
+    color: $color-text;
     padding: 0;
     min-width: 0;
 
     &::placeholder {
-        color: $text-muted;
+        color: $color-text-muted;
         font-family: inherit;
-        font-size: $font-size-xs;
+        font-size: $font-size-sm;
     }
 }
 
@@ -311,61 +323,64 @@ function onGridToggle(e: Event): void {
     border-radius: $border-radius-round;
     border: none;
     background: transparent;
-    color: $text-muted;
-    font-size: $font-size-md;
+    color: $color-text-muted;
     cursor: pointer;
     padding: 0;
     flex-shrink: 0;
-    line-height: $line-height-none;
     transition:
         background $duration-base,
         color $duration-base;
 
+    svg {
+        width: $size-8;
+        height: $size-8;
+    }
+
     &:hover {
-        background: $danger-color-alpha;
-        color: $danger-color;
+        background: $color-danger-subtle;
+        color: $color-danger;
     }
 }
 
 .ref-empty-hint {
-    font-size: $font-size-xs;
-    color: $text-muted;
+    font-size: $font-size-sm;
+    color: $color-text-muted;
     text-align: center;
-    padding: $space-3;
+    padding: $space-1;
 }
 
 .config-row {
     display: flex;
     align-items: flex-start;
-    gap: $space-5;
-    margin-bottom: $space-5;
+    gap: $space-2;
+    margin-bottom: $space-2;
 
     > label:first-child {
         flex: 0 0 50px;
         font-weight: $font-weight-semibold;
-        color: $text-muted;
-        padding-top: $space-1;
+        color: $color-text-muted;
+        padding-top: $space-0;
         font-size: $font-size-sm;
     }
 
     select {
         flex: 1;
         font-size: $font-size-sm;
-        padding: $space-1 $space-3;
-        border: $border-width-thin $border-color;
+        padding: $space-0 $space-1;
+        border: $border-width-thin $color-border;
         border-radius: $border-radius-sm;
-        background: $bg-secondary;
-        color: $text-primary;
+        background: $color-bg-chrome;
+        color: $color-text;
     }
 
     input[type='checkbox'] {
-        margin-top: $space-2;
+        margin-top: $space-1;
     }
 }
 
 .config-hint {
-    font-size: $font-size-xs;
-    color: $text-muted;
-    padding-top: $space-2;
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+    padding-top: $space-1;
 }
 </style>

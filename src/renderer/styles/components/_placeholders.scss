@@ -36,19 +36,22 @@
     justify-content: center;
     width: $size-13;
     height: $size-13;
-    border: $border-width-thin $border-color;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-round;
-    background: $bg-primary;
-    color: $text-muted;
-    font-size: $font-size-lg;
-    line-height: $line-height-none;
+    background: $color-bg-surface;
+    color: $color-text-muted;
     cursor: pointer;
-    box-shadow: $shadow-sm;
+    box-shadow: $shadow-popover;
     z-index: $z-sticky-high;
 
+    svg {
+        width: $size-8;
+        height: $size-8;
+    }
+
     &:hover {
-        background: $danger-color-alpha;
-        border-color: $danger-color;
-        color: $danger-color;
+        background: $color-danger-subtle;
+        border-color: $color-danger;
+        color: $color-danger;
     }
 }

@@ -1,13 +1,10 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { assert, describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import Toolbar from '@/renderer/components/Toolbar.vue';
-import { useSpreadsheet, SPREADSHEET_KEY, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
 
 describe('Toolbar', () => {
-    let ss: SpreadsheetState;
     let wrapper: VueWrapper;
-    let id: string;
 
     /** Buttons are identified by their tooltip — that is also their accessible name. */
     const byTitle = (title: string) => wrapper.get(`[title="${title}"]`);
@@ -26,10 +23,7 @@ describe('Toolbar', () => {
             writable: true,
         });
         localStorage.clear();
-        ss = useSpreadsheet();
-        ss.addTable();
-        id = ss.tables.value[0]!.id;
-        wrapper = mount(Toolbar, { global: { provide: { [SPREADSHEET_KEY as symbol]: ss } } });
+        wrapper = mount(Toolbar);
     });
 
     afterEach(() => {
@@ -48,100 +42,12 @@ describe('Toolbar', () => {
             ['New (⌘N)', 'newFile'],
             ['Open (⌘O)', 'openFile'],
             ['Save (⌘S)', 'saveFile'],
-            ['Add Table', 'addTable'],
-            ['Add Text Box', 'addTextBox'],
-            ['Add Chart', 'addChart'],
-            ['Merge cells', 'mergeCells'],
-            ['Unmerge cells', 'unmergeCells'],
+            ['Add table', 'addTable'],
+            ['Add text box', 'addTextBox'],
+            ['Add chart', 'addChart'],
         ])('%s emits %s', async (title, event) => {
             await byTitle(title).trigger('click');
             expect(wrapper.emitted(event)).toHaveLength(1);
-        });
-    });
-
-    describe('cell formatting', () => {
-        beforeEach(async () => {
-            ss.selectCell(id, 0, 0);
-            await wrapper.vm.$nextTick();
-        });
-
-        it('toggles bold on and off', async () => {
-            await byTitle('Bold').trigger('click');
-            expect(ss.findCell(id, 0, 0)?.format?.bold).toBe(true);
-            await byTitle('Bold').trigger('click');
-            expect(ss.findCell(id, 0, 0)?.format?.bold).toBe(false);
-        });
-
-        it('toggles italic on and off', async () => {
-            await byTitle('Italic').trigger('click');
-            expect(ss.findCell(id, 0, 0)?.format?.italic).toBe(true);
-            await byTitle('Italic').trigger('click');
-            expect(ss.findCell(id, 0, 0)?.format?.italic).toBe(false);
-        });
-
-        it.each([
-            ['Align Left', 'left'],
-            ['Align Center', 'center'],
-            ['Align Right', 'right'],
-        ])('%s sets the alignment', async (title, align) => {
-            await byTitle(title).trigger('click');
-            expect(ss.findCell(id, 0, 0)?.format?.align).toBe(align);
-        });
-
-        it('makes the cell a checkbox from the type menu', async () => {
-            await byTitle('Cell format type').trigger('click');
-            const option = wrapper.findAll('.type-option').find((candidate) => candidate.text().includes('Checkbox'));
-            assert.isDefined(option);
-            await option.trigger('click');
-            expect(ss.getCellType(id, 0, 0)).toBe('checkbox');
-        });
-
-        it('makes the cell a star rating from the type menu', async () => {
-            await byTitle('Cell format type').trigger('click');
-            const option = wrapper
-                .findAll('.type-option')
-                .find((candidate) => candidate.text().includes('Star rating'));
-            assert.isDefined(option);
-            await option.trigger('click');
-            expect(ss.getCellType(id, 0, 0)).toBe('rating');
-        });
-
-        it('makes the cell a stepper from the type menu', async () => {
-            await byTitle('Cell format type').trigger('click');
-            const option = wrapper.findAll('.type-option').find((candidate) => candidate.text().includes('Stepper'));
-            assert.isDefined(option);
-            await option.trigger('click');
-            expect(ss.getCellType(id, 0, 0)).toBe('stepper');
-        });
-    });
-
-    describe('text box formatting', () => {
-        beforeEach(async () => {
-            ss.addTextBox();
-            await wrapper.vm.$nextTick();
-        });
-
-        it('bolds the active text box rather than a cell', async () => {
-            await byTitle('Bold').trigger('click');
-            expect(ss.textBoxes.value[0]!.fontWeight).toBe('bold');
-        });
-
-        it('italicises the active text box', async () => {
-            await byTitle('Italic').trigger('click');
-            expect(ss.textBoxes.value[0]!.fontStyle).toBe('italic');
-        });
-
-        it('aligns the active text box', async () => {
-            await byTitle('Align Center').trigger('click');
-            expect(ss.textBoxes.value[0]!.align).toBe('center');
-        });
-
-        it('steps the font size up and down', async () => {
-            const start = ss.textBoxes.value[0]!.fontSize;
-            await byTitle('Increase font size').trigger('click');
-            expect(ss.textBoxes.value[0]!.fontSize).toBeGreaterThan(start);
-            await byTitle('Decrease font size').trigger('click');
-            expect(ss.textBoxes.value[0]!.fontSize).toBe(start);
         });
     });
 
@@ -155,7 +61,7 @@ describe('Toolbar', () => {
         it('reads the saved theme on mount', async () => {
             wrapper.unmount();
             localStorage.setItem('slate-theme', 'dark');
-            wrapper = mount(Toolbar, { global: { provide: { [SPREADSHEET_KEY as symbol]: ss } } });
+            wrapper = mount(Toolbar);
             await wrapper.vm.$nextTick();
             expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
         });

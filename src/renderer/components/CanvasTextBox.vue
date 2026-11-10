@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, useTemplateRef } from 'vue';
 
 import ResizeHandles from '@/renderer/components/canvas/ResizeHandles.vue';
+import IconCloseSmall from '@/renderer/components/icons/IconCloseSmall.vue';
 import { useDragResize, type ResizeDir } from '@/renderer/composables/useDragResize';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 import type { TextBox } from '@/renderer/types/spreadsheet';
@@ -35,7 +36,7 @@ const textStyle = computed(() => ({
             : undefined,
     fontWeight: props.textBox.fontWeight,
     fontStyle: props.textBox.fontStyle,
-    color: props.textBox.textColor !== '' ? props.textBox.textColor : 'var(--text-primary)',
+    color: props.textBox.textColor !== '' ? props.textBox.textColor : 'var(--color-text)',
     textAlign: props.textBox.align,
 }));
 
@@ -137,9 +138,10 @@ function finishTextEdit(): void {
             v-if="isActive && !isTextEditing"
             class="canvas-delete"
             title="Delete text box"
+            aria-label="Delete text box"
             @click.stop="ss.removeTextBox(textBox.id)"
             @mousedown.stop>
-            ×
+            <IconCloseSmall />
         </button>
     </div>
 </template>
@@ -150,7 +152,7 @@ function finishTextEdit(): void {
     border: $border-width-thin transparent;
 
     &:hover:not(.active) {
-        border-color: $border-color;
+        border-color: $color-border;
     }
 
     &.editing {
@@ -161,22 +163,21 @@ function finishTextEdit(): void {
 .textbox-display {
     width: 100%;
     height: 100%;
-    padding: $space-7 $space-9;
+    padding: $space-2 $space-3;
     white-space: pre-wrap;
     overflow-wrap: break-word;
     overflow: hidden;
     font-family: inherit;
     line-height: $line-height-base;
-    color: $text-primary;
+    color: $color-text;
 }
 
 .textbox-placeholder {
     position: absolute;
     inset: 0;
-    padding: $space-7 $space-9;
-    font-size: $font-size-lg;
-    color: $text-muted;
-    opacity: $opacity-mid;
+    padding: $space-2 $space-3;
+    font-size: $font-size-base;
+    color: $color-text-muted;
     pointer-events: none;
     line-height: $line-height-base;
 }
@@ -184,7 +185,7 @@ function finishTextEdit(): void {
 .textbox-editor {
     width: 100%;
     height: 100%;
-    padding: $space-7 $space-9;
+    padding: $space-2 $space-3;
     border: none;
     outline: none;
     background: transparent;
@@ -193,7 +194,7 @@ function finishTextEdit(): void {
     line-height: $line-height-base;
     white-space: pre-wrap;
     overflow-wrap: break-word;
-    color: $text-primary;
+    color: $color-text;
 }
 
 /* ––––– Resize handles ––––– */

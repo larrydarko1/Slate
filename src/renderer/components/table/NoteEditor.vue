@@ -84,12 +84,10 @@ watch(
 .note-editor {
     position: absolute;
     width: $size-26;
-    background: $note-bg;
-    border: $border-width-thin $note-border;
-    border-radius: $border-radius-xl;
-    box-shadow:
-        0 8px 32px $scrim-heavy,
-        0 0 0 1px $scrim-faint;
+    background: $color-note-bg;
+    border: $border-width-thin $color-note-border;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow-popover;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -99,7 +97,7 @@ watch(
     width: 100%;
     min-height: $size-22;
     max-height: $size-25;
-    padding: $space-9 $space-11;
+    padding: $space-3 $space-3;
     border: none;
     outline: none;
     resize: vertical;
@@ -107,19 +105,19 @@ watch(
     font-family: inherit;
     line-height: $line-height-base;
     background: transparent;
-    color: $note-text;
+    color: $color-note-text;
 
     &::placeholder {
-        color: $note-placeholder;
+        color: $color-note-muted;
     }
 }
 
 .note-editor-actions {
     display: flex;
     align-items: center;
-    padding: $space-5 $space-7;
-    gap: $space-5;
-    border-top: $border-width-thin $note-border;
+    padding: $space-2 $space-2;
+    gap: $space-2;
+    border-top: $border-width-thin $color-note-border;
 }
 
 .note-editor-spacer {
@@ -129,7 +127,7 @@ watch(
 .note-editor-cancel,
 .note-editor-save,
 .note-editor-delete {
-    padding: $space-3 $space-11;
+    padding: $space-1 $space-3;
     border: none;
     border-radius: $border-radius-md;
     font-size: $font-size-sm;
@@ -139,28 +137,28 @@ watch(
 
 .note-editor-cancel {
     background: transparent;
-    color: $note-muted;
+    color: $color-note-muted;
 
     &:hover {
-        background: $scrim-soft;
+        background: $color-scrim-soft;
     }
 }
 
 .note-editor-save {
-    background: $note-accent;
-    color: $on-accent;
+    background: $color-note-text;
+    color: $color-note-bg;
 
     &:hover {
-        background: $note-accent-hover;
+        background: color-mix(in srgb, $color-note-text 85%, $color-note-bg);
     }
 }
 
 .note-editor-delete {
     background: transparent;
-    color: $danger-color;
+    color: $color-danger;
 
     &:hover {
-        background: $danger-color-alpha;
+        background: $color-danger-subtle;
     }
 }
 </style>

@@ -2,6 +2,8 @@
 import { computed, nextTick, ref, toRef, watch, useTemplateRef } from 'vue';
 
 import ContextMenu from '@/renderer/components/ContextMenu.vue';
+import IconCloseSmall from '@/renderer/components/icons/IconCloseSmall.vue';
+import IconPlus from '@/renderer/components/icons/IconPlus.vue';
 import CellDisplay from '@/renderer/components/table/CellDisplay.vue';
 import CellSettingsPanel from '@/renderer/components/table/CellSettingsPanel.vue';
 import NoteEditor from '@/renderer/components/table/NoteEditor.vue';
@@ -351,17 +353,15 @@ watch(
                 <button
                     class="table-close-btn"
                     title="Delete table"
-                    @click.stop="$emit('remove')"
-                    >×</button
-                >
+                    aria-label="Delete table"
+                    @click.stop="$emit('remove')">
+                    <IconCloseSmall />
+                </button>
             </div>
 
             <!-- Table grid -->
             <div class="table-grid-wrapper">
-                <table
-                    class="table-grid"
-                    cellpadding="0"
-                    cellspacing="0">
+                <table class="table-grid">
                     <thead>
                         <tr>
                             <th
@@ -405,7 +405,7 @@ watch(
                                 class="add-col-header"
                                 title="Drag to add columns"
                                 @mousedown.stop.prevent="startAddColDrag($event)">
-                                <span class="add-handle add-handle-col">≡</span>
+                                <IconPlus class="add-handle" />
                             </th>
                         </tr>
                     </thead>
@@ -520,7 +520,7 @@ watch(
                                 :colspan="table.columns.length + 2"
                                 title="Drag to add rows"
                                 @mousedown.stop.prevent="startAddRowDrag($event)">
-                                <span class="add-handle add-handle-row">≡</span>
+                                <IconPlus class="add-handle" />
                             </td>
                         </tr>
                     </tbody>
@@ -564,19 +564,15 @@ watch(
 
 .spreadsheet-table {
     position: relative;
-    border-radius: $border-radius-xl;
+    border-radius: $border-radius-lg;
     overflow: hidden;
-    box-shadow: $shadow-md;
-    border: $border-width-thin $border-color;
-    background: $bg-primary;
+    border: $border-width-thin $color-border;
+    background: $color-bg-surface;
     outline: none;
-    transition:
-        box-shadow $duration-base,
-        border-color $duration-base;
+    transition: border-color $duration-base;
 
     &.active {
-        box-shadow: $shadow-lg;
-        border-color: $accent-color;
+        border-color: $color-accent;
     }
 
     &.formula-mode {
@@ -585,7 +581,7 @@ watch(
 
             &:hover {
                 /* stylelint-disable-next-line declaration-no-important */
-                background: $accent-color-alpha !important;
+                background: $color-accent-subtle !important;
             }
         }
     }
@@ -601,10 +597,9 @@ watch(
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: $size-18;
-    padding: 0 $space-9;
-    background: $accent-color;
-    color: $on-accent;
+    height: $size-19;
+    padding: 0 $space-1 0 $space-3;
+    color: $color-text;
     cursor: grab;
     user-select: none;
 
@@ -621,38 +616,38 @@ watch(
 }
 
 .table-name-input {
-    border: none;
+    border: $border-width-thin $color-accent;
     outline: none;
-    background: $glass-soft;
-    color: $on-accent;
-    font-size: $font-size-base;
+    background: $color-bg-surface;
+    color: $color-text;
+    font: inherit;
     font-weight: $font-weight-semibold;
-    border-radius: $border-radius-xs;
-    padding: $space-1 $space-5;
-    width: $size-23;
-
-    &::selection {
-        background: $glass;
-    }
+    border-radius: $border-radius-sm;
+    padding: $space-0 $space-1;
+    width: $size-29;
 }
 
 .table-close-btn {
-    width: $size-13;
-    height: $size-13;
+    width: $size-15;
+    height: $size-15;
     border: none;
     border-radius: $border-radius-sm;
     background: transparent;
-    color: $glass-strong;
-    font-size: $font-size-xl;
-    line-height: $line-height-none;
+    color: $color-text-muted;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+
+    svg {
+        width: $size-9;
+        height: $size-9;
+    }
 
     &:hover {
-        background: $glass-soft;
-        color: $on-accent;
+        background: $color-danger-subtle;
+        color: $color-danger;
     }
 }
 
@@ -665,48 +660,53 @@ watch(
 .table-grid {
     border-collapse: collapse;
     table-layout: fixed;
+
+    :where(th, td) {
+        padding: 0;
+    }
 }
 
 .corner-cell {
     width: $size-20;
     min-width: $size-20;
     height: $size-15;
-    background: $bg-tertiary;
-    border-bottom: $border-width-thin $border-color;
-    border-right: $border-width-thin $border-color;
+    background: $color-bg-chrome;
+    border-bottom: $border-width-thin $color-grid;
+    border-right: $border-width-thin $color-grid;
     cursor: pointer;
     user-select: none;
 
     &:hover {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 
     &.all-selected {
-        background: $accent-color;
+        background: color-mix(in srgb, $color-accent 16%, $color-bg-chrome);
     }
 }
 
 .col-header {
     position: relative;
     height: $size-15;
-    background: $bg-tertiary;
-    border-bottom: $border-width-thin $border-color;
-    border-right: $border-width-thin $border-color;
+    background: $color-bg-chrome;
+    border-bottom: $border-width-thin $color-grid;
+    border-right: $border-width-thin $color-grid;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
-    color: $text-muted;
+    color: $color-text-muted;
     text-align: center;
     user-select: none;
-    padding: 0 $space-3;
+    padding: 0 $space-1;
     cursor: pointer;
 
     &:hover:not(.col-selected) {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 
     &.col-selected {
-        background: $accent-color;
-        color: $on-accent;
+        background: color-mix(in srgb, $color-accent 16%, $color-bg-chrome);
+        color: $color-accent;
+        font-weight: $font-weight-semibold;
     }
 }
 
@@ -721,7 +721,7 @@ watch(
 
     &:hover,
     &:active {
-        background: $accent-color;
+        background: $color-accent;
         opacity: $opacity-low;
     }
 }
@@ -729,14 +729,14 @@ watch(
 .add-col-header {
     width: $size-17;
     min-width: $size-17;
-    background: $bg-tertiary;
-    border-bottom: $border-width-thin $border-color;
+    background: $color-bg-chrome;
+    border-bottom: $border-width-thin $color-border;
     text-align: center;
     cursor: e-resize;
     user-select: none;
 
     &:hover {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 }
 
@@ -744,31 +744,32 @@ watch(
     width: $size-20;
     min-width: $size-20;
     height: $size-16;
-    background: $bg-tertiary;
-    border-bottom: $border-width-thin $border-color;
-    border-right: $border-width-thin $border-color;
+    background: $color-bg-chrome;
+    border-bottom: $border-width-thin $color-grid;
+    border-right: $border-width-thin $color-grid;
     font-size: $font-size-sm;
-    font-weight: $font-weight-medium;
-    color: $text-muted;
+    font-weight: $font-weight-normal;
+    color: $color-text-muted;
     text-align: center;
     user-select: none;
-    padding: 0 $space-3;
+    padding: 0 $space-1;
     cursor: pointer;
 
     &:hover:not(.row-selected) {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 
     &.row-selected {
-        background: $accent-color;
-        color: $on-accent;
+        background: color-mix(in srgb, $color-accent 16%, $color-bg-chrome);
+        color: $color-accent;
+        font-weight: $font-weight-semibold;
     }
 }
 
 .cell {
     height: $size-16;
-    border-bottom: $border-width-thin $border-color;
-    border-right: $border-width-thin $border-color;
+    border-bottom: $border-width-thin $color-grid;
+    border-right: $border-width-thin $color-grid;
     padding: 0;
     position: relative;
     cursor: cell;
@@ -780,32 +781,32 @@ watch(
     user-select: none;
 
     &.header-row {
-        background: $bg-secondary;
+        background: $color-bg-chrome;
         font-weight: $font-weight-semibold;
     }
 
     &.selected {
-        outline: 2px solid $accent-color;
-        outline-offset: -1px;
+        outline: $border-width-thick $color-accent;
+        outline-offset: -$size-0;
         z-index: $z-raised-high;
         overflow: visible;
     }
 
     &.in-selection {
-        background: $accent-color-alpha;
+        background: $color-accent-subtle;
         z-index: $z-base;
     }
 
     &.in-fill,
     &.in-move {
-        background: $accent-color-alpha;
-        outline: 1px dashed $accent-color;
-        outline-offset: -1px;
+        background: $color-accent-subtle;
+        outline: $size-0 dashed $color-accent;
+        outline-offset: -$size-0;
         z-index: $z-base;
     }
 
     &.lifted {
-        opacity: 0.4;
+        opacity: $opacity-low;
     }
 
     &.merged-cell {
@@ -818,7 +819,7 @@ watch(
     }
 
     &:hover:not(.selected, .in-selection) {
-        background: $accent-color-alpha;
+        background: $color-bg-hover;
     }
 }
 
@@ -829,11 +830,11 @@ watch(
     height: 100%;
     border: none;
     outline: none;
-    padding: 0 $space-5;
+    padding: 0 $space-2;
     font-size: $font-size-base;
     font-family: inherit;
-    color: $text-primary;
-    background: $bg-primary;
+    color: $color-text;
+    background: $color-bg-surface;
     z-index: $z-raised;
     user-select: text;
 }
@@ -847,7 +848,7 @@ watch(
     width: 0;
     height: 0;
     border-left: $size-5 solid transparent;
-    border-top: $size-5 solid $note-accent;
+    border-top: $size-5 solid $color-note-accent;
     z-index: $z-raised-high;
     pointer-events: auto;
     cursor: default;
@@ -861,16 +862,12 @@ watch(
     bottom: -$size-3;
     width: $size-7;
     height: $size-7;
-    background: $accent-color;
-    border: 1.5px solid $on-accent;
-    border-radius: $border-radius-hairline;
+    background: $color-accent;
+    border: $border-width-thin $color-bg-surface;
+    border-radius: $border-radius-round;
     cursor: crosshair;
     z-index: $z-raised-high;
     pointer-events: auto;
-
-    @include dark {
-        border-color: $bg-primary;
-    }
 }
 
 /* ––––– Row / Column reorder drop indicators ––––– */
@@ -884,56 +881,46 @@ tr.reorder-row-source > td {
 }
 
 tr.reorder-row-drop-before > td {
-    box-shadow: inset 0 $size-1 0 0 $accent-color;
+    box-shadow: inset 0 $size-1 0 0 $color-accent;
 }
 
 tr.reorder-row-drop-after > td {
-    box-shadow: inset 0 (-$size-1) 0 0 $accent-color;
+    box-shadow: inset 0 (-$size-1) 0 0 $color-accent;
 }
 
 .row-header.reorder-drop-before {
-    box-shadow: inset 0 $size-1 0 0 $accent-color;
+    box-shadow: inset 0 $size-1 0 0 $color-accent;
 }
 
 .row-header.reorder-drop-after {
-    box-shadow: inset 0 (-$size-1) 0 0 $accent-color;
+    box-shadow: inset 0 (-$size-1) 0 0 $color-accent;
 }
 
 .col-header.reorder-drop-before {
-    box-shadow: inset $size-1 0 0 0 $accent-color;
+    box-shadow: inset $size-1 0 0 0 $color-accent;
 }
 
 .col-header.reorder-drop-after {
-    box-shadow: inset (-$size-1) 0 0 0 $accent-color;
+    box-shadow: inset (-$size-1) 0 0 0 $color-accent;
 }
 
 .add-row-cell {
     height: $size-15;
-    background: $bg-tertiary;
+    background: $color-bg-chrome;
     text-align: center;
     cursor: s-resize;
     border-bottom: none;
     user-select: none;
 
     &:hover {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 }
 
 .add-handle {
-    font-size: $font-size-base;
-    font-weight: $font-weight-bold;
-    color: $text-muted;
-    line-height: 2;
-    letter-spacing: 1px;
-}
-
-.add-handle-row {
-    display: inline-block;
-    transform: rotate(90deg);
-}
-
-.add-handle-col {
-    display: inline-block;
+    width: $size-8;
+    height: $size-8;
+    color: $color-text-muted;
+    vertical-align: middle;
 }
 </style>

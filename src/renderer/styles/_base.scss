@@ -1,7 +1,7 @@
 // Global reset and element defaults.
-// Owns: box-sizing, the document-level typography, the Electron drag regions,
+// Owns: box-sizing, the document-level typography, the interactive cursor,
 // the scrollbar, and the focus/selection treatment.
-// Does NOT own: the palette it paints with (_themes.scss) or anything scoped
+// Does NOT own: the palette it paints with (_theme.scss) or anything scoped
 // to a single component.
 // Reached only through index.scss, which main.ts imports exactly once. Every
 // rule below is unscoped, so a second import would emit all of it twice.
@@ -22,8 +22,8 @@
     font-family: $font-family;
     line-height: $line-height-base;
     font-weight: $font-weight-normal;
-    color: $text1;
-    background-color: $bg-primary;
+    color: $color-text;
+    background-color: $color-bg;
     font-synthesis: none;
     text-rendering: optimizelegibility;
     -webkit-font-smoothing: antialiased;
@@ -75,35 +75,17 @@ html,
     // stylelint-enable declaration-no-important
 }
 
-// ── Electron drag regions ─────────────────────────────────────────────────────
+// ── Interactive elements ──────────────────────────────────────────────────────
 
-// These do not make anything draggable; they make it NOT draggable. The window
-// declares its own drag handle in the toolbar, and anything the user is meant
-// to click has to opt out or the mousedown starts a window drag instead of
-// reaching the element.
+// Text fields are left out: they keep the text cursor, which says "type here".
 button,
-input,
-textarea,
 select,
 a,
 [role='button'],
-.clickable {
-    -webkit-app-region: no-drag;
+.clickable,
+input[type='checkbox'],
+input[type='color'] {
     cursor: pointer;
-}
-
-// Scrollable content containers, matched by the class patterns they share.
-[class*='content'],
-[class*='list'],
-[class*='body'],
-[class*='container'],
-[class*='wrapper'],
-[class*='entries'],
-[class*='items'],
-.modal,
-.popup,
-.dropdown-menu {
-    -webkit-app-region: no-drag;
 }
 
 // ── Scrollbar ─────────────────────────────────────────────────────────────────
@@ -118,24 +100,24 @@ a,
 }
 
 ::-webkit-scrollbar-thumb {
-    background: $scrollbar-thumb;
-    border-radius: $border-radius-xs;
+    background: $color-scrollbar;
+    border-radius: $border-radius-sm;
     transition: background $transition-slow;
 
     &:hover {
-        background: $scrollbar-thumb-hover;
+        background: $color-scrollbar-hover;
     }
 }
 
 // ── Focus & Selection ─────────────────────────────────────────────────────────
 
 :focus-visible {
-    outline: $border-width-thick $accent-color;
+    outline: $border-width-thick $color-accent;
     outline-offset: -$size-1;
     border-radius: $border-radius-sm;
 }
 
 ::selection {
-    background: $accent-color-alpha;
-    color: $text1;
+    background: $color-accent-subtle;
+    color: $color-text;
 }

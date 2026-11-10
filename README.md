@@ -166,10 +166,9 @@ slate/
 │       ├── main.ts                #   Vue entry point
 │       ├── styles/                #   SCSS design system
 │       │   ├── index.scss         #     Entry point — imported once by main.ts
-│       │   ├── _tokens.scss       #     Custom properties shared by every theme
-│       │   ├── _themes.scss       #     Per-theme palettes (light/dark)
-│       │   ├── _variables.scss    #     Scales, theme aliases & mixins — injected into every SFC
-│       │   ├── _base.scss         #     Document typography, Electron drag regions
+│       │   ├── _variables.scss    #     Scales, theme maps, aliases & mixins — injected into every SFC
+│       │   ├── _theme.scss        #     Emits the theme maps as CSS custom properties
+│       │   ├── _base.scss         #     Document typography, element defaults
 │       │   └── components/        #     Shared button, canvas & placeholder styles
 │       ├── components/            #   Vue components
 │       │   ├── SpreadsheetTable.vue    # Table grid, cell editing, keyboard nav
@@ -177,7 +176,8 @@ slate/
 │       │   ├── CanvasChart.vue         # Chart element on canvas
 │       │   ├── CanvasTextBox.vue       # Rich text box element
 │       │   ├── CanvasTabs.vue          # Multi-canvas tab bar & zoom controls
-│       │   ├── Toolbar.vue             # App & formatting toolbar
+│       │   ├── Toolbar.vue             # File, insert & theme row
+│       │   ├── FormatBar.vue           # Formatting row for the selection
 │       │   ├── FormulaBar.vue          # Formula input with token coloring
 │       │   ├── ContextMenu.vue         # Reusable right-click menu
 │       │   ├── canvas/                 # ResizeHandles

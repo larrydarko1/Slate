@@ -14,15 +14,6 @@ const contentStyle = computed((): { transform: string; transformOrigin: string }
     transformOrigin: '0 0',
 }));
 
-const bgStyle = computed((): { backgroundPosition: string; backgroundSize: string } => {
-    const zoom = ss.canvasZoom.value;
-    const size = 24 * zoom;
-    return {
-        backgroundPosition: `${ss.canvasOffset.value.x}px ${ss.canvasOffset.value.y}px`,
-        backgroundSize: `${size}px ${size}px`,
-    };
-});
-
 // ── Canvas panning ──
 
 let panState: { startX: number; startY: number; origX: number; origY: number } | null = null;
@@ -99,9 +90,7 @@ function onWheel(e: WheelEvent): void {
         @mousedown="onCanvasMouseDown"
         @wheel="onWheel">
         <!-- Grid dot pattern background -->
-        <div
-            class="canvas-bg"
-            :style="bgStyle"></div>
+        <div class="canvas-bg"></div>
 
         <!-- Pannable content layer -->
         <div
@@ -126,8 +115,22 @@ function onWheel(e: WheelEvent): void {
         <div
             v-if="ss.tables.value.length === 0 && ss.textBoxes.value.length === 0 && ss.charts.value.length === 0"
             class="canvas-empty">
-            <p class="empty-title">No tables yet</p>
-            <p class="empty-sub">Click <strong>+ Table</strong> in the toolbar to get started.</p>
+            <p class="empty-title">This canvas is empty</p>
+            <p class="empty-sub">Start with a table, or add a text box for notes.</p>
+            <div class="empty-actions">
+                <button
+                    type="button"
+                    class="empty-primary"
+                    @click="ss.addTable()">
+                    Add table
+                </button>
+                <button
+                    type="button"
+                    class="empty-secondary"
+                    @click="ss.addTextBox()">
+                    Add text box
+                </button>
+            </div>
         </div>
     </div>
 </template>
@@ -144,8 +147,7 @@ function onWheel(e: WheelEvent): void {
     position: absolute;
     inset: 0;
     z-index: 0;
-    background-color: $bg-secondary;
-    background-size: 24px 24px;
+    background-color: $color-bg;
     pointer-events: all;
 }
 
@@ -169,15 +171,50 @@ function onWheel(e: WheelEvent): void {
 }
 
 .empty-title {
-    font-size: $font-size-2xl;
+    font-size: $font-size-lg;
     font-weight: $font-weight-semibold;
-    color: $text-muted;
-    margin: 0 0 $space-3;
+    color: $color-text;
+    margin: 0 0 $space-1;
 }
 
 .empty-sub {
-    font-size: $font-size-md;
-    color: $text3;
-    margin: 0;
+    font-size: $font-size-base;
+    color: $color-text-muted;
+    margin: 0 0 $space-4;
+}
+
+.empty-actions {
+    display: flex;
+    gap: $space-2;
+    pointer-events: auto;
+
+    button {
+        height: $size-17;
+        padding: 0 $space-3;
+        border-radius: $border-radius-md;
+        font: inherit;
+        font-size: $font-size-base;
+        cursor: pointer;
+    }
+}
+
+.empty-primary {
+    border: $border-width-thin $color-accent;
+    background: $color-accent;
+    color: $color-on-accent;
+
+    &:hover {
+        background: color-mix(in srgb, $color-accent 88%, $color-text);
+    }
+}
+
+.empty-secondary {
+    border: $border-width-thin $color-border;
+    background: $color-bg-surface;
+    color: $color-text;
+
+    &:hover {
+        background: color-mix(in srgb, $color-text 6%, $color-bg-surface);
+    }
 }
 </style>

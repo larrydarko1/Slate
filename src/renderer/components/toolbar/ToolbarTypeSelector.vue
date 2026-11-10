@@ -110,11 +110,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
                     class="type-option"
                     :class="{ active: opt.value === currentCellType }"
                     @click="setType(opt.value)">
-                    <span
-                        class="type-option-badge"
-                        :class="'badge-' + opt.value.replace('_', '-')"
-                        >{{ opt.short }}</span
-                    >
+                    <span class="type-option-badge">{{ opt.short }}</span>
                     <span class="type-option-label">{{ opt.label }}</span>
                 </button>
             </div>
@@ -144,7 +140,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 
 <style scoped lang="scss">
 .decimal-btn {
-    padding: 0 $space-3;
+    padding: 0 $space-1;
     min-width: $size-15;
 }
 
@@ -153,7 +149,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 }
 
 .type-selector-btn {
-    gap: $space-3;
+    gap: $space-1;
 
     .chevron {
         opacity: $opacity-mid;
@@ -165,12 +161,12 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     position: absolute;
     top: 100%;
     left: 0;
-    margin-top: $space-3;
-    background: $bg-primary;
-    border: $border-width-thin $border-color;
+    margin-top: $space-1;
+    background: $color-bg-elevated;
+    border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    box-shadow: $shadow-lg;
-    padding: $space-3;
+    box-shadow: $shadow-popover;
+    padding: $space-1;
     z-index: $z-overlay;
     min-width: $size-27;
 }
@@ -178,68 +174,36 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 .type-option {
     display: flex;
     align-items: center;
-    gap: $space-7;
+    gap: $space-2;
     width: 100%;
-    padding: $space-4 $space-7;
+    padding: $space-1 $space-2;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $border-radius-md;
     background: transparent;
-    color: $text-primary;
+    color: $color-text;
     font-size: $font-size-base;
     cursor: pointer;
     transition: background $duration-quick;
 
     &:hover {
-        background: $bg-hover;
+        background: $color-bg-hover;
     }
 
     &.active {
-        background: $accent-color-alpha;
+        background: $color-accent-subtle;
         font-weight: $font-weight-semibold;
     }
 }
 
 .type-option-badge {
-    font-size: $font-size-2xs;
-    font-weight: $font-weight-bold;
-    padding: $space-0 $space-4;
-    border-radius: $border-radius-xs;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    padding: $space-0 $space-1;
+    border-radius: $border-radius-sm;
     min-width: $size-16;
     text-align: center;
-    background: $bg-tertiary;
-    color: $text-muted;
-
-    &.badge-integer {
-        background: $type-text-alpha;
-        color: $type-text;
-    }
-
-    &.badge-float {
-        background: $type-number-alpha;
-        color: $type-number;
-    }
-
-    &.badge-currency-eur {
-        background: $type-currency-alpha;
-        color: $type-currency;
-    }
-
-    &.badge-currency-usd {
-        background: $type-percent-alpha;
-        color: $type-percent;
-    }
-
-    &.badge-text {
-        background: $type-date-alpha;
-        color: $type-date;
-    }
-
-    &.badge-checkbox,
-    &.badge-rating,
-    &.badge-stepper {
-        background: $type-boolean-alpha;
-        color: $type-boolean;
-    }
+    background: $color-bg-chrome;
+    color: $color-text-muted;
 }
 
 .type-option-label {

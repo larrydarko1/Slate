@@ -11,8 +11,8 @@
 // The transition is on the border and never on the box — animating geometry
 // here would drag the eight handles out of step with the object they are
 // pinned to.
-// The hover tint is deliberately NOT here: a chart darkens to $text-muted
-// against its own filled surface, a text box to $border-color against the
+// The hover tint is deliberately NOT here: a chart darkens to $color-text-muted
+// against its own filled surface, a text box to $color-border against the
 // sheet. Same gesture, different starting point, so each keeps its own.
 .canvas-object {
     position: absolute;
@@ -25,8 +25,8 @@
     // The ring is a box-shadow rather than a thicker border: a border would
     // resize the object every time it was selected.
     &.active {
-        border-color: $accent-color;
-        box-shadow: 0 0 0 $size-0 $accent-color;
+        border-color: $color-accent;
+        box-shadow: 0 0 0 $size-0 $color-accent;
     }
 }
 
@@ -83,7 +83,7 @@
     width: $size-7;
     height: $size-7;
     border-radius: $border-radius-round;
-    background: $accent-color;
+    background: $color-accent;
 }
 
 .rh-se {
