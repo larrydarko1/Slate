@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The arrow beside the text, fill and border colour buttons had no name, so screen readers announced it only as "button". It is now named, for example "Fill color options", and says whether its palette is open.
 - The formula bar, chart title and chart reference fields showed a pointing hand instead of a text cursor, so they looked like buttons rather than places to type.
 - Toolbar buttons that do nothing yet, such as the colour buttons before a cell is selected or the decimal buttons on a text cell, now look turned off. Before, they looked the same as working buttons and lit up on hover.
 - In a narrow window the right end of the toolbar, the theme switch included, was cut off with no way to reach it. Both toolbar rows now fit the smallest window.

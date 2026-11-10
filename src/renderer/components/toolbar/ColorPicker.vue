@@ -65,6 +65,9 @@ function onCustomColor(e: Event): void {
         <button
             class="tb color-chevron"
             :disabled="disabled"
+            :title="`${label} options`"
+            :aria-label="`${label} options`"
+            :aria-expanded="open"
             @click.stop="toggleDropdown">
             <IconChevronDown
                 width="8"

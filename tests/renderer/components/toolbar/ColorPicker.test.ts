@@ -30,6 +30,17 @@ describe('ColorPicker', () => {
         expect(wrapper.findAll('.color-swatch')).toHaveLength(PALETTE.length);
     });
 
+    it('names the arrow after the colour it picks', () => {
+        expect(mountPicker().findAll('button')[1]!.attributes('aria-label')).toBe('Text colour options');
+    });
+
+    it.each([
+        [false, 'false'],
+        [true, 'true'],
+    ])('reports the palette as open: %s', (open, expanded) => {
+        expect(mountPicker({ open }).findAll('button')[1]!.attributes('aria-expanded')).toBe(expanded);
+    });
+
     it('asks to open when the arrow is clicked', async () => {
         const wrapper = mountPicker();
         await wrapper.findAll('button')[1]!.trigger('click');
