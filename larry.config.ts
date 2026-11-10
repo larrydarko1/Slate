@@ -9,9 +9,6 @@ import { defineConfig } from '@larrydarko/lint-config/config';
  * regrow to the old number.
  */
 const LENGTH_BASELINE: Record<string, number> = {
-    // Mostly template: one <button> per formatting control, in two sets (cells and
-    // text boxes). A split would put each set in its own component.
-    'src/renderer/components/Toolbar.vue': 605,
     // 265 lines of script and a 261-line template: neither half is over on its own.
     'src/renderer/components/SpreadsheetTable.vue': 517,
 };
@@ -91,9 +88,9 @@ export default defineConfig({
                     note: 'SFC markup — structural repetition is often cheaper than another component.',
                 },
             },
-            // The largest clone today is 132 tokens: the text-colour menu, which Toolbar.vue
-            // renders twice, once for cells and once for text boxes.
-            maxCloneTokens: 160,
+            // The largest clone today is 92 tokens: two of the chart reference updates in
+            // composables/spreadsheet/charts.ts.
+            maxCloneTokens: 100,
         },
         // `require` is three tags: `lang`, `charset`, and `appMount`, since renaming `#app` renders nothing
         // with no error. No `title`: src/main/index.ts sets `title: ''` on purpose. No viewport, theme-color

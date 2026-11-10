@@ -176,7 +176,8 @@ slate/
 │       │   ├── CanvasChart.vue         # Chart element on canvas
 │       │   ├── CanvasTextBox.vue       # Rich text box element
 │       │   ├── CanvasTabs.vue          # Multi-canvas tab bar & zoom controls
-│       │   ├── Toolbar.vue             # App & formatting toolbar
+│       │   ├── Toolbar.vue             # File, insert & theme row
+│       │   ├── FormatBar.vue           # Formatting row for the selection
 │       │   ├── FormulaBar.vue          # Formula input with token coloring
 │       │   ├── ContextMenu.vue         # Reusable right-click menu
 │       │   ├── canvas/                 # ResizeHandles

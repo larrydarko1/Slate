@@ -23,9 +23,16 @@ describe('ToolbarFontPicker', () => {
         wrapper.unmount();
     });
 
-    // The button is always live — unlike the type selector, it has no
-    // :disabled binding; picking a font with nothing selected is simply a no-op.
-    it('stays clickable with nothing selected', () => {
+    it('is turned off with nothing selected', () => {
+        expect(wrapper.find('.font-selector-btn').attributes('disabled')).toBeDefined();
+    });
+
+    it.each([
+        ['a cell', (): void => ss.selectCell(id, 0, 0)],
+        ['a text box', (): void => ss.addTextBox()],
+    ])('turns on with %s selected', async (_, select) => {
+        select();
+        await wrapper.vm.$nextTick();
         expect(wrapper.find('.font-selector-btn').attributes('disabled')).toBeUndefined();
     });
 

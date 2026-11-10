@@ -137,6 +137,10 @@ function onCustomColor(e: Event): void {
     border-radius: $border-radius-sm;
 }
 
+.color-btn:disabled .color-indicator {
+    opacity: $opacity-subtle;
+}
+
 .color-chevron {
     padding: 0 $space-1;
     min-width: $size-10;

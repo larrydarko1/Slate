@@ -77,6 +77,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
             class="font-selector-wrapper">
             <button
                 class="tb has-label font-selector-btn"
+                :disabled="!hasActiveCell && !hasActiveTextBox"
                 title="Font family"
                 @click="toggleFontMenu">
                 <span
@@ -109,10 +110,14 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
 <style scoped lang="scss">
 .font-selector-wrapper {
     position: relative;
+    flex: 1;
+    min-width: 0;
 }
 
 .font-selector-btn {
+    justify-content: space-between;
     gap: $space-1;
+    width: 100%;
     max-width: $size-26;
 
     .chevron {

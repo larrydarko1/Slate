@@ -16,6 +16,14 @@
     gap: $space-0;
 }
 
+.toolbar-sep {
+    width: $size-0;
+    height: $size-11;
+    background: $color-border;
+    margin: 0 $space-1;
+    flex-shrink: 0;
+}
+
 .tb {
     @extend %bare-button;
     @extend %interactive;

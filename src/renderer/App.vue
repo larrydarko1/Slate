@@ -3,6 +3,7 @@ import { provide, onMounted, onBeforeUnmount } from 'vue';
 
 import CanvasTabs from '@/renderer/components/CanvasTabs.vue';
 import CanvasWorkspace from '@/renderer/components/CanvasWorkspace.vue';
+import FormatBar from '@/renderer/components/FormatBar.vue';
 import FormulaBar from '@/renderer/components/FormulaBar.vue';
 import NotificationCenter from '@/renderer/components/NotificationCenter.vue';
 import Toolbar from '@/renderer/components/Toolbar.vue';
@@ -101,7 +102,8 @@ onBeforeUnmount((): void => {
             @add-chart="ss.addChart()"
             @new-file="handleNewFile"
             @open-file="ss.openFile"
-            @save-file="ss.saveFile"
+            @save-file="ss.saveFile" />
+        <FormatBar
             @merge-cells="ss.mergeSelection"
             @unmerge-cells="ss.unmergeSelection" />
         <FormulaBar />
