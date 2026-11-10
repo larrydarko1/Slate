@@ -62,10 +62,6 @@ const typeShortLabel = computed((): 'INT' | 'DEC' | '€' | '$' | 'DATE' | 'ABC'
     }
 });
 
-const typeBadgeClass = computed(() => ({
-    [`type-${currentCellType.value.replace('_', '-')}`]: true,
-}));
-
 const hasFormula = computed((): boolean => {
     if (activeCell.value === null) return false;
     const cell = ss.findCell(activeCell.value.tableId, activeCell.value.col, activeCell.value.row);
@@ -159,7 +155,6 @@ watch(
         <div
             v-if="activeCell"
             class="type-badge"
-            :class="typeBadgeClass"
             :title="typeLabel">
             {{ typeShortLabel }}
         </div>
@@ -262,46 +257,8 @@ watch(
     margin-right: $space-5;
     flex-shrink: 0;
     line-height: 1.7778;
-    background: $color-bg-chrome;
+    border: $border-width-thin $color-border;
     color: $color-text-muted;
-
-    &.type-integer {
-        background: $color-type-text-subtle;
-        color: $color-type-text;
-    }
-
-    &.type-float {
-        background: $color-type-number-subtle;
-        color: $color-type-number;
-    }
-
-    &.type-currency-eur {
-        background: $color-type-currency-subtle;
-        color: $color-type-currency;
-    }
-
-    &.type-currency-usd {
-        background: $color-type-percent-subtle;
-        color: $color-type-percent;
-    }
-
-    &.type-text {
-        background: $color-type-date-subtle;
-        color: $color-type-date;
-    }
-
-    &.type-boolean,
-    &.type-checkbox,
-    &.type-rating,
-    &.type-stepper {
-        background: $color-type-boolean-subtle;
-        color: $color-type-boolean;
-    }
-
-    &.type-date {
-        background: $color-type-date-subtle;
-        color: $color-type-date;
-    }
 }
 
 .formula-separator {

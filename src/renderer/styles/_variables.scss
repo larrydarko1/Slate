@@ -207,18 +207,6 @@ $theme-dark: (
     'note-text': #f2e4a6,
     'note-muted': #c9b975,
     'note-accent': #e2b23c,
-    'type-text': #3b82f6,
-    'type-text-subtle': rgb(59 130 246 / 12%),
-    'type-number': #6366f1,
-    'type-number-subtle': rgb(99 102 241 / 12%),
-    'type-currency': #10b981,
-    'type-currency-subtle': rgb(16 185 129 / 12%),
-    'type-percent': #22c55e,
-    'type-percent-subtle': rgb(34 197 94 / 12%),
-    'type-date': #f59e0b,
-    'type-date-subtle': rgb(245 158 11 / 12%),
-    'type-boolean': #8b5cf6,
-    'type-boolean-subtle': rgb(139 92 246 / 12%),
     'formula-bg': rgb(245 158 11 / 12%),
     'formula-border': rgb(245 158 11 / 30%),
     'formula-text': #fbbf24,
@@ -259,18 +247,6 @@ $theme-light: (
     'note-text': #47390a,
     'note-muted': #6e5b1c,
     'note-accent': #b07600,
-    'type-text': #3b82f6,
-    'type-text-subtle': rgb(59 130 246 / 12%),
-    'type-number': #6366f1,
-    'type-number-subtle': rgb(99 102 241 / 12%),
-    'type-currency': #10b981,
-    'type-currency-subtle': rgb(16 185 129 / 12%),
-    'type-percent': #22c55e,
-    'type-percent-subtle': rgb(34 197 94 / 12%),
-    'type-date': #f59e0b,
-    'type-date-subtle': rgb(245 158 11 / 12%),
-    'type-boolean': #8b5cf6,
-    'type-boolean-subtle': rgb(139 92 246 / 12%),
     'formula-bg': rgb(245 158 11 / 10%),
     'formula-border': rgb(245 158 11 / 35%),
     'formula-text': #b45309,
@@ -317,18 +293,6 @@ $color-note-border: var(--color-note-border);
 $color-note-text: var(--color-note-text);
 $color-note-muted: var(--color-note-muted);
 $color-note-accent: var(--color-note-accent);
-$color-type-text: var(--color-type-text);
-$color-type-text-subtle: var(--color-type-text-subtle);
-$color-type-number: var(--color-type-number);
-$color-type-number-subtle: var(--color-type-number-subtle);
-$color-type-currency: var(--color-type-currency);
-$color-type-currency-subtle: var(--color-type-currency-subtle);
-$color-type-percent: var(--color-type-percent);
-$color-type-percent-subtle: var(--color-type-percent-subtle);
-$color-type-date: var(--color-type-date);
-$color-type-date-subtle: var(--color-type-date-subtle);
-$color-type-boolean: var(--color-type-boolean);
-$color-type-boolean-subtle: var(--color-type-boolean-subtle);
 $color-formula-bg: var(--color-formula-bg);
 $color-formula-border: var(--color-formula-border);
 $color-formula-text: var(--color-formula-text);

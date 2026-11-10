@@ -110,11 +110,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
                     class="type-option"
                     :class="{ active: opt.value === currentCellType }"
                     @click="setType(opt.value)">
-                    <span
-                        class="type-option-badge"
-                        :class="'badge-' + opt.value.replace('_', '-')"
-                        >{{ opt.short }}</span
-                    >
+                    <span class="type-option-badge">{{ opt.short }}</span>
                     <span class="type-option-label">{{ opt.label }}</span>
                 </button>
             </div>
@@ -208,38 +204,6 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     text-align: center;
     background: $color-bg-chrome;
     color: $color-text-muted;
-
-    &.badge-integer {
-        background: $color-type-text-subtle;
-        color: $color-type-text;
-    }
-
-    &.badge-float {
-        background: $color-type-number-subtle;
-        color: $color-type-number;
-    }
-
-    &.badge-currency-eur {
-        background: $color-type-currency-subtle;
-        color: $color-type-currency;
-    }
-
-    &.badge-currency-usd {
-        background: $color-type-percent-subtle;
-        color: $color-type-percent;
-    }
-
-    &.badge-text {
-        background: $color-type-date-subtle;
-        color: $color-type-date;
-    }
-
-    &.badge-checkbox,
-    &.badge-rating,
-    &.badge-stepper {
-        background: $color-type-boolean-subtle;
-        color: $color-type-boolean;
-    }
 }
 
 .type-option-label {
