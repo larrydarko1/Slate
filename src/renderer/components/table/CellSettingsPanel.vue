@@ -106,7 +106,7 @@ watch([limits, ss.activeCell], ([current]) => showLimits(current), { immediate: 
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
     background: $color-bg-surface;
-    box-shadow: $shadow-md;
+    box-shadow: $shadow-popover;
     font-size: $font-size-sm;
     cursor: default;
     z-index: $z-canvas-chrome;

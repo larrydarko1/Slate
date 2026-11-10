@@ -153,7 +153,6 @@ ChartJS.register(
     background: $color-bg-surface;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    box-shadow: $shadow-sm;
 
     &:hover:not(.active) {
         border-color: $color-text-muted;

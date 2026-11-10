@@ -335,7 +335,6 @@ function ctxDelete(): void {
     &.active {
         background: $color-bg-surface;
         color: $color-text;
-        box-shadow: $shadow-sm;
     }
 
     &.formula-source {
@@ -518,7 +517,7 @@ function ctxDelete(): void {
     background: $color-bg-elevated;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    box-shadow: $shadow-lg;
+    box-shadow: $shadow-popover;
     padding: $space-1;
     min-width: $size-23;
 
@@ -526,7 +525,7 @@ function ctxDelete(): void {
         display: block;
         width: 100%;
         text-align: left;
-        padding: $space-2 $space-3;
+        padding: $space-1 $space-2;
         font-size: $font-size-base;
         font-weight: $font-weight-normal;
         border: none;

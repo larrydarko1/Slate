@@ -43,7 +43,7 @@
     font-size: $font-size-base;
     line-height: $line-height-none;
     cursor: pointer;
-    box-shadow: $shadow-sm;
+    box-shadow: $shadow-popover;
     z-index: $z-sticky-high;
 
     &:hover {

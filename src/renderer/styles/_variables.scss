@@ -180,18 +180,14 @@ $theme-dark: (
     'danger-subtle': rgb(240 116 104 / 14%),
     'scrollbar': #3a414c,
     'scrollbar-hover': #4e5663,
-    'shadow-sm': rgb(0 0 0 / 30%),
-    'shadow-md': rgb(0 0 0 / 40%),
-    'shadow-lg': rgb(0 0 0 / 50%),
+    'shadow-near': rgb(0 0 0 / 30%),
+    'shadow-far': rgb(0 0 0 / 45%),
     'note-bg': #453b14,
     'note-border': #6b5a1e,
     'note-text': #f2e4a6,
     'note-muted': #c9b975,
     'note-accent': #e2b23c,
-    'scrim-faint': rgb(0 0 0 / 4%),
     'scrim-soft': rgb(0 0 0 / 8%),
-    'scrim-medium': rgb(0 0 0 / 12%),
-    'scrim-heavy': rgb(0 0 0 / 16%),
     'scrim-strong': rgb(0 0 0 / 25%),
 );
 
@@ -213,18 +209,14 @@ $theme-light: (
     'danger-subtle': rgb(191 58 47 / 10%),
     'scrollbar': #c5ccd5,
     'scrollbar-hover': #9aa3af,
-    'shadow-sm': rgb(20 28 36 / 8%),
-    'shadow-md': rgb(20 28 36 / 12%),
-    'shadow-lg': rgb(20 28 36 / 16%),
+    'shadow-near': rgb(20 28 36 / 8%),
+    'shadow-far': rgb(20 28 36 / 14%),
     'note-bg': #fbeeb2,
     'note-border': #e3cc6a,
     'note-text': #47390a,
     'note-muted': #6e5b1c,
     'note-accent': #b07600,
-    'scrim-faint': rgb(0 0 0 / 4%),
     'scrim-soft': rgb(0 0 0 / 8%),
-    'scrim-medium': rgb(0 0 0 / 12%),
-    'scrim-heavy': rgb(0 0 0 / 16%),
     'scrim-strong': rgb(0 0 0 / 25%),
 );
 
@@ -252,24 +244,21 @@ $color-danger: var(--color-danger);
 $color-danger-subtle: var(--color-danger-subtle);
 $color-scrollbar: var(--color-scrollbar);
 $color-scrollbar-hover: var(--color-scrollbar-hover);
-$color-shadow-sm: var(--color-shadow-sm);
-$color-shadow-md: var(--color-shadow-md);
-$color-shadow-lg: var(--color-shadow-lg);
+$color-shadow-near: var(--color-shadow-near);
+$color-shadow-far: var(--color-shadow-far);
 $color-note-bg: var(--color-note-bg);
 $color-note-border: var(--color-note-border);
 $color-note-text: var(--color-note-text);
 $color-note-muted: var(--color-note-muted);
 $color-note-accent: var(--color-note-accent);
-$color-scrim-faint: var(--color-scrim-faint);
 $color-scrim-soft: var(--color-scrim-soft);
-$color-scrim-medium: var(--color-scrim-medium);
-$color-scrim-heavy: var(--color-scrim-heavy);
 $color-scrim-strong: var(--color-scrim-strong);
 
-// Shadows fork by strength, not shape, so the geometry stays here.
-$shadow-sm: 0 1px 2px $color-shadow-sm;
-$shadow-md: 0 2px 8px $color-shadow-md;
-$shadow-lg: 0 4px 16px $color-shadow-lg;
+// One shadow, for what floats above the canvas: menus, dropdowns, popovers
+// and panels. Canvas objects sit on it and are separated by their border.
+$shadow-popover:
+    0 1px 3px $color-shadow-near,
+    0 8px 20px $color-shadow-far;
 
 // ── Mixins ────────────────────────────────────────────────────────────────────
 // The multi-declaration patterns that were being retyped by hand. A mixin

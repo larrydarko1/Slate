@@ -203,7 +203,7 @@ function onGridToggle(e: Event): void {
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
     padding: $space-2;
-    box-shadow: $shadow-md;
+    box-shadow: $shadow-popover;
     z-index: $z-canvas-chrome;
     max-height: $size-35;
     overflow-y: auto;

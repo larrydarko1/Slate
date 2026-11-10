@@ -165,7 +165,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     background: $color-bg-elevated;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    box-shadow: $shadow-lg;
+    box-shadow: $shadow-popover;
     padding: $space-1;
     z-index: $z-overlay;
     min-width: $size-27;

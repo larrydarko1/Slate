@@ -40,9 +40,7 @@ defineEmits<{
     color: $color-note-text;
     border: $border-width-thin $color-note-border;
     border-radius: $border-radius-lg;
-    box-shadow:
-        0 4px 16px $color-scrim-medium,
-        0 0 0 1px $color-scrim-faint;
+    box-shadow: $shadow-popover;
     font-size: $font-size-base;
     line-height: $line-height-base;
     pointer-events: auto;

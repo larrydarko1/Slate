@@ -77,14 +77,12 @@ function onItemClick(item: MenuItem): void {
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
     padding: $space-1;
-    box-shadow:
-        $shadow-lg,
-        0 0 0 1px $color-scrim-faint;
+    box-shadow: $shadow-popover;
     z-index: $z-modal-raised;
 }
 
 .context-menu-item {
-    padding: $space-2 $space-3;
+    padding: $space-1 $space-2;
     font-size: $font-size-base;
     color: $color-text;
     cursor: pointer;
@@ -97,7 +95,7 @@ function onItemClick(item: MenuItem): void {
 
     &.separator {
         height: $size-0;
-        margin: $space-1 $space-2;
+        margin: $space-1 0;
         padding: 0;
         background: $color-border;
         cursor: default;

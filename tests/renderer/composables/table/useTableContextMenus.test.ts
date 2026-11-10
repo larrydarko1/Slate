@@ -44,28 +44,28 @@ describe('useTableContextMenus', () => {
 
         it('offers a single-column delete by default', () => {
             menus.onColumnContextMenu(0, EVENT);
-            expect(labels()).toContain('Delete Column');
+            expect(labels()).toContain('Delete column');
         });
 
         it('counts the columns when a whole block is selected', () => {
             ss.selectColumn(table.value.id, 0);
             ss.extendColumnSelection(table.value.id, 2);
             menus.onColumnContextMenu(1, EVENT);
-            expect(labels()).toContain('Delete 3 Columns');
+            expect(labels()).toContain('Delete 3 columns');
         });
 
         it('sorts through the menu', () => {
             ss.setCellValue(table.value.id, 0, 1, '2');
             ss.setCellValue(table.value.id, 0, 2, '1');
             menus.onColumnContextMenu(0, EVENT);
-            invoke('Sort Ascending ↑');
+            invoke('Sort ascending');
             expect(ss.getDisplayValue(table.value.id, 0, 1)).toBe('1');
         });
 
         it('inserts on either side', () => {
             ss.setCellValue(table.value.id, 0, 0, 'a');
             menus.onColumnContextMenu(0, EVENT);
-            invoke('Insert Column Before');
+            invoke('Insert column before');
             expect(ss.getDisplayValue(table.value.id, 1, 0)).toBe('a');
         });
     });
@@ -73,20 +73,20 @@ describe('useTableContextMenus', () => {
     describe('the row menu', () => {
         it('offers a single-row delete by default', () => {
             menus.onRowContextMenu(0, EVENT);
-            expect(labels()).toContain('Delete Row');
+            expect(labels()).toContain('Delete row');
         });
 
         it('counts the rows when a whole block is selected', () => {
             ss.selectRow(table.value.id, 1);
             ss.extendRowSelection(table.value.id, 3);
             menus.onRowContextMenu(2, EVENT);
-            expect(labels()).toContain('Delete 3 Rows');
+            expect(labels()).toContain('Delete 3 rows');
         });
 
         it('inserts above and below', () => {
             ss.setCellValue(table.value.id, 0, 0, 'a');
             menus.onRowContextMenu(0, EVENT);
-            invoke('Insert Row Above');
+            invoke('Insert row above');
             expect(ss.getDisplayValue(table.value.id, 0, 1)).toBe('a');
         });
     });
@@ -99,25 +99,25 @@ describe('useTableContextMenus', () => {
 
         it('offers to add a note, and to edit one that exists', () => {
             menus.onCellContextMenu(0, 0, EVENT);
-            expect(labels()).toContain('Add Note');
-            expect(labels()).not.toContain('Delete Note');
+            expect(labels()).toContain('Add note');
+            expect(labels()).not.toContain('Delete note');
 
             ss.setCellNote(table.value.id, 0, 0, 'hi');
             menus.onCellContextMenu(0, 0, EVENT);
-            expect(labels()).toContain('Edit Note');
-            expect(labels()).toContain('Delete Note');
+            expect(labels()).toContain('Edit note');
+            expect(labels()).toContain('Delete note');
         });
 
         it('opens the editor through the menu', () => {
             menus.onCellContextMenu(1, 1, EVENT);
-            invoke('Add Note');
+            invoke('Add note');
             expect(openNoteEditor).toHaveBeenCalledWith(1, 1, EVENT);
         });
 
         it('deletes a note through the menu', () => {
             ss.setCellNote(table.value.id, 0, 0, 'hi');
             menus.onCellContextMenu(0, 0, EVENT);
-            invoke('Delete Note');
+            invoke('Delete note');
             expect(ss.cellHasNote(table.value.id, 0, 0)).toBe(false);
         });
 
@@ -135,29 +135,29 @@ describe('useTableContextMenus', () => {
 
             menus.onCellContextMenu(0, 0, EVENT);
             expect(ss.hasMultiCellSelection()).toBe(false);
-            expect(labels()).not.toContain('Merge Cells');
+            expect(labels()).not.toContain('Merge cells');
         });
 
         it('offers unmerge over an existing merge', () => {
             ss.mergeCells(table.value.id, 0, 0, 1, 1);
             menus.onCellContextMenu(0, 0, EVENT);
-            expect(labels()).toContain('Unmerge Cells');
-            invoke('Unmerge Cells');
+            expect(labels()).toContain('Unmerge cells');
+            invoke('Unmerge cells');
             expect(table.value.mergedRegions).toHaveLength(0);
         });
 
         it('still offers unmerge for a selection that overlaps a merge', () => {
             ss.mergeCells(table.value.id, 0, 0, 1, 1);
             menus.onCellContextMenu(1, 1, EVENT);
-            expect(labels()).toContain('Unmerge Cells');
-            invoke('Unmerge Cells');
+            expect(labels()).toContain('Unmerge cells');
+            invoke('Unmerge cells');
             expect(table.value.mergedRegions).toHaveLength(0);
         });
 
         it('clears the cell through the menu', () => {
             ss.setCellValue(table.value.id, 0, 0, 'x');
             menus.onCellContextMenu(0, 0, EVENT);
-            invoke('Clear Cell');
+            invoke('Clear cell');
             expect(ss.getDisplayValue(table.value.id, 0, 0)).toBe('');
         });
 
@@ -168,21 +168,21 @@ describe('useTableContextMenus', () => {
             ss.extendRowSelection(table.value.id, 1);
             const before = table.value.rows.length;
             menus.onCellContextMenu(0, 0, EVENT);
-            invoke('Delete Row');
+            invoke('Delete row');
             expect(table.value.rows).toHaveLength(before - 1);
         });
 
         it('deletes just the one row otherwise', () => {
             const before = table.value.rows.length;
             menus.onCellContextMenu(0, 0, EVENT);
-            invoke('Delete Row');
+            invoke('Delete row');
             expect(table.value.rows).toHaveLength(before - 1);
         });
 
         it('deletes just the one column otherwise', () => {
             const before = table.value.columns.length;
             menus.onCellContextMenu(0, 0, EVENT);
-            invoke('Delete Column');
+            invoke('Delete column');
             expect(table.value.columns).toHaveLength(before - 1);
         });
     });

@@ -65,7 +65,7 @@ const { notifications, dismiss, pause, resume } = useNotifications();
     background: $color-bg-elevated;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    box-shadow: $shadow-lg;
+    box-shadow: $shadow-popover;
     color: $color-text;
     font-size: $font-size-base;
     pointer-events: auto;

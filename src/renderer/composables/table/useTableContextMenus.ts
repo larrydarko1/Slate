@@ -36,15 +36,15 @@ export function useTableContextMenus(
         const colCount = isMultiCol ? sr.endCol - sr.startCol + 1 : 1;
 
         const items: MenuItem[] = [
-            { label: 'Sort Ascending ↑', action: (): void => ss.sortColumn(table.value.id, ci, 'asc') },
-            { label: 'Sort Descending ↓', action: (): void => ss.sortColumn(table.value.id, ci, 'desc') },
+            { label: 'Sort ascending', action: (): void => ss.sortColumn(table.value.id, ci, 'asc') },
+            { label: 'Sort descending', action: (): void => ss.sortColumn(table.value.id, ci, 'desc') },
             { label: '', separator: true },
-            { label: 'Insert Column Before', action: (): void => ss.insertColumnAt(table.value.id, ci) },
-            { label: 'Insert Column After', action: (): void => ss.insertColumnAt(table.value.id, ci + 1) },
+            { label: 'Insert column before', action: (): void => ss.insertColumnAt(table.value.id, ci) },
+            { label: 'Insert column after', action: (): void => ss.insertColumnAt(table.value.id, ci + 1) },
             { label: '', separator: true },
             isMultiCol
-                ? { label: `Delete ${colCount} Columns`, danger: true, action: (): void => ss.deleteSelectedColumns() }
-                : { label: 'Delete Column', danger: true, action: (): void => ss.deleteColumn(table.value.id, ci) },
+                ? { label: `Delete ${colCount} columns`, danger: true, action: (): void => ss.deleteSelectedColumns() }
+                : { label: 'Delete column', danger: true, action: (): void => ss.deleteColumn(table.value.id, ci) },
         ];
         ctxMenu.value?.open(e.clientX, e.clientY, items);
     }
@@ -63,12 +63,12 @@ export function useTableContextMenus(
         const rowCount = isMultiRow ? sr.endRow - sr.startRow + 1 : 1;
 
         const items: MenuItem[] = [
-            { label: 'Insert Row Above', action: (): void => ss.insertRowAt(table.value.id, ri) },
-            { label: 'Insert Row Below', action: (): void => ss.insertRowAt(table.value.id, ri + 1) },
+            { label: 'Insert row above', action: (): void => ss.insertRowAt(table.value.id, ri) },
+            { label: 'Insert row below', action: (): void => ss.insertRowAt(table.value.id, ri + 1) },
             { label: '', separator: true },
             isMultiRow
-                ? { label: `Delete ${rowCount} Rows`, danger: true, action: (): void => ss.deleteSelectedRows() }
-                : { label: 'Delete Row', danger: true, action: (): void => ss.deleteRow(table.value.id, ri) },
+                ? { label: `Delete ${rowCount} rows`, danger: true, action: (): void => ss.deleteSelectedRows() }
+                : { label: 'Delete row', danger: true, action: (): void => ss.deleteRow(table.value.id, ri) },
         ];
         ctxMenu.value?.open(e.clientX, e.clientY, items);
     }
@@ -84,28 +84,28 @@ export function useTableContextMenus(
             { label: 'Cut', action: (): void => void ss.cutCells() },
             { label: 'Paste', action: (): void => void ss.pasteCells() },
             { label: '', separator: true },
-            { label: cellHasNote ? 'Edit Note' : 'Add Note', action: (): void => openNoteEditor(ci, ri, e) },
+            { label: cellHasNote ? 'Edit note' : 'Add note', action: (): void => openNoteEditor(ci, ri, e) },
             ...(cellHasNote
                 ? [
                       {
-                          label: 'Delete Note',
+                          label: 'Delete note',
                           danger: true,
                           action: (): void => ss.removeCellNote(table.value.id, ci, ri),
                       },
                   ]
                 : []),
             { label: '', separator: true },
-            { label: 'Clear Cell', action: (): void => ss.clearActiveCell() },
+            { label: 'Clear cell', action: (): void => ss.clearActiveCell() },
             { label: '', separator: true },
         ];
 
         // Merge options
         if (hasSelection && !ss.selectionHasMerge()) {
-            items.push({ label: 'Merge Cells', action: (): void => ss.mergeSelection() });
+            items.push({ label: 'Merge cells', action: (): void => ss.mergeSelection() });
         }
         if (mergeAtCell !== null || ss.selectionHasMerge()) {
             items.push({
-                label: 'Unmerge Cells',
+                label: 'Unmerge cells',
                 action: (): void => {
                     if (mergeAtCell !== null) ss.unmergeCells(table.value.id, ci, ri);
                     else ss.unmergeSelection();
@@ -117,13 +117,13 @@ export function useTableContextMenus(
         }
 
         items.push(
-            { label: 'Insert Row Above', action: (): void => ss.insertRowAt(table.value.id, ri) },
-            { label: 'Insert Row Below', action: (): void => ss.insertRowAt(table.value.id, ri + 1) },
-            { label: 'Insert Column Before', action: (): void => ss.insertColumnAt(table.value.id, ci) },
-            { label: 'Insert Column After', action: (): void => ss.insertColumnAt(table.value.id, ci + 1) },
+            { label: 'Insert row above', action: (): void => ss.insertRowAt(table.value.id, ri) },
+            { label: 'Insert row below', action: (): void => ss.insertRowAt(table.value.id, ri + 1) },
+            { label: 'Insert column before', action: (): void => ss.insertColumnAt(table.value.id, ci) },
+            { label: 'Insert column after', action: (): void => ss.insertColumnAt(table.value.id, ci + 1) },
             { label: '', separator: true },
             {
-                label: 'Delete Row',
+                label: 'Delete row',
                 danger: true,
                 action: (): void => {
                     if (ss.isRowInSelection(table.value.id, ri)) ss.deleteSelectedRows();
@@ -131,7 +131,7 @@ export function useTableContextMenus(
                 },
             },
             {
-                label: 'Delete Column',
+                label: 'Delete column',
                 danger: true,
                 action: (): void => {
                     if (ss.isColInSelection(table.value.id, ci)) ss.deleteSelectedColumns();

@@ -152,7 +152,7 @@ function onCustomColor(e: Event): void {
     background: $color-bg-elevated;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
-    box-shadow: $shadow-lg;
+    box-shadow: $shadow-popover;
     padding: $space-3;
     z-index: $z-popover;
     width: $size-31;
@@ -184,15 +184,11 @@ function onCustomColor(e: Event): void {
     border-radius: $border-radius-sm;
     border: $border-width-thin $color-scrim-soft;
     cursor: pointer;
-    transition:
-        transform $duration-quick,
-        box-shadow $duration-quick;
     padding: 0;
 
     &:hover {
-        transform: scale(1.2);
-        z-index: $z-base;
-        box-shadow: 0 $size-0 $size-3 $color-scrim-strong;
+        outline: $border-width-thin $color-text-muted;
+        outline-offset: 1px;
     }
 
     &.active {

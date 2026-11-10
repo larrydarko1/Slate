@@ -87,9 +87,7 @@ watch(
     background: $color-note-bg;
     border: $border-width-thin $color-note-border;
     border-radius: $border-radius-lg;
-    box-shadow:
-        0 8px 32px $color-scrim-heavy,
-        0 0 0 1px $color-scrim-faint;
+    box-shadow: $shadow-popover;
     display: flex;
     flex-direction: column;
     overflow: hidden;
