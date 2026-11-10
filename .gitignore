@@ -29,3 +29,7 @@ out
 prompts
 todo.md
 coverage
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.env
