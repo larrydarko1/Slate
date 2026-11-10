@@ -16,6 +16,15 @@ const LENGTH_BASELINE: Record<string, number> = {
     'src/renderer/components/SpreadsheetTable.vue': 517,
 };
 
+/** Where the palettes live, shared by the two gates that read them. */
+const THEMES = {
+    source: 'scss-maps',
+    file: 'src/renderer/styles/_variables.scss',
+    reference: 'dark',
+    mixinFile: 'src/renderer/styles/_theme.scss',
+    emitFile: 'src/renderer/styles/_theme.scss',
+} as const;
+
 export default defineConfig({
     family: 'electron',
     gates: {
@@ -45,7 +54,14 @@ export default defineConfig({
                 { files: /\.vue$/, require: 'none' },
             ],
         },
-        'contrast': { skip: 'No script ran it before larry upgrade.' },
+        // Every text colour on every surface it can sit on, in both themes. The accent is text too: formula
+        // references, links and the active tab are written in it.
+        'contrast': {
+            themes: THEMES,
+            text: ['text', 'text-muted', 'accent', 'danger'],
+            backgrounds: ['bg', 'bg-chrome', 'bg-surface', 'bg-elevated'],
+            scan: ['src/renderer'],
+        },
         // A dependency Electron loads indirectly (a native backend, a builder hook) looks unused to an import
         // graph: it goes under `ignoreDependencies` in knip.config.js with a reason, never in a raised
         // budget. Budgets are all zero and stay there.
@@ -143,13 +159,7 @@ export default defineConfig({
                     why: 'components/ holds the classes shared across unrelated SFCs. Un-@used, every template naming one of them renders unstyled.',
                 },
             ],
-            themes: {
-                source: 'scss-maps',
-                file: 'src/renderer/styles/_variables.scss',
-                reference: 'dark',
-                mixinFile: 'src/renderer/styles/_theme.scss',
-                emitFile: 'src/renderer/styles/_theme.scss',
-            },
+            themes: THEMES,
         },
         'secrets': { skip: 'No script ran it before larry upgrade.' },
         // Tests mirror src/ under tests/, one top-level directory per src/ directory: add a new area to both

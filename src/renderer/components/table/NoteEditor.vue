@@ -110,7 +110,7 @@ watch(
     color: $color-note-text;
 
     &::placeholder {
-        color: $color-note-placeholder;
+        color: $color-note-muted;
     }
 }
 
@@ -147,11 +147,11 @@ watch(
 }
 
 .note-editor-save {
-    background: $color-note-accent;
-    color: $color-on-accent;
+    background: $color-note-text;
+    color: $color-note-bg;
 
     &:hover {
-        background: $color-note-accent-hover;
+        background: color-mix(in srgb, $color-note-text 85%, $color-note-bg);
     }
 }
 

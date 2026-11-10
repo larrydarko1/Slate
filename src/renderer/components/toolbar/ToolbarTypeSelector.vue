@@ -166,7 +166,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     top: 100%;
     left: 0;
     margin-top: $space-3;
-    background: $color-bg-surface;
+    background: $color-bg-elevated;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
     box-shadow: $shadow-lg;
@@ -206,7 +206,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
     border-radius: $border-radius-xs;
     min-width: $size-16;
     text-align: center;
-    background: $color-bg-subtle;
+    background: $color-bg-chrome;
     color: $color-text-muted;
 
     &.badge-integer {

@@ -144,7 +144,7 @@ function onWheel(e: WheelEvent): void {
     position: absolute;
     inset: 0;
     z-index: 0;
-    background-color: $color-bg-chrome;
+    background-color: $color-bg;
     background-size: 24px 24px;
     pointer-events: all;
 }
@@ -177,7 +177,7 @@ function onWheel(e: WheelEvent): void {
 
 .empty-sub {
     font-size: $font-size-md;
-    color: $color-text-faint;
+    color: $color-text-muted;
     margin: 0;
 }
 </style>

@@ -176,7 +176,6 @@ function finishTextEdit(): void {
     padding: $space-7 $space-9;
     font-size: $font-size-lg;
     color: $color-text-muted;
-    opacity: $opacity-mid;
     pointer-events: none;
     line-height: $line-height-base;
 }

@@ -290,7 +290,7 @@ function ctxDelete(): void {
     align-items: center;
     height: $size-19;
     min-height: $size-19;
-    background: $color-bg-subtle;
+    background: $color-bg-chrome;
     border-top: $border-width-thin $color-border;
     padding: 0 $space-3;
     gap: $space-1;
@@ -515,7 +515,7 @@ function ctxDelete(): void {
 .canvas-ctx-menu {
     position: fixed;
     z-index: $z-modal-raised;
-    background: $color-bg-surface;
+    background: $color-bg-elevated;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-lg;
     box-shadow: $shadow-lg;

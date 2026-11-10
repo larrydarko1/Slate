@@ -116,7 +116,7 @@ onBeforeUnmount((): void => {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: $color-bg-surface;
+    background: $color-bg;
     outline: none;
 }
 </style>

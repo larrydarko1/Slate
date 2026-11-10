@@ -62,7 +62,7 @@ const { notifications, dismiss, pause, resume } = useNotifications();
     gap: $space-5;
     width: $size-33;
     padding: $space-5 $space-5 $space-5 $space-11;
-    background: $color-bg-surface;
+    background: $color-bg-elevated;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-xl;
     box-shadow: $shadow-lg;

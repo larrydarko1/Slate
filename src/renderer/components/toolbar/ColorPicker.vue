@@ -149,7 +149,7 @@ function onCustomColor(e: Event): void {
     top: 100%;
     left: 0;
     margin-top: $space-3;
-    background: $color-bg-surface;
+    background: $color-bg-elevated;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-xl;
     box-shadow: $shadow-lg;

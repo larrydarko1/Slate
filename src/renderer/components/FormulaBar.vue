@@ -249,7 +249,7 @@ watch(
 }
 
 .cell-ref-empty {
-    color: $color-text-faint;
+    color: $color-text-muted;
 }
 
 .type-badge {
@@ -262,7 +262,7 @@ watch(
     margin-right: $space-5;
     flex-shrink: 0;
     line-height: 1.7778;
-    background: $color-bg-subtle;
+    background: $color-bg-chrome;
     color: $color-text-muted;
 
     &.type-integer {
@@ -322,9 +322,8 @@ watch(
 .fx-label {
     font-size: $font-size-sm;
     font-weight: $font-weight-bold;
-    color: $color-accent;
+    color: $color-text-muted;
     flex-shrink: 0;
-    opacity: $opacity-higher;
 }
 
 .formula-input-container {
@@ -352,7 +351,7 @@ watch(
     }
 
     &::placeholder {
-        color: $color-text-faint;
+        color: $color-text-muted;
     }
 
     &:disabled {
@@ -400,7 +399,7 @@ watch(
     height: $size-14;
     border: $border-width-thin $color-border;
     border-radius: $border-radius;
-    background: $color-bg-subtle;
+    background: $color-bg-chrome;
     color: $color-text-muted;
     cursor: pointer;
     flex-shrink: 0;

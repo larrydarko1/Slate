@@ -671,9 +671,9 @@ watch(
     width: $size-20;
     min-width: $size-20;
     height: $size-15;
-    background: $color-bg-subtle;
-    border-bottom: $border-width-thin $color-border;
-    border-right: $border-width-thin $color-border;
+    background: $color-bg-chrome;
+    border-bottom: $border-width-thin $color-grid;
+    border-right: $border-width-thin $color-grid;
     cursor: pointer;
     user-select: none;
 
@@ -689,9 +689,9 @@ watch(
 .col-header {
     position: relative;
     height: $size-15;
-    background: $color-bg-subtle;
-    border-bottom: $border-width-thin $color-border;
-    border-right: $border-width-thin $color-border;
+    background: $color-bg-chrome;
+    border-bottom: $border-width-thin $color-grid;
+    border-right: $border-width-thin $color-grid;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
     color: $color-text-muted;
@@ -729,7 +729,7 @@ watch(
 .add-col-header {
     width: $size-17;
     min-width: $size-17;
-    background: $color-bg-subtle;
+    background: $color-bg-chrome;
     border-bottom: $border-width-thin $color-border;
     text-align: center;
     cursor: e-resize;
@@ -744,9 +744,9 @@ watch(
     width: $size-20;
     min-width: $size-20;
     height: $size-16;
-    background: $color-bg-subtle;
-    border-bottom: $border-width-thin $color-border;
-    border-right: $border-width-thin $color-border;
+    background: $color-bg-chrome;
+    border-bottom: $border-width-thin $color-grid;
+    border-right: $border-width-thin $color-grid;
     font-size: $font-size-sm;
     font-weight: $font-weight-medium;
     color: $color-text-muted;
@@ -767,8 +767,8 @@ watch(
 
 .cell {
     height: $size-16;
-    border-bottom: $border-width-thin $color-border;
-    border-right: $border-width-thin $color-border;
+    border-bottom: $border-width-thin $color-grid;
+    border-right: $border-width-thin $color-grid;
     padding: 0;
     position: relative;
     cursor: cell;
@@ -909,7 +909,7 @@ tr.reorder-row-drop-after > td {
 
 .add-row-cell {
     height: $size-15;
-    background: $color-bg-subtle;
+    background: $color-bg-chrome;
     text-align: center;
     cursor: s-resize;
     border-bottom: none;

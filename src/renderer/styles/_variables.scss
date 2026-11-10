@@ -182,32 +182,31 @@ $z-tooltip-raised: 1003;
 // missing from light would fall through to the dark value for light users only.
 
 $theme-dark: (
-    'text': #fafafa,
-    'text-muted': #71717a,
-    'text-faint': #3f3f46,
-    'on-accent': #fff,
-    'bg-surface': #18181b,
-    'bg-chrome': #1c1c1f,
-    'bg-subtle': #27272a,
-    'bg-hover': #2c2c30,
-    'bg-pressed': #3f3f46,
-    'border': #2e2e33,
-    'accent': #3e61b4,
-    'accent-subtle': rgb(62 97 180 / 12%),
-    'danger': #ef4444,
-    'danger-subtle': rgb(239 68 68 / 12%),
-    'scrollbar': #3f3f46,
-    'scrollbar-hover': #52525b,
-    'shadow-sm': rgb(0 0 0 / 20%),
-    'shadow-md': rgb(0 0 0 / 30%),
-    'shadow-lg': rgb(0 0 0 / 40%),
-    'note-bg': #3d3100,
-    'note-border': #78600a,
-    'note-text': #fef3c7,
-    'note-placeholder': #b89f4a,
-    'note-accent': #f5a623,
-    'note-accent-hover': #e09510,
-    'note-muted': #b89f4a,
+    'text': #e3e6eb,
+    'text-muted': #8e97a5,
+    'on-accent': #0c1430,
+    'bg': #121418,
+    'bg-chrome': #181b20,
+    'bg-surface': #1c2026,
+    'bg-elevated': #252a32,
+    'bg-hover': rgb(227 230 235 / 8%),
+    'bg-pressed': rgb(227 230 235 / 14%),
+    'border': #363d48,
+    'grid': #262b33,
+    'accent': #7f9df0,
+    'accent-subtle': rgb(127 157 240 / 16%),
+    'danger': #f07468,
+    'danger-subtle': rgb(240 116 104 / 14%),
+    'scrollbar': #3a414c,
+    'scrollbar-hover': #4e5663,
+    'shadow-sm': rgb(0 0 0 / 30%),
+    'shadow-md': rgb(0 0 0 / 40%),
+    'shadow-lg': rgb(0 0 0 / 50%),
+    'note-bg': #453b14,
+    'note-border': #6b5a1e,
+    'note-text': #f2e4a6,
+    'note-muted': #c9b975,
+    'note-accent': #e2b23c,
     'type-text': #3b82f6,
     'type-text-subtle': rgb(59 130 246 / 12%),
     'type-number': #6366f1,
@@ -235,32 +234,31 @@ $theme-dark: (
 );
 
 $theme-light: (
-    'text': #1a1a1a,
-    'text-muted': #71717a,
-    'text-faint': #c8c8c8,
+    'text': #1b2029,
+    'text-muted': #5b6573,
     'on-accent': #fff,
+    'bg': #e9ecf0,
+    'bg-chrome': #f5f6f8,
     'bg-surface': #fff,
-    'bg-chrome': #fafafa,
-    'bg-subtle': #f4f4f5,
-    'bg-hover': #f0f0f1,
-    'bg-pressed': #e4e4e7,
-    'border': #e4e4e7,
-    'accent': #3e61b4,
-    'accent-subtle': rgb(62 97 180 / 8%),
-    'danger': #ef4444,
-    'danger-subtle': rgb(239 68 68 / 10%),
-    'scrollbar': #d4d4d8,
-    'scrollbar-hover': #a1a1aa,
-    'shadow-sm': rgb(0 0 0 / 4%),
-    'shadow-md': rgb(0 0 0 / 6%),
-    'shadow-lg': rgb(0 0 0 / 8%),
-    'note-bg': #fef9e7,
-    'note-border': #f0d96c,
-    'note-text': #3d3100,
-    'note-placeholder': #b89f4a,
-    'note-accent': #f5a623,
-    'note-accent-hover': #e09510,
-    'note-muted': #b89f4a,
+    'bg-elevated': #fff,
+    'bg-hover': rgb(27 32 41 / 6%),
+    'bg-pressed': rgb(27 32 41 / 11%),
+    'border': #c9cfd8,
+    'grid': #e5e8ed,
+    'accent': #2b52c4,
+    'accent-subtle': rgb(43 82 196 / 10%),
+    'danger': #bf3a2f,
+    'danger-subtle': rgb(191 58 47 / 10%),
+    'scrollbar': #c5ccd5,
+    'scrollbar-hover': #9aa3af,
+    'shadow-sm': rgb(20 28 36 / 8%),
+    'shadow-md': rgb(20 28 36 / 12%),
+    'shadow-lg': rgb(20 28 36 / 16%),
+    'note-bg': #fbeeb2,
+    'note-border': #e3cc6a,
+    'note-text': #47390a,
+    'note-muted': #6e5b1c,
+    'note-accent': #b07600,
     'type-text': #3b82f6,
     'type-text-subtle': rgb(59 130 246 / 12%),
     'type-number': #6366f1,
@@ -296,14 +294,15 @@ $theme-light: (
 
 $color-text: var(--color-text);
 $color-text-muted: var(--color-text-muted);
-$color-text-faint: var(--color-text-faint);
 $color-on-accent: var(--color-on-accent);
-$color-bg-surface: var(--color-bg-surface);
+$color-bg: var(--color-bg);
 $color-bg-chrome: var(--color-bg-chrome);
-$color-bg-subtle: var(--color-bg-subtle);
+$color-bg-surface: var(--color-bg-surface);
+$color-bg-elevated: var(--color-bg-elevated);
 $color-bg-hover: var(--color-bg-hover);
 $color-bg-pressed: var(--color-bg-pressed);
 $color-border: var(--color-border);
+$color-grid: var(--color-grid);
 $color-accent: var(--color-accent);
 $color-accent-subtle: var(--color-accent-subtle);
 $color-danger: var(--color-danger);
@@ -316,10 +315,8 @@ $color-shadow-lg: var(--color-shadow-lg);
 $color-note-bg: var(--color-note-bg);
 $color-note-border: var(--color-note-border);
 $color-note-text: var(--color-note-text);
-$color-note-placeholder: var(--color-note-placeholder);
-$color-note-accent: var(--color-note-accent);
-$color-note-accent-hover: var(--color-note-accent-hover);
 $color-note-muted: var(--color-note-muted);
+$color-note-accent: var(--color-note-accent);
 $color-type-text: var(--color-type-text);
 $color-type-text-subtle: var(--color-type-text-subtle);
 $color-type-number: var(--color-type-number);

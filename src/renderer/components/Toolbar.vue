@@ -654,7 +654,7 @@ onBeforeUnmount((): void => {
     align-items: center;
     height: $size-21;
     padding: 0 $space-9;
-    background: $color-bg-surface;
+    background: $color-bg-chrome;
     border-bottom: $border-width-thin $color-border;
     user-select: none;
     flex-shrink: 0;
@@ -707,7 +707,7 @@ onBeforeUnmount((): void => {
     font-size: $font-size-base;
     font-weight: $font-weight-semibold;
     color: $color-text;
-    background: $color-bg-subtle;
+    background: $color-bg-chrome;
     border-radius: $border-radius-sm;
     padding: 0 $space-3;
     user-select: none;

@@ -73,7 +73,7 @@ function onItemClick(item: MenuItem): void {
 .context-menu {
     position: absolute;
     min-width: $size-24;
-    background: $color-bg-surface;
+    background: $color-bg-elevated;
     border: $border-width-thin $color-border;
     border-radius: $border-radius-xl;
     padding: $space-3;
