@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filling or pasting a formula no longer rewrites a table name that looks like a cell reference: `Q1::A1` used to become `Q2::A1`. The same went for the end of a cross-table range and for names with underscores, such as `my_table1`.
 - Shift-clicking cells no longer highlights the text of every column in between, and dragging a selection to move it no longer fails midway. Cells were open to the browser's own text selection, which ran across the table and turned the drag into a text drag.
 - Two release runs can no longer overlap, so a release's installers always come from the commit its tag points at.
+- A failed release can only be finished by re-running it. A later commit with the same version now stops with an error instead of shipping its own installers under the earlier commit's tag.
 
 ## [2.0.1] - 2026-08-28
 
