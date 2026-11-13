@@ -122,6 +122,10 @@ verify anything there. Bug reports from self-built platforms are welcome and wil
 are fixed on a best-effort basis, and CI never builds or tests them. The same applies to Windows,
 which has no build target at all — `electron-builder --win` may well work, but nobody has checked.
 
+## Releases
+
+Slate gets a feature release four times a year, on the second Tuesday of March, June, September and December. A bug that loses data, opens a security hole, crashes Slate, stops it opening or saving, or breaks a common task with no workaround is fixed within 7 days of being confirmed, in a release of its own. What the next release contains is listed under `[Unreleased]` in [CHANGELOG.md](CHANGELOG.md).
+
 ## Tech Stack
 
 - **Desktop:** Electron 44, electron-vite 5
