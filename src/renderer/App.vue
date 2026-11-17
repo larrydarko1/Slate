@@ -9,6 +9,9 @@ import NotificationCenter from '@/renderer/components/NotificationCenter.vue';
 import Toolbar from '@/renderer/components/Toolbar.vue';
 import { useSpreadsheet, SPREADSHEET_KEY } from '@/renderer/composables/useSpreadsheet';
 
+// The inputs the browser keeps a typing history for; a checkbox or colour well has none
+const TEXT_INPUT_TYPES = new Set(['text', 'search', 'url', 'tel', 'email', 'password', 'number']);
+
 const ss = useSpreadsheet();
 
 // Asked through the main process's message box: a native confirm() would freeze the window.
@@ -67,6 +70,8 @@ const handleKeydown = (e: KeyboardEvent): void => {
             ss.showAll();
             break;
         case 'z':
+            // Undo while typing takes back the typing, the way every text field does
+            if (isTextField(e.target)) break;
             e.preventDefault();
             if (e.shiftKey) {
                 ss.redo();
@@ -76,6 +81,11 @@ const handleKeydown = (e: KeyboardEvent): void => {
             break;
     }
 };
+
+function isTextField(target: EventTarget | null): boolean {
+    if (target instanceof HTMLTextAreaElement) return true;
+    return target instanceof HTMLInputElement && TEXT_INPUT_TYPES.has(target.type);
+}
 
 provide(SPREADSHEET_KEY, ss);
 

@@ -8,6 +8,18 @@ import { stubElectronApi as stubApi } from '@test-utils';
 // than mocked at the import boundary: every path here is "what did the composable
 // ask Electron to do, and what did it do with the answer".
 
+const JOBS_FILE = JSON.stringify({
+    version: '2.0',
+    canvases: [
+        {
+            id: 'c1',
+            name: 'Canvas 1',
+            tables: [{ id: 't1', name: 'Jobs', columns: [{ id: 'a', width: 120 }], rows: [[{ value: 'Klarna' }]] }],
+        },
+    ],
+    activeCanvasId: 'c1',
+});
+
 describe('fileOps', () => {
     let ss: SpreadsheetState;
     // Held rather than re-read off `notify`: the spy is what the cases actually mean.
@@ -54,24 +66,47 @@ describe('fileOps', () => {
             expect(api.writeFile).toHaveBeenCalledWith('/tmp/other.slate', expect.any(String));
         });
 
-        /**
-         * Documents a bug, not a contract. saveAsFile calls saveFile(undefined),
-         * and saveFile treats an undefined path as "use the remembered one" — so
-         * once a file has been saved, Save As silently overwrites it instead of
-         * asking where to put the copy.
-         */
-        it('does not ask again for save-as once a path is remembered', async () => {
+        it('asks where to save-as even once a path is remembered, starting from that path', async () => {
             const api = stubApi();
             await ss.saveFile();
-            await ss.saveAsFile();
-            expect(api.showSaveDialog).toHaveBeenCalledTimes(1);
-            expect(api.writeFile).toHaveBeenNthCalledWith(2, '/tmp/book.slate', expect.any(String));
+            vi.mocked(api.showSaveDialog).mockResolvedValue({ canceled: false, filePath: '/tmp/copy.slate' });
+            expect(await ss.saveAsFile()).toBe(true);
+            expect(api.showSaveDialog).toHaveBeenLastCalledWith('/tmp/book.slate');
+            expect(api.writeFile).toHaveBeenLastCalledWith('/tmp/copy.slate', expect.any(String));
+            expect(api.writeFile).toHaveBeenCalledTimes(2);
         });
 
-        it('does ask for save-as before anything has been saved', async () => {
+        it('carries on in the copy after save-as', async () => {
+            const api = stubApi();
+            await ss.saveFile();
+            vi.mocked(api.showSaveDialog).mockResolvedValue({ canceled: false, filePath: '/tmp/copy.slate' });
+            await ss.saveAsFile();
+            await ss.saveFile();
+            expect(ss.currentFilePath.value).toBe('/tmp/copy.slate');
+            expect(api.writeFile).toHaveBeenLastCalledWith('/tmp/copy.slate', expect.any(String));
+        });
+
+        it('leaves the open file alone when save-as is cancelled', async () => {
+            const api = stubApi();
+            await ss.saveFile();
+            ss.addTable();
+            vi.mocked(api.showSaveDialog).mockResolvedValue({ canceled: true });
+            expect(await ss.saveAsFile()).toBe(false);
+            expect(api.writeFile).toHaveBeenCalledTimes(1);
+            expect(ss.currentFilePath.value).toBe('/tmp/book.slate');
+            expect(ss.isDirty.value).toBe(true);
+        });
+
+        it('asks for save-as before anything has been saved, with no starting path', async () => {
             const api = stubApi();
             expect(await ss.saveAsFile()).toBe(true);
-            expect(api.showSaveDialog).toHaveBeenCalledTimes(1);
+            expect(api.showSaveDialog).toHaveBeenCalledWith(undefined);
+        });
+
+        it('refuses save-as outside Electron', async () => {
+            delete window.electronAPI;
+            expect(await ss.saveAsFile()).toBe(false);
+            expect(notifyError).toHaveBeenCalledWith('Opening and saving files needs the desktop app.');
         });
 
         it('gives up when the dialog is cancelled', async () => {
@@ -168,6 +203,38 @@ describe('fileOps', () => {
             delete window.electronAPI;
             expect(await ss.loadFileFromPath('/tmp/x.slate')).toBe(false);
             expect(await ss.openFile()).toBe(false);
+        });
+
+        // An undo that walked back past the open replaced the whole file with the
+        // workbook that was on screen before it, often the blank startup table.
+        it('cannot undo back past the file it opened', async () => {
+            ss.addTable();
+            stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: JOBS_FILE }) });
+            await ss.loadFileFromPath('/tmp/jobs.slate');
+            expect(ss.canUndo.value).toBe(false);
+
+            ss.setCellValue('t1', 0, 0, 'Spotify');
+            ss.undo();
+            ss.undo();
+            expect(ss.getDisplayValue('t1', 0, 0)).toBe('Klarna');
+        });
+
+        it('keeps the undo history of the workbook a refused file leaves open', async () => {
+            ss.addTable();
+            stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: 'not json' }) });
+            await ss.loadFileFromPath('/tmp/x.slate');
+            expect(ss.canUndo.value).toBe(true);
+        });
+
+        it('cannot redo the workbook it replaced', async () => {
+            ss.addTable();
+            ss.undo();
+            stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: JOBS_FILE }) });
+            await ss.loadFileFromPath('/tmp/jobs.slate');
+            expect(ss.canRedo.value).toBe(false);
+
+            ss.redo();
+            expect(ss.getDisplayValue('t1', 0, 0)).toBe('Klarna');
         });
 
         describe('a file saved with its tables out of view', () => {
@@ -356,6 +423,18 @@ describe('fileOps', () => {
             expect(ss.activeCell.value).toBeNull();
             expect(ss.isDirty.value).toBe(false);
             expect(ss.currentFilePath.value).toBeNull();
+        });
+
+        it('cannot undo back to the workbook it replaced', async () => {
+            ss.addTable();
+            // Lets pushUndo's nesting guard reset, so the edit below records its own step
+            await Promise.resolve();
+            ss.setCellValue(ss.tables.value[0]!.id, 0, 0, 'kept');
+            ss.newFile();
+            expect(ss.canUndo.value).toBe(false);
+
+            ss.undo();
+            expect(ss.tables.value).toHaveLength(0);
         });
     });
 });

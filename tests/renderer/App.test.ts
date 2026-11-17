@@ -148,6 +148,46 @@ describe('App', () => {
             expect(wrapper.find('.zoom-label').text()).toBe('100%');
         });
 
+        describe('undo', () => {
+            // The startup table is the one step there is to undo
+            function pressUndoOn(target: Element): KeyboardEvent {
+                const event = new KeyboardEvent('keydown', {
+                    key: 'z',
+                    metaKey: true,
+                    bubbles: true,
+                    cancelable: true,
+                });
+                target.dispatchEvent(event);
+                return event;
+            }
+
+            it('undoes and redoes the spreadsheet', async () => {
+                press('z');
+                await wrapper.vm.$nextTick();
+                expect(wrapper.findAll('.spreadsheet-table')).toHaveLength(0);
+                press('z', { shiftKey: true });
+                await wrapper.vm.$nextTick();
+                expect(wrapper.findAll('.spreadsheet-table')).toHaveLength(1);
+            });
+
+            it('leaves typing in a text field to the field', async () => {
+                const event = pressUndoOn(wrapper.get('.formula-bar input').element);
+                await wrapper.vm.$nextTick();
+                expect(event.defaultPrevented).toBe(false);
+                expect(wrapper.findAll('.spreadsheet-table')).toHaveLength(1);
+            });
+
+            it('still undoes the spreadsheet from a checkbox, which has no typing to undo', async () => {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                wrapper.get('.app-shell').element.append(checkbox);
+                const event = pressUndoOn(checkbox);
+                await wrapper.vm.$nextTick();
+                expect(event.defaultPrevented).toBe(true);
+                expect(wrapper.findAll('.spreadsheet-table')).toHaveLength(0);
+            });
+        });
+
         it('stops listening once unmounted', () => {
             wrapper.unmount();
             expect(() => press('=')).not.toThrow();

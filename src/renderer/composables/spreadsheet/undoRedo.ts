@@ -12,6 +12,7 @@ export type SpreadsheetUndoRedo = {
     endUndoBatch: () => void;
     undo: () => void;
     redo: () => void;
+    clearHistory: () => void;
 };
 
 type UndoRedoDeps = {
@@ -84,5 +85,14 @@ export function createUndoRedo(state: SpreadsheetCoreState, deps: UndoRedoDeps):
         state.canRedo.value = redoStack.length > 0;
     }
 
-    return { pushUndo, startUndoBatch, endUndoBatch, undo, redo };
+    // Every snapshot is a whole set of canvases, so one left over from a document
+    // that was replaced would bring that document back over the new one.
+    function clearHistory(): void {
+        undoStack.length = 0;
+        redoStack.length = 0;
+        state.canUndo.value = false;
+        state.canRedo.value = false;
+    }
+
+    return { pushUndo, startUndoBatch, endUndoBatch, undo, redo, clearHistory };
 }
