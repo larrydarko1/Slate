@@ -3,6 +3,7 @@ import { assert, describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
 import CanvasWorkspace from '@/renderer/components/CanvasWorkspace.vue';
 import { useSpreadsheet, SPREADSHEET_KEY, type SpreadsheetState } from '@/renderer/composables/useSpreadsheet';
+import { rect } from '@test-utils';
 
 vi.mock('vue-chartjs', () => {
     const stub = { name: 'ChartStub', template: '<div class="chart-stub" />' };
@@ -122,6 +123,35 @@ describe('CanvasWorkspace', () => {
             );
             await wrapper.vm.$nextTick();
             expect(ss.canvasZoom.value).toBeGreaterThan(1);
+        });
+    });
+
+    describe('show all', () => {
+        // The workspace sits at (10, 20) on screen; the view is panned to (100, 50) at half size
+        async function layOutOneTable(): Promise<void> {
+            ss.addTable();
+            ss.canvasOffset.value = { x: 100, y: 50 };
+            ss.canvasZoom.value = 0.5;
+            await wrapper.vm.$nextTick();
+            surface().element.getBoundingClientRect = () => rect({ left: 10, top: 20, width: 1000, height: 800 });
+            wrapper.get('.table-frame').element.getBoundingClientRect = () =>
+                rect({ left: 160, top: 120, width: 300, height: 100 });
+        }
+
+        it('measures what is drawn in canvas coordinates and fits it', async () => {
+            await layOutOneTable();
+            // On screen 300 × 100 at half size is 600 × 200 on the canvas, from (100, 100)
+            ss.showAll();
+            expect(ss.canvasZoom.value).toBe(1);
+            expect(ss.canvasOffset.value).toStrictEqual({ x: 100, y: 200 });
+        });
+
+        it('stops answering once it unmounts', async () => {
+            await layOutOneTable();
+            wrapper.unmount();
+            ss.showAll();
+            expect(ss.canvasOffset.value).toStrictEqual({ x: 100, y: 50 });
+            wrapper = mount(CanvasWorkspace, { global: { provide: { [SPREADSHEET_KEY as symbol]: ss } } });
         });
     });
 });

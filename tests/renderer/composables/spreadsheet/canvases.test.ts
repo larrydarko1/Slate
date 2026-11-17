@@ -171,4 +171,57 @@ describe('canvases', () => {
             expect(ss.canvasOffset.value).toEqual({ x: 5, y: 5 });
         });
     });
+
+    describe('show all', () => {
+        const VIEWPORT = { width: 1000, height: 800 };
+        const TABLE = { left: 100, top: 50, width: 200, height: 100 };
+        const PANNED_AWAY = { x: 3648, y: -869 };
+
+        it('brings the content into view', () => {
+            ss.attachViewport(() => ({ items: [TABLE], viewport: VIEWPORT }));
+            ss.canvasOffset.value = PANNED_AWAY;
+            ss.canvasZoom.value = 0.76;
+            ss.showAll();
+            expect(ss.canvasOffset.value).toStrictEqual({ x: 300, y: 300 });
+            expect(ss.canvasZoom.value).toBe(1);
+        });
+
+        it('is not an edit: nothing to undo and nothing to save', () => {
+            ss.attachViewport(() => ({ items: [TABLE], viewport: VIEWPORT }));
+            ss.canvasOffset.value = PANNED_AWAY;
+            ss.showAll();
+            expect(ss.canUndo.value).toBe(false);
+            expect(ss.isDirty.value).toBe(false);
+        });
+
+        it('leaves an empty canvas where it is', () => {
+            ss.attachViewport(() => ({ items: [], viewport: VIEWPORT }));
+            ss.canvasOffset.value = PANNED_AWAY;
+            ss.showAll();
+            expect(ss.canvasOffset.value).toStrictEqual(PANNED_AWAY);
+        });
+
+        it('does nothing while no canvas is on screen to measure', () => {
+            ss.canvasOffset.value = PANNED_AWAY;
+            ss.showAll();
+            expect(ss.canvasOffset.value).toStrictEqual(PANNED_AWAY);
+        });
+
+        it('stops measuring a canvas once it detaches', () => {
+            const detach = ss.attachViewport(() => ({ items: [TABLE], viewport: VIEWPORT }));
+            detach();
+            ss.canvasOffset.value = PANNED_AWAY;
+            ss.showAll();
+            expect(ss.canvasOffset.value).toStrictEqual(PANNED_AWAY);
+        });
+
+        it('keeps measuring the newer canvas when an older one detaches late', () => {
+            const detachOld = ss.attachViewport(() => ({ items: [], viewport: VIEWPORT }));
+            ss.attachViewport(() => ({ items: [TABLE], viewport: VIEWPORT }));
+            detachOld();
+            ss.canvasOffset.value = PANNED_AWAY;
+            ss.showAll();
+            expect(ss.canvasOffset.value).toStrictEqual({ x: 300, y: 300 });
+        });
+    });
 });

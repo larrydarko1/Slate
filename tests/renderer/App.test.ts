@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import App from '@/renderer/App.vue';
 import type { ElectronAPI } from '@/schemas/electron';
-import { stubElectronApi } from '@test-utils';
+import { rect, stubElectronApi } from '@test-utils';
 
 /**
  * App is the only place the toolbar's events are wired to the spreadsheet, and
@@ -123,6 +123,16 @@ describe('App', () => {
             press('0');
             await wrapper.vm.$nextTick();
             expect(wrapper.find('.zoom-label').text()).toBe('100%');
+        });
+
+        it('shows all', async () => {
+            await wrapper.vm.$nextTick();
+            // A table twice as wide as the workspace only fits at the 50% floor
+            wrapper.get('.canvas-workspace').element.getBoundingClientRect = () => rect({ width: 1000, height: 800 });
+            wrapper.get('.table-frame').element.getBoundingClientRect = () => rect({ width: 2000, height: 200 });
+            press('1');
+            await wrapper.vm.$nextTick();
+            expect(wrapper.find('.zoom-label').text()).toBe('50%');
         });
 
         it('creates a new file', async () => {
