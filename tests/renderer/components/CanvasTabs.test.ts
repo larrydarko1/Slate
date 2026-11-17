@@ -189,6 +189,18 @@ describe('CanvasTabs', () => {
             await wrapper.vm.$nextTick();
             expect(wrapper.findAll('.zoom-btn')[0]!.attributes('disabled')).toBeDefined();
         });
+
+        it('turns Show all off while the canvas has nothing to show', () => {
+            expect(wrapper.get('[aria-label="Show all"]').attributes('disabled')).toBeDefined();
+        });
+
+        it('shows all from its button', async () => {
+            const showAll = vi.spyOn(ss, 'showAll');
+            ss.addTable();
+            await wrapper.vm.$nextTick();
+            await wrapper.get('[aria-label="Show all"]').trigger('click');
+            expect(showAll).toHaveBeenCalledOnce();
+        });
     });
 
     describe('the unsaved marker', () => {

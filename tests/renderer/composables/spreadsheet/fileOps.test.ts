@@ -169,6 +169,48 @@ describe('fileOps', () => {
             expect(await ss.loadFileFromPath('/tmp/x.slate')).toBe(false);
             expect(await ss.openFile()).toBe(false);
         });
+
+        describe('a file saved with its tables out of view', () => {
+            const VIEWPORT = { width: 1000, height: 800 };
+            const TABLE = { left: 100, top: 50, width: 200, height: 100 };
+
+            function fileViewedFrom(canvasOffset: { x: number; y: number }): string {
+                return JSON.stringify({
+                    version: '2.0',
+                    canvases: [
+                        {
+                            id: 'c1',
+                            name: 'Canvas 1',
+                            tables: [{ id: 't1', name: 'Jobs', x: 100, y: 50, columns: [], rows: [] }],
+                            canvasOffset,
+                            canvasZoom: 0.76,
+                        },
+                    ],
+                    activeCanvasId: 'c1',
+                });
+            }
+
+            beforeEach(() => {
+                ss.attachViewport(() => ({ items: [TABLE], viewport: VIEWPORT }));
+            });
+
+            it('opens with them in view', async () => {
+                const content = fileViewedFrom({ x: 3648.28, y: -869.48 });
+                stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content }) });
+                expect(await ss.loadFileFromPath('/tmp/jobs.slate')).toBe(true);
+                expect(ss.canvasOffset.value).toStrictEqual({ x: 300, y: 300 });
+                expect(ss.canvasZoom.value).toBe(1);
+                expect(ss.isDirty.value).toBe(false);
+            });
+
+            it('opens a file whose view shows them exactly as it was saved', async () => {
+                const content = fileViewedFrom({ x: 20, y: 10 });
+                stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content }) });
+                await ss.loadFileFromPath('/tmp/jobs.slate');
+                expect(ss.canvasOffset.value).toStrictEqual({ x: 20, y: 10 });
+                expect(ss.canvasZoom.value).toBe(0.76);
+            });
+        });
     });
 
     describe('migrating older files', () => {

@@ -169,6 +169,7 @@ export function useSpreadsheet(): SpreadsheetState {
     const fileOps = createFileOps(state, {
         recalculate: formulaEngine.recalculate,
         recalculateMaxZ: helpers.recalculateMaxZ,
+        revealHiddenContent: canvases.revealHiddenContent,
     });
 
     // ── Unified public API ───────────────────────────────────────────────────

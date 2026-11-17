@@ -1,10 +1,18 @@
 /**
  * createCanvases — canvas CRUD, zoom controls, and tab reordering.
- * Owns: addCanvas, removeCanvas, renameCanvas, switchCanvas, zoom, reorder.
- * Does NOT own: reactive state (state.ts), recalculation (useFormulaEngine.ts).
+ * Owns: addCanvas, removeCanvas, renameCanvas, switchCanvas, zoom, show all, reorder.
+ * Does NOT own: reactive state (state.ts), recalculation (useFormulaEngine.ts), the
+ * fit arithmetic (viewFit.ts), measuring what is on the canvas (CanvasWorkspace.vue).
  */
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
+import {
+    type CanvasView,
+    type ViewMeasurement,
+    buildFitView,
+    findBounds,
+    isAnyInView,
+} from '@/renderer/composables/spreadsheet/viewFit';
 import { createDefaultCanvas, MAX_CANVASES, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP } from '@/renderer/types/spreadsheet';
 
 /** Viewport point that must stay put while the zoom level changes. */
@@ -20,6 +28,9 @@ export type SpreadsheetCanvases = {
     zoomIn: (anchor?: ZoomAnchor) => void;
     zoomOut: (anchor?: ZoomAnchor) => void;
     resetZoom: () => void;
+    showAll: () => void;
+    revealHiddenContent: () => void;
+    attachViewport: (measure: () => ViewMeasurement) => () => void;
 };
 
 type CanvasesDeps = {
@@ -31,6 +42,10 @@ type CanvasesDeps = {
 };
 
 export function createCanvases(state: SpreadsheetCoreState, deps: CanvasesDeps): SpreadsheetCanvases {
+    // Table heights exist only in the rendered page, so the one component that
+    // renders the canvas is asked for them; null while it is not mounted.
+    let measureViewport: (() => ViewMeasurement) | null = null;
+
     function addCanvas(): void {
         if (state.canvases.value.length >= MAX_CANVASES) return;
         deps.pushUndo();
@@ -122,6 +137,38 @@ export function createCanvases(state: SpreadsheetCoreState, deps: CanvasesDeps):
         setZoom(1.0);
     }
 
+    // ── Show all ─────────────────────────────────────────────────────────────
+
+    /** Returns the detach call, which the workspace makes when it unmounts. */
+    function attachViewport(measure: () => ViewMeasurement): () => void {
+        measureViewport = measure;
+        return (): void => {
+            if (measureViewport === measure) measureViewport = null;
+        };
+    }
+
+    function showAll(): void {
+        if (measureViewport === null) return;
+        const { items, viewport } = measureViewport();
+        const bounds = findBounds(items);
+        if (bounds === null) return;
+        applyView(buildFitView(bounds, viewport));
+    }
+
+    /** Show all, but only when the current view has nothing of the canvas on screen. */
+    function revealHiddenContent(): void {
+        if (measureViewport === null) return;
+        const { items, viewport } = measureViewport();
+        const current = { offset: state.canvasOffset.value, zoom: state.canvasZoom.value };
+        if (items.length === 0 || isAnyInView(items, current, viewport)) return;
+        showAll();
+    }
+
+    function applyView(view: CanvasView): void {
+        state.canvasOffset.value = view.offset;
+        state.canvasZoom.value = view.zoom;
+    }
+
     function reorderCanvas(fromIndex: number, toIndex: number): void {
         if (fromIndex === toIndex) return;
         if (fromIndex < 0 || toIndex < 0) return;
@@ -141,5 +188,8 @@ export function createCanvases(state: SpreadsheetCoreState, deps: CanvasesDeps):
         zoomIn,
         zoomOut,
         resetZoom,
+        showAll,
+        revealHiddenContent,
+        attachViewport,
     };
 }

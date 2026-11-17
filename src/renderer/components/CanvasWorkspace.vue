@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { computed, useTemplateRef } from 'vue';
+import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue';
 
 import CanvasChart from '@/renderer/components/CanvasChart.vue';
 import CanvasTextBox from '@/renderer/components/CanvasTextBox.vue';
 import SpreadsheetTable from '@/renderer/components/SpreadsheetTable.vue';
+import type { CanvasRect, ViewMeasurement } from '@/renderer/composables/spreadsheet/viewFit';
 import { injectSpreadsheet } from '@/renderer/composables/useSpreadsheet';
 
 const ss = injectSpreadsheet();
 const canvasRef = useTemplateRef<HTMLElement>('canvasRef');
+const contentRef = useTemplateRef<HTMLElement>('contentRef');
+
+let detachViewport: (() => void) | null = null;
 
 const contentStyle = computed((): { transform: string; transformOrigin: string } => ({
     transform: `translate(${ss.canvasOffset.value.x}px, ${ss.canvasOffset.value.y}px) scale(${ss.canvasZoom.value})`,
@@ -78,6 +82,36 @@ function onWheel(e: WheelEvent): void {
         };
     }
 }
+
+// ── Measuring for Show all ──
+
+/** Every table, text box and chart as drawn, turned back from screen pixels into canvas coordinates. */
+function measureViewport(): ViewMeasurement {
+    const surface = canvasRef.value?.getBoundingClientRect();
+    if (surface === undefined) return { items: [], viewport: { width: 0, height: 0 } };
+
+    const { x, y } = ss.canvasOffset.value;
+    const zoom = ss.canvasZoom.value;
+    const children = Array.from(contentRef.value?.children ?? []);
+    const items = children.map((child): CanvasRect => {
+        const rect = child.getBoundingClientRect();
+        return {
+            left: (rect.left - surface.left - x) / zoom,
+            top: (rect.top - surface.top - y) / zoom,
+            width: rect.width / zoom,
+            height: rect.height / zoom,
+        };
+    });
+    return { items, viewport: { width: surface.width, height: surface.height } };
+}
+
+onMounted((): void => {
+    detachViewport = ss.attachViewport(measureViewport);
+});
+
+onBeforeUnmount((): void => {
+    detachViewport?.();
+});
 </script>
 
 <template>
@@ -94,6 +128,7 @@ function onWheel(e: WheelEvent): void {
 
         <!-- Pannable content layer -->
         <div
+            ref="contentRef"
             class="canvas-content"
             :style="contentStyle">
             <SpreadsheetTable

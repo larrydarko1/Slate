@@ -3,6 +3,7 @@ import { nextTick, ref, computed, useTemplateRef } from 'vue';
 
 import IconCloseSmall from '@/renderer/components/icons/IconCloseSmall.vue';
 import IconPlus from '@/renderer/components/icons/IconPlus.vue';
+import IconShowAll from '@/renderer/components/icons/IconShowAll.vue';
 import IconZoomIn from '@/renderer/components/icons/IconZoomIn.vue';
 import IconZoomOut from '@/renderer/components/icons/IconZoomOut.vue';
 import { parseTables } from '@/renderer/composables/spreadsheet/documentSchema';
@@ -13,6 +14,10 @@ const ss = injectSpreadsheet();
 const maxCanvases = MAX_CANVASES;
 
 const zoomLabel = computed((): string => `${Math.round(ss.canvasZoom.value * 100)}%`);
+
+const canvasIsEmpty = computed(
+    (): boolean => ss.tables.value.length === 0 && ss.textBoxes.value.length === 0 && ss.charts.value.length === 0,
+);
 
 /** During cross-canvas formula editing, the canvas where the formula cell lives */
 const formulaSourceCanvasId = computed((): string | null => {
@@ -256,6 +261,16 @@ function ctxDelete(): void {
                 :disabled="ss.canvasZoom.value >= 4"
                 @click="ss.zoomIn()">
                 <IconZoomIn
+                    width="12"
+                    height="12" />
+            </button>
+            <button
+                class="zoom-btn"
+                title="Show all (⌘1)"
+                aria-label="Show all"
+                :disabled="canvasIsEmpty"
+                @click="ss.showAll()">
+                <IconShowAll
                     width="12"
                     height="12" />
             </button>

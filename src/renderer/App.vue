@@ -62,6 +62,10 @@ const handleKeydown = (e: KeyboardEvent): void => {
             e.preventDefault();
             ss.resetZoom();
             break;
+        case '1':
+            e.preventDefault();
+            ss.showAll();
+            break;
         case 'z':
             e.preventDefault();
             if (e.shiftKey) {

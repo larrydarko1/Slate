@@ -18,6 +18,7 @@ function setupState() {
     const fileOps = createFileOps(state, {
         recalculate: formulaEngine.recalculate,
         recalculateMaxZ: () => {},
+        revealHiddenContent: () => {},
     });
 
     return { state, undoRedo, fileOps };
