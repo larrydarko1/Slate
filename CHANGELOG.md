@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-17
+
 ### Added
 
 - The release schedule in the README: a feature release every quarter, and fixes for urgent bugs within 7 days.
@@ -37,7 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The add-canvas button sits right after the last tab, and the tab bar's icon buttons have names screen readers announce.
 - Charts use the app's font, lighter gridlines and round legend keys. An empty chart shows a chart icon instead of an emoji, and the delete buttons on charts and text boxes, and the chart panel's add and remove buttons, have names screen readers announce.
 - Decimal and percent numbers show at most two decimals, so `=AVERAGE` of three cells shows 0.67 rather than 0.6666666667, and a typed 3.14159 shows 3.14. The full number is kept and used in formulas, and the toolbar's decimal buttons show more or fewer digits.
-- Formatting and lint rules now come from the shared `@larrydarko/lint-config` package.
 - Filling or pasting a formula now shifts its references into other tables as well, so `=Sales::B2` filled down becomes `=Sales::B3`. Anchor the reference with `$` to keep it fixed.
 
 ### Fixed
@@ -191,7 +192,8 @@ Before 1.2.9, the version was bumped on almost every commit, so earlier versions
 
 - Style changes (1.0.2).
 
-[Unreleased]: https://github.com/larrydarko1/Slate/compare/v2.0.1...HEAD
+[Unreleased]: https://github.com/larrydarko1/Slate/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/larrydarko1/Slate/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/larrydarko1/Slate/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/larrydarko1/Slate/compare/v1.3.1...v2.0.0
 [1.3.1]: https://github.com/larrydarko1/Slate/compare/v1.3.0...v1.3.1
