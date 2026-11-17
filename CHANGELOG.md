@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Save As (⇧⌘S) overwrote the open file without asking once it had been saved, so there was no way to save a copy. It now always asks where to save, starting from the open file's name and folder, and you carry on working in the copy. Cancelling leaves everything as it was.
 - ⌘Z while typing in a cell, the formula bar, a name or a text box now takes back the typing. Before, it undid the last change to the spreadsheet instead, leaving the typing in place. Outside a text field, ⌘Z still undoes the spreadsheet.
 - Undo could wipe out a file you had just opened. Undo went on past the moment the file was opened and brought back whatever was on screen before it, usually the empty table Slate starts with, so every table seemed to vanish; saving then wrote that empty canvas over the file. Opening a file or starting a new one now begins a fresh undo history.
 - A file saved while the canvas was panned away from its tables opened looking empty, as if the tables had been deleted. The tables were in the file all along, only out of view. A file now opens with its tables in view whenever none would be on screen; a file whose saved view shows any of them still opens exactly as it was saved.

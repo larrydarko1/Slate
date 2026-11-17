@@ -66,24 +66,47 @@ describe('fileOps', () => {
             expect(api.writeFile).toHaveBeenCalledWith('/tmp/other.slate', expect.any(String));
         });
 
-        /**
-         * Documents a bug, not a contract. saveAsFile calls saveFile(undefined),
-         * and saveFile treats an undefined path as "use the remembered one" — so
-         * once a file has been saved, Save As silently overwrites it instead of
-         * asking where to put the copy.
-         */
-        it('does not ask again for save-as once a path is remembered', async () => {
+        it('asks where to save-as even once a path is remembered, starting from that path', async () => {
             const api = stubApi();
             await ss.saveFile();
-            await ss.saveAsFile();
-            expect(api.showSaveDialog).toHaveBeenCalledTimes(1);
-            expect(api.writeFile).toHaveBeenNthCalledWith(2, '/tmp/book.slate', expect.any(String));
+            vi.mocked(api.showSaveDialog).mockResolvedValue({ canceled: false, filePath: '/tmp/copy.slate' });
+            expect(await ss.saveAsFile()).toBe(true);
+            expect(api.showSaveDialog).toHaveBeenLastCalledWith('/tmp/book.slate');
+            expect(api.writeFile).toHaveBeenLastCalledWith('/tmp/copy.slate', expect.any(String));
+            expect(api.writeFile).toHaveBeenCalledTimes(2);
         });
 
-        it('does ask for save-as before anything has been saved', async () => {
+        it('carries on in the copy after save-as', async () => {
+            const api = stubApi();
+            await ss.saveFile();
+            vi.mocked(api.showSaveDialog).mockResolvedValue({ canceled: false, filePath: '/tmp/copy.slate' });
+            await ss.saveAsFile();
+            await ss.saveFile();
+            expect(ss.currentFilePath.value).toBe('/tmp/copy.slate');
+            expect(api.writeFile).toHaveBeenLastCalledWith('/tmp/copy.slate', expect.any(String));
+        });
+
+        it('leaves the open file alone when save-as is cancelled', async () => {
+            const api = stubApi();
+            await ss.saveFile();
+            ss.addTable();
+            vi.mocked(api.showSaveDialog).mockResolvedValue({ canceled: true });
+            expect(await ss.saveAsFile()).toBe(false);
+            expect(api.writeFile).toHaveBeenCalledTimes(1);
+            expect(ss.currentFilePath.value).toBe('/tmp/book.slate');
+            expect(ss.isDirty.value).toBe(true);
+        });
+
+        it('asks for save-as before anything has been saved, with no starting path', async () => {
             const api = stubApi();
             expect(await ss.saveAsFile()).toBe(true);
-            expect(api.showSaveDialog).toHaveBeenCalledTimes(1);
+            expect(api.showSaveDialog).toHaveBeenCalledWith(undefined);
+        });
+
+        it('refuses save-as outside Electron', async () => {
+            delete window.electronAPI;
+            expect(await ss.saveAsFile()).toBe(false);
+            expect(notifyError).toHaveBeenCalledWith('Opening and saving files needs the desktop app.');
         });
 
         it('gives up when the dialog is cancelled', async () => {

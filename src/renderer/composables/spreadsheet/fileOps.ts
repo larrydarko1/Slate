@@ -89,9 +89,8 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
         let targetPath = filePath !== undefined && filePath !== '' ? filePath : state.currentFilePath.value;
 
         if (targetPath === null || targetPath === '') {
-            const result = await window.electronAPI.showSaveDialog();
-            if (result.canceled || result.filePath === undefined || result.filePath === '') return false;
-            targetPath = result.filePath;
+            targetPath = await findSavePath(undefined);
+            if (targetPath === null) return false;
         }
 
         const content = serializeState();
@@ -106,8 +105,16 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
         return false;
     }
 
+    // Always asks, starting from the open file: Save As is how a copy gets made,
+    // so falling back to the remembered path would overwrite the original.
     async function saveAsFile(): Promise<boolean> {
-        return await saveFile(undefined);
+        if (window.electronAPI === undefined) {
+            notify.error(ELECTRON_ONLY);
+            return false;
+        }
+        const targetPath = await findSavePath(state.currentFilePath.value ?? undefined);
+        if (targetPath === null) return false;
+        return await saveFile(targetPath);
     }
 
     async function openFile(): Promise<boolean> {
@@ -162,6 +169,13 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
     }
 
     return { saveFile, saveAsFile, openFile, loadFileFromPath, newFile };
+}
+
+/** The path the user picked in the save dialog, or null when they cancelled it. */
+async function findSavePath(defaultPath: string | undefined): Promise<string | null> {
+    const result = await window.electronAPI?.showSaveDialog(defaultPath);
+    if (result === undefined || result.canceled || result.filePath === undefined || result.filePath === '') return null;
+    return result.filePath;
 }
 
 function fileFailureMessage(action: 'saved' | 'opened', code: IpcErrorCode | undefined): string {
