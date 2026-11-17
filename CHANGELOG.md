@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Undo could wipe out a file you had just opened. Undo went on past the moment the file was opened and brought back whatever was on screen before it, usually the empty table Slate starts with, so every table seemed to vanish; saving then wrote that empty canvas over the file. Opening a file or starting a new one now begins a fresh undo history.
 - A file saved while the canvas was panned away from its tables opened looking empty, as if the tables had been deleted. The tables were in the file all along, only out of view. A file now opens with its tables in view whenever none would be on screen; a file whose saved view shows any of them still opens exactly as it was saved.
 - The arrow beside the text, fill and border colour buttons had no name, so screen readers announced it only as "button". It is now named, for example "Fill color options", and says whether its palette is open.
 - The formula bar, chart title and chart reference fields showed a pointing hand instead of a text cursor, so they looked like buttons rather than places to type.

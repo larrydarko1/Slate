@@ -129,4 +129,18 @@ describe('undoRedo', () => {
         expect(ss.canvases.value).toHaveLength(1);
         expect(ss.activeCanvasId.value).toBe(ss.canvases.value[0]!.id);
     });
+
+    it('forgets every step when the history is cleared', async () => {
+        ss.setCellValue(id, 0, 0, 'a');
+        await settle();
+        ss.setCellValue(id, 0, 0, 'b');
+        ss.undo();
+        ss.clearHistory();
+        expect(ss.canUndo.value).toBe(false);
+        expect(ss.canRedo.value).toBe(false);
+
+        ss.undo();
+        ss.redo();
+        expect(ss.getDisplayValue(id, 0, 0)).toBe('a');
+    });
 });

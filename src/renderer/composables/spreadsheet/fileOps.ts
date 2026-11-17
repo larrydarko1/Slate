@@ -26,6 +26,7 @@ type FileOpsDeps = {
     recalculate: () => void;
     recalculateMaxZ: SpreadsheetHelpers['recalculateMaxZ'];
     revealHiddenContent: () => void;
+    clearUndoHistory: () => void;
 };
 
 /** What the user is told for each code the file handlers answer with. */
@@ -68,6 +69,7 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
             state.activeChartId.value = null;
             state.isEditing.value = false;
             state.isDirty.value = false;
+            deps.clearUndoHistory();
             deps.recalculate();
             return true;
         } catch (error) {
@@ -153,6 +155,7 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
         state.isEditing.value = false;
         state.currentFilePath.value = null;
         state.isDirty.value = false;
+        deps.clearUndoHistory();
         state.counters.maxZ = 0;
         state.counters.tableCount = 0;
         state.counters.canvasCount = 1;

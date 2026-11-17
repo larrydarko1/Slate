@@ -8,6 +8,18 @@ import { stubElectronApi as stubApi } from '@test-utils';
 // than mocked at the import boundary: every path here is "what did the composable
 // ask Electron to do, and what did it do with the answer".
 
+const JOBS_FILE = JSON.stringify({
+    version: '2.0',
+    canvases: [
+        {
+            id: 'c1',
+            name: 'Canvas 1',
+            tables: [{ id: 't1', name: 'Jobs', columns: [{ id: 'a', width: 120 }], rows: [[{ value: 'Klarna' }]] }],
+        },
+    ],
+    activeCanvasId: 'c1',
+});
+
 describe('fileOps', () => {
     let ss: SpreadsheetState;
     // Held rather than re-read off `notify`: the spy is what the cases actually mean.
@@ -168,6 +180,38 @@ describe('fileOps', () => {
             delete window.electronAPI;
             expect(await ss.loadFileFromPath('/tmp/x.slate')).toBe(false);
             expect(await ss.openFile()).toBe(false);
+        });
+
+        // An undo that walked back past the open replaced the whole file with the
+        // workbook that was on screen before it, often the blank startup table.
+        it('cannot undo back past the file it opened', async () => {
+            ss.addTable();
+            stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: JOBS_FILE }) });
+            await ss.loadFileFromPath('/tmp/jobs.slate');
+            expect(ss.canUndo.value).toBe(false);
+
+            ss.setCellValue('t1', 0, 0, 'Spotify');
+            ss.undo();
+            ss.undo();
+            expect(ss.getDisplayValue('t1', 0, 0)).toBe('Klarna');
+        });
+
+        it('keeps the undo history of the workbook a refused file leaves open', async () => {
+            ss.addTable();
+            stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: 'not json' }) });
+            await ss.loadFileFromPath('/tmp/x.slate');
+            expect(ss.canUndo.value).toBe(true);
+        });
+
+        it('cannot redo the workbook it replaced', async () => {
+            ss.addTable();
+            ss.undo();
+            stubApi({ readFile: vi.fn().mockResolvedValue({ success: true, content: JOBS_FILE }) });
+            await ss.loadFileFromPath('/tmp/jobs.slate');
+            expect(ss.canRedo.value).toBe(false);
+
+            ss.redo();
+            expect(ss.getDisplayValue('t1', 0, 0)).toBe('Klarna');
         });
 
         describe('a file saved with its tables out of view', () => {
@@ -356,6 +400,18 @@ describe('fileOps', () => {
             expect(ss.activeCell.value).toBeNull();
             expect(ss.isDirty.value).toBe(false);
             expect(ss.currentFilePath.value).toBeNull();
+        });
+
+        it('cannot undo back to the workbook it replaced', async () => {
+            ss.addTable();
+            // Lets pushUndo's nesting guard reset, so the edit below records its own step
+            await Promise.resolve();
+            ss.setCellValue(ss.tables.value[0]!.id, 0, 0, 'kept');
+            ss.newFile();
+            expect(ss.canUndo.value).toBe(false);
+
+            ss.undo();
+            expect(ss.tables.value).toHaveLength(0);
         });
     });
 });

@@ -170,6 +170,7 @@ export function useSpreadsheet(): SpreadsheetState {
         recalculate: formulaEngine.recalculate,
         recalculateMaxZ: helpers.recalculateMaxZ,
         revealHiddenContent: canvases.revealHiddenContent,
+        clearUndoHistory: undoRedo.clearHistory,
     });
 
     // ── Unified public API ───────────────────────────────────────────────────

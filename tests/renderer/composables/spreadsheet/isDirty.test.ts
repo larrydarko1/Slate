@@ -19,6 +19,7 @@ function setupState() {
         recalculate: formulaEngine.recalculate,
         recalculateMaxZ: () => {},
         revealHiddenContent: () => {},
+        clearUndoHistory: undoRedo.clearHistory,
     });
 
     return { state, undoRedo, fileOps };
