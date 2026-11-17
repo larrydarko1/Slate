@@ -1,6 +1,6 @@
 /**
  * viewFit — where the canvas view has to be for its content to be on screen.
- * Owns: the bounds of a set of items and the view that fits them.
+ * Owns: the bounds of a set of items, the view that fits them, and whether any is in view.
  * Does NOT own: measuring the items (CanvasWorkspace.vue), applying a view (canvases.ts).
  */
 
@@ -55,6 +55,17 @@ export function buildFitView(content: CanvasRect, viewport: ViewportSize): Canva
         },
         zoom,
     };
+}
+
+/** True when at least part of one item would be on screen in `view`. */
+export function isAnyInView(items: CanvasRect[], view: CanvasView, viewport: ViewportSize): boolean {
+    return items.some((item): boolean => {
+        const left = view.offset.x + item.left * view.zoom;
+        const top = view.offset.y + item.top * view.zoom;
+        const right = left + item.width * view.zoom;
+        const bottom = top + item.height * view.zoom;
+        return right > 0 && bottom > 0 && left < viewport.width && top < viewport.height;
+    });
 }
 
 /** The offset along one axis: centred when the content fits on it, else its start at the margin. */

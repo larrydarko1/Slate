@@ -5,6 +5,8 @@
  * Does NOT own: reactive state (state.ts), recalculation (useFormulaEngine.ts), the
  * file format and its migrations (documentSchema.ts).
  */
+import { nextTick } from 'vue';
+
 import { parseSlateDocument } from '@/renderer/composables/spreadsheet/documentSchema';
 import type { SpreadsheetHelpers } from '@/renderer/composables/spreadsheet/helpers';
 import type { SpreadsheetCoreState } from '@/renderer/composables/spreadsheet/state';
@@ -23,6 +25,7 @@ export type SpreadsheetFileOps = {
 type FileOpsDeps = {
     recalculate: () => void;
     recalculateMaxZ: SpreadsheetHelpers['recalculateMaxZ'];
+    revealHiddenContent: () => void;
 };
 
 /** What the user is told for each code the file handlers answer with. */
@@ -127,6 +130,10 @@ export function createFileOps(state: SpreadsheetCoreState, deps: FileOpsDeps): S
         if (readResult.success && readResult.content !== undefined && readResult.content !== '') {
             if (deserializeState(readResult.content)) {
                 state.currentFilePath.value = filePath;
+                // A file saved while panned away from its tables would otherwise open
+                // looking empty. Measured after the render, since only it has their sizes.
+                await nextTick();
+                deps.revealHiddenContent();
                 return true;
             }
             notify.error('The file could not be opened. It is not a Slate spreadsheet, or it is damaged.');

@@ -11,6 +11,7 @@ import {
     type ViewMeasurement,
     buildFitView,
     findBounds,
+    isAnyInView,
 } from '@/renderer/composables/spreadsheet/viewFit';
 import { createDefaultCanvas, MAX_CANVASES, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP } from '@/renderer/types/spreadsheet';
 
@@ -28,6 +29,7 @@ export type SpreadsheetCanvases = {
     zoomOut: (anchor?: ZoomAnchor) => void;
     resetZoom: () => void;
     showAll: () => void;
+    revealHiddenContent: () => void;
     attachViewport: (measure: () => ViewMeasurement) => () => void;
 };
 
@@ -153,6 +155,15 @@ export function createCanvases(state: SpreadsheetCoreState, deps: CanvasesDeps):
         applyView(buildFitView(bounds, viewport));
     }
 
+    /** Show all, but only when the current view has nothing of the canvas on screen. */
+    function revealHiddenContent(): void {
+        if (measureViewport === null) return;
+        const { items, viewport } = measureViewport();
+        const current = { offset: state.canvasOffset.value, zoom: state.canvasZoom.value };
+        if (items.length === 0 || isAnyInView(items, current, viewport)) return;
+        showAll();
+    }
+
     function applyView(view: CanvasView): void {
         state.canvasOffset.value = view.offset;
         state.canvasZoom.value = view.zoom;
@@ -178,6 +189,7 @@ export function createCanvases(state: SpreadsheetCoreState, deps: CanvasesDeps):
         zoomOut,
         resetZoom,
         showAll,
+        revealHiddenContent,
         attachViewport,
     };
 }

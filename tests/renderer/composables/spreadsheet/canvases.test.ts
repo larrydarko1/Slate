@@ -204,6 +204,7 @@ describe('canvases', () => {
         it('does nothing while no canvas is on screen to measure', () => {
             ss.canvasOffset.value = PANNED_AWAY;
             ss.showAll();
+            ss.revealHiddenContent();
             expect(ss.canvasOffset.value).toStrictEqual(PANNED_AWAY);
         });
 
@@ -222,6 +223,29 @@ describe('canvases', () => {
             ss.canvasOffset.value = PANNED_AWAY;
             ss.showAll();
             expect(ss.canvasOffset.value).toStrictEqual({ x: 300, y: 300 });
+        });
+
+        it('reveals content the view was panned away from', () => {
+            ss.attachViewport(() => ({ items: [TABLE], viewport: VIEWPORT }));
+            ss.canvasOffset.value = PANNED_AWAY;
+            ss.revealHiddenContent();
+            expect(ss.canvasOffset.value).toStrictEqual({ x: 300, y: 300 });
+        });
+
+        it('keeps a view that already shows some of the content', () => {
+            ss.attachViewport(() => ({ items: [TABLE], viewport: VIEWPORT }));
+            ss.canvasOffset.value = { x: -150, y: 0 };
+            ss.canvasZoom.value = 0.76;
+            ss.revealHiddenContent();
+            expect(ss.canvasOffset.value).toStrictEqual({ x: -150, y: 0 });
+            expect(ss.canvasZoom.value).toBe(0.76);
+        });
+
+        it('keeps the view of an empty canvas', () => {
+            ss.attachViewport(() => ({ items: [], viewport: VIEWPORT }));
+            ss.canvasOffset.value = PANNED_AWAY;
+            ss.revealHiddenContent();
+            expect(ss.canvasOffset.value).toStrictEqual(PANNED_AWAY);
         });
     });
 });
