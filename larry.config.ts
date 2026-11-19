@@ -132,7 +132,7 @@ export default defineConfig({
             },
         },
         'pipeline': {},
-        'refactoring': {},
+        'refactoring': { claudeCode: true },
         // `index.scss` is the entry, imported once by main.ts. `_variables.scss` is injected into every SFC
         // style block, each its own Sass compilation, so anything reachable from it that emits ships once per
         // component: it holds the theme maps, and `_theme.scss` turns them into custom properties once.
