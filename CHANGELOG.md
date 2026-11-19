@@ -121,9 +121,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated dependencies to fix vulnerabilities.
 
-## 1.2.0 – 1.2.8 - 2026-02-23 to 2026-03-08
+## [1.2.8] - 2026-03-08
 
-Before 1.2.9, the version was bumped on almost every commit, so earlier versions are grouped by minor version.
+1.2.0 to 1.2.8, released from 2026-02-23 to 2026-03-08. Before 1.2.9, the version was bumped on almost every
+commit, so these releases are written as one, and each line names the version it came in.
 
 ### Added
 
@@ -152,7 +153,9 @@ Before 1.2.9, the version was bumped on almost every commit, so earlier versions
 
 - Security fixes (1.2.2).
 
-## 1.1.0 – 1.1.9 - 2026-02-16 to 2026-02-23
+## [1.1.9] - 2026-02-23
+
+1.1.0 to 1.1.9, released from 2026-02-16 to 2026-02-23, written as one in the same way.
 
 ### Added
 
@@ -174,7 +177,9 @@ Before 1.2.9, the version was bumped on almost every commit, so earlier versions
 - Cross-canvas formulas (1.1.6).
 - The chart grid in dark mode, and series and dataset issues in charts (1.1.8).
 
-## 1.0.0 – 1.0.9 - 2026-02-09 to 2026-02-16
+## [1.0.9] - 2026-02-16
+
+1.0.0 to 1.0.9, released from 2026-02-09 to 2026-02-16, written as one in the same way.
 
 ### Added
 
@@ -199,3 +204,4 @@ Before 1.2.9, the version was bumped on almost every commit, so earlier versions
 [1.3.1]: https://github.com/larrydarko1/Slate/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/larrydarko1/Slate/compare/v1.2.9...v1.3.0
 [1.2.9]: https://github.com/larrydarko1/Slate/compare/v1.2.8...v1.2.9
+[1.2.8]: https://github.com/larrydarko1/Slate/releases/tag/v1.2.8
