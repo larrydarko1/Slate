@@ -9,8 +9,8 @@ import { defineConfig } from '@larrydarko/lint-config/config';
  * regrow to the old number.
  */
 const LENGTH_BASELINE: Record<string, number> = {
-    // 265 lines of script and a 261-line template: neither half is over on its own.
-    'src/renderer/components/SpreadsheetTable.vue': 517,
+    // 265 lines of script and a 245-line template: neither half is over on its own.
+    'src/renderer/components/SpreadsheetTable.vue': 510,
 };
 
 /** Where the palettes live, shared by the two gates that read them. */
