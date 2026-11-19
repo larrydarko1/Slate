@@ -60,9 +60,7 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
         const rowNum = row + 1;
         const cellRef = `${colLetter}${rowNum}`;
 
-        if (targetTableId === state.activeCell.value.tableId) {
-            return cellRef;
-        }
+        if (targetTableId === state.activeCell.value.tableId) return cellRef;
 
         const targetInfo = deps.findTableGlobal(targetTableId);
         if (targetInfo === null) return cellRef;
@@ -99,11 +97,8 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
         const lastChar = trimmed[trimmed.length - 1] ?? '';
 
         // `''` has to be excluded first: every string contains the empty string.
-        if (lastChar !== '' && '+-*/^(,'.includes(lastChar)) {
-            state.editValue.value = current + refStr;
-        } else {
-            state.editValue.value = `${current}+${refStr}`;
-        }
+        if (lastChar !== '' && '+-*/^(,'.includes(lastChar)) state.editValue.value = current + refStr;
+        else state.editValue.value = `${current}+${refStr}`;
     }
 
     function resolveRefString(refText: string): ResolvedRef | null {
@@ -128,9 +123,7 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
 
         const buildResult = (tableId: string): ResolvedRef => ({ tableId, col, row, endCol, endRow, isRange });
 
-        if (parts.length === 1) {
-            return buildResult(state.activeCell.value.tableId);
-        }
+        if (parts.length === 1) return buildResult(state.activeCell.value.tableId);
 
         const unquote = (s: string): string => (s.startsWith("'") && s.endsWith("'") ? s.slice(1, -1) : s);
 
@@ -163,9 +156,7 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
         let match: RegExpExecArray | null;
 
         while ((match = refRegex.exec(body)) !== null) {
-            if (match.index > lastIndex) {
-                tokens.push({ text: body.substring(lastIndex, match.index), isRef: false });
-            }
+            if (match.index > lastIndex) tokens.push({ text: body.substring(lastIndex, match.index), isRef: false });
             const refText = match[0];
             const resolved = resolveRefString(refText);
             const color = refColor(colorIdx);
@@ -183,9 +174,7 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
             colorIdx++;
             lastIndex = match.index + match[0].length;
         }
-        if (lastIndex < body.length) {
-            tokens.push({ text: body.substring(lastIndex), isRef: false });
-        }
+        if (lastIndex < body.length) tokens.push({ text: body.substring(lastIndex), isRef: false });
         return tokens;
     }
 
@@ -214,8 +203,9 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
                 token.col === undefined ||
                 token.row === undefined ||
                 token.color === undefined
-            )
+            ) {
                 continue;
+            }
             const color = token.color;
             // A single reference is the 1×1 range at its own cell, so one loop covers both.
             const { endCol: rangeEndCol, endRow: rangeEndRow } = token;
@@ -238,12 +228,8 @@ export function createFormulas(state: SpreadsheetCoreState, deps: FormulasDeps):
     function toggleFormulaMode(): void {
         if (state.activeCell.value === null) return;
         state.formulaMode.value = !state.formulaMode.value;
-        if (state.formulaMode.value && !state.isEditing.value) {
-            deps.startEditing('=');
-        }
-        if (!state.formulaMode.value) {
-            state.formulaRefs.value = [];
-        }
+        if (state.formulaMode.value && !state.isEditing.value) deps.startEditing('=');
+        if (!state.formulaMode.value) state.formulaRefs.value = [];
     }
 
     return {

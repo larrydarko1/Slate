@@ -159,9 +159,7 @@ export function useRowColReorder(
                 targetIdx = i;
             }
         }
-        if (targetIdx > st.fromStart && targetIdx < st.fromEnd) {
-            targetIdx = st.fromStart;
-        }
+        if (targetIdx > st.fromStart && targetIdx < st.fromEnd) targetIdx = st.fromStart;
         st.toIdx = targetIdx;
     }
 
@@ -185,9 +183,7 @@ export function useRowColReorder(
     }
 
     function onRowHeaderMouseOver(ri: number): void {
-        if (isDraggingRows && !reorderRowState.value.active) {
-            ss.extendRowSelection(table.value.id, ri);
-        }
+        if (isDraggingRows && !reorderRowState.value.active) ss.extendRowSelection(table.value.id, ri);
     }
 
     // ── Column header ────────────────────────────────────────────────────────
@@ -261,9 +257,7 @@ export function useRowColReorder(
                 targetIdx = i;
             }
         }
-        if (targetIdx > st.fromStart && targetIdx < st.fromEnd) {
-            targetIdx = st.fromStart;
-        }
+        if (targetIdx > st.fromStart && targetIdx < st.fromEnd) targetIdx = st.fromStart;
         st.toIdx = targetIdx;
     }
 
@@ -287,9 +281,7 @@ export function useRowColReorder(
     }
 
     function onColHeaderMouseOver(ci: number): void {
-        if (isDraggingCols && !reorderColState.value.active) {
-            ss.extendColumnSelection(table.value.id, ci);
-        }
+        if (isDraggingCols && !reorderColState.value.active) ss.extendColumnSelection(table.value.id, ci);
     }
 
     // ── Cleanup helper for selection mouseup ─────────────────────────────────

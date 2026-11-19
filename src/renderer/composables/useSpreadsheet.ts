@@ -262,7 +262,8 @@ export function useSpreadsheet(): SpreadsheetState {
  */
 export function injectSpreadsheet(): SpreadsheetState {
     const ss = inject(SPREADSHEET_KEY);
-    if (ss === undefined)
+    if (ss === undefined) {
         throw new Error('useSpreadsheet: no spreadsheet provided — is this component mounted inside App.vue?');
+    }
     return ss;
 }

@@ -51,27 +51,19 @@ const CURRENCY_EUR_PATTERNS = [
 
 // Detect the type of a raw input string and extract its components.
 export function detectType(raw: string): TypedValue {
-    if (raw === '') {
-        return { type: 'empty', numericValue: null, rawInput: '' };
-    }
+    if (raw === '') return { type: 'empty', numericValue: null, rawInput: '' };
 
     const trimmed = raw.trim();
 
     // Boolean
-    if (trimmed.toLowerCase() === 'true') {
-        return { type: 'boolean', numericValue: 1, rawInput: trimmed };
-    }
-    if (trimmed.toLowerCase() === 'false') {
-        return { type: 'boolean', numericValue: 0, rawInput: trimmed };
-    }
+    if (trimmed.toLowerCase() === 'true') return { type: 'boolean', numericValue: 1, rawInput: trimmed };
+    if (trimmed.toLowerCase() === 'false') return { type: 'boolean', numericValue: 0, rawInput: trimmed };
 
     // Currency USD
     for (const pat of CURRENCY_USD_PATTERNS) {
         if (pat.test(trimmed)) {
             const num = parseCurrencyUSD(trimmed);
-            if (num !== null) {
-                return { type: 'currency_usd', numericValue: num, rawInput: trimmed };
-            }
+            if (num !== null) return { type: 'currency_usd', numericValue: num, rawInput: trimmed };
         }
     }
 
@@ -79,47 +71,35 @@ export function detectType(raw: string): TypedValue {
     for (const pat of CURRENCY_EUR_PATTERNS) {
         if (pat.test(trimmed)) {
             const num = parseCurrencyEUR(trimmed);
-            if (num !== null) {
-                return { type: 'currency_eur', numericValue: num, rawInput: trimmed };
-            }
+            if (num !== null) return { type: 'currency_eur', numericValue: num, rawInput: trimmed };
         }
     }
 
     // Percentage (e.g. 50%, 12.5%, -3%)
     if (/^-?\d+(\.\d+)?%$/.test(trimmed)) {
         const num = parseFloat(trimmed) / 100;
-        if (!isNaN(num)) {
-            return { type: 'percent', numericValue: num, rawInput: trimmed };
-        }
+        if (!isNaN(num)) return { type: 'percent', numericValue: num, rawInput: trimmed };
     }
 
     // Integer (no decimal point, no leading zeros except "0" itself)
     if (/^-?\d+$/.test(trimmed)) {
         const parsed = parseInt(trimmed, 10);
-        if (!isNaN(parsed)) {
-            return { type: 'integer', numericValue: parsed, rawInput: trimmed };
-        }
+        if (!isNaN(parsed)) return { type: 'integer', numericValue: parsed, rawInput: trimmed };
     }
 
     // Float
     if (/^-?\d+\.\d+$/.test(trimmed) || /^-?\.\d+$/.test(trimmed)) {
         const parsed = parseFloat(trimmed);
-        if (!isNaN(parsed)) {
-            return { type: 'float', numericValue: parsed, rawInput: trimmed };
-        }
+        if (!isNaN(parsed)) return { type: 'float', numericValue: parsed, rawInput: trimmed };
     }
 
     // Date (2026-03-04, or 04/03/2026 in the locale's day/month order), held
     // as its serial number
     const serial = parseDate(trimmed);
-    if (serial !== null) {
-        return { type: 'date', numericValue: serial, rawInput: trimmed };
-    }
+    if (serial !== null) return { type: 'date', numericValue: serial, rawInput: trimmed };
 
     // URL (http:// or https://)
-    if (URL_PATTERN.test(trimmed)) {
-        return { type: 'url', numericValue: null, rawInput: trimmed };
-    }
+    if (URL_PATTERN.test(trimmed)) return { type: 'url', numericValue: null, rawInput: trimmed };
 
     // Anything else is text
     return { type: 'text', numericValue: null, rawInput: trimmed };
@@ -245,14 +225,10 @@ export function formatCellDisplay(value: unknown, type: CellDataType, decimalPla
     if (type === 'boolean' || type === 'checkbox') return isCheckedValue(value) ? 'TRUE' : 'FALSE';
     if (type === 'empty') return '';
 
-    if (typeof value === 'number') {
-        return formatValue(value, type, decimalPlaces);
-    }
+    if (typeof value === 'number') return formatValue(value, type, decimalPlaces);
 
     // If it's a string that looks like an error, pass through
-    if (typeof value === 'string' && value.startsWith('#')) {
-        return value;
-    }
+    if (typeof value === 'string' && value.startsWith('#')) return value;
 
     return toDisplayString(value);
 }
@@ -334,9 +310,7 @@ function formatValue(value: number | null, type: CellDataType, decimalPlaces?: n
             return Math.round(value).toString();
 
         case 'float': {
-            if (decimalPlaces !== undefined) {
-                return value.toFixed(decimalPlaces);
-            }
+            if (decimalPlaces !== undefined) return value.toFixed(decimalPlaces);
             const rounded = parseFloat(value.toFixed(DEFAULT_DECIMAL_PLACES));
             // A decimal keeps its point even when it rounds to a whole number
             if (Number.isInteger(rounded)) return rounded.toFixed(1);
@@ -365,9 +339,7 @@ function formatValue(value: number | null, type: CellDataType, decimalPlaces?: n
 
         case 'percent': {
             const pct = value * 100;
-            if (decimalPlaces !== undefined) {
-                return `${pct.toFixed(decimalPlaces)}%`;
-            }
+            if (decimalPlaces !== undefined) return `${pct.toFixed(decimalPlaces)}%`;
             return `${parseFloat(pct.toFixed(DEFAULT_DECIMAL_PLACES))}%`;
         }
 

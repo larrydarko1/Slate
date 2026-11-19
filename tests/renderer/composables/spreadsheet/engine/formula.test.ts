@@ -23,18 +23,14 @@ function gridContext(grid: CellValue[][], types?: CellDataType[][]): FormulaCont
         getCellRange: (sc, sr, ec, er) => {
             const result: CellValue[] = [];
             for (let r = sr; r <= er; r++) {
-                for (let c = sc; c <= ec; c++) {
-                    result.push(getVal(c, r));
-                }
+                for (let c = sc; c <= ec; c++) result.push(getVal(c, r));
             }
             return result;
         },
         getCellRangeTypes: (sc, sr, ec, er) => {
             const result: CellDataType[] = [];
             for (let r = sr; r <= er; r++) {
-                for (let c = sc; c <= ec; c++) {
-                    result.push(getType(c, r));
-                }
+                for (let c = sc; c <= ec; c++) result.push(getType(c, r));
             }
             return result;
         },

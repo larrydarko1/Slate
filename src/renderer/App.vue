@@ -38,11 +38,8 @@ const handleKeydown = (e: KeyboardEvent): void => {
     switch (e.key.toLowerCase()) {
         case 's':
             e.preventDefault();
-            if (e.shiftKey) {
-                void ss.saveAsFile();
-            } else {
-                void ss.saveFile();
-            }
+            if (e.shiftKey) void ss.saveAsFile();
+            else void ss.saveFile();
             break;
         case 'o':
             e.preventDefault();
@@ -73,11 +70,8 @@ const handleKeydown = (e: KeyboardEvent): void => {
             // Undo while typing takes back the typing, the way every text field does
             if (isTextField(e.target)) break;
             e.preventDefault();
-            if (e.shiftKey) {
-                ss.redo();
-            } else {
-                ss.undo();
-            }
+            if (e.shiftKey) ss.redo();
+            else ss.undo();
             break;
     }
 };
@@ -91,9 +85,7 @@ provide(SPREADSHEET_KEY, ss);
 
 onMounted((): void => {
     // A blank canvas with nothing on it gives the user nowhere to start.
-    if (ss.tables.value.length === 0) {
-        ss.addTable();
-    }
+    if (ss.tables.value.length === 0) ss.addTable();
 
     // Listen for files opened via OS file association (double-click .slate)
     window.electronAPI?.onOpenFile((filePath: string): void => {

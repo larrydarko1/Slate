@@ -148,9 +148,7 @@ export function useTableStructure(
     }
 
     function onAddColDragEnd(): void {
-        if (addColDragState !== null && addColDragState.added === 0) {
-            ss.addColumn(table.value.id);
-        }
+        if (addColDragState !== null && addColDragState.added === 0) ss.addColumn(table.value.id);
         addColDragState = null;
         document.removeEventListener('mousemove', onAddColDragMove);
         document.removeEventListener('mouseup', onAddColDragEnd);

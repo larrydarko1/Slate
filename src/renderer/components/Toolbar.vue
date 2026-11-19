@@ -34,11 +34,8 @@ function applyTheme(): void {
 
 onMounted((): void => {
     const saved = localStorage.getItem('slate-theme');
-    if (saved !== null) {
-        isDark.value = saved === 'dark';
-    } else {
-        isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
+    if (saved !== null) isDark.value = saved === 'dark';
+    else isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches;
     applyTheme();
 });
 </script>

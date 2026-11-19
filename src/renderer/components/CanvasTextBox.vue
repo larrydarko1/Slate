@@ -55,9 +55,7 @@ const { startDrag, startResize } = useDragResize({
 
 function onMouseDown(e: MouseEvent): void {
     ss.selectTextBox(props.textBox.id);
-    if (!isTextEditing.value) {
-        startDrag(e, props.textBox);
-    }
+    if (!isTextEditing.value) startDrag(e, props.textBox);
 }
 
 function onResizeStart(dir: ResizeDir, e: MouseEvent): void {

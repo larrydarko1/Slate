@@ -163,9 +163,7 @@ export function useTableCellRendering(
             base['backgroundColor'] = hexToRgba(cell.format.bgColor, 0.5);
         }
         const refStyle = cellRefStyle(ci, ri);
-        if (refStyle !== undefined) {
-            Object.assign(base, refStyle);
-        }
+        if (refStyle !== undefined) Object.assign(base, refStyle);
         return base;
     }
 
@@ -216,11 +214,8 @@ export function useTableCellRendering(
 
     function openCellUrl(url: string): void {
         if (url === '') return;
-        if (window.electronAPI?.openExternal !== undefined) {
-            void window.electronAPI.openExternal(url);
-        } else {
-            window.open(url, '_blank', 'noopener,noreferrer');
-        }
+        if (window.electronAPI?.openExternal !== undefined) void window.electronAPI.openExternal(url);
+        else window.open(url, '_blank', 'noopener,noreferrer');
     }
 
     return {

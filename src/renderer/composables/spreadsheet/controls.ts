@@ -144,9 +144,7 @@ export function createControls(state: SpreadsheetCoreState, deps: ControlsDeps):
                 const cell = deps.findCell(sr.tableId, colIdx, rowIdx);
                 if (!isEditableControl(cell, 'stepper')) continue;
                 cell.limits = { ...limits };
-                if (typeof cell.value === 'number') {
-                    cell.value = Math.min(limits.max, Math.max(limits.min, cell.value));
-                }
+                if (typeof cell.value === 'number') cell.value = Math.min(limits.max, Math.max(limits.min, cell.value));
             }
         }
         deps.recalculate();

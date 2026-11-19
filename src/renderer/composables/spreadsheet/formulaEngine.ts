@@ -62,9 +62,7 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                 try {
                     const result = evaluateFormulaTyped(cell.formula, buildFormulaContext(tableId));
                     cell.computed = result.value;
-                    if (cell.cellType === 'empty') {
-                        cell.computedType = result.type;
-                    }
+                    if (cell.cellType === 'empty') cell.computedType = result.type;
                 } catch {
                     cell.computed = '#ERROR!';
                     cell.computedType = 'text';
@@ -96,14 +94,16 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                 },
                 getCellRange: (sc, sr, ec, er): CellValue[] => {
                     const vals: CellValue[] = [];
-                    for (let rowIdx = sr; rowIdx <= er; rowIdx++)
-                        for (let colIdx = sc; colIdx <= ec; colIdx++)
+                    for (let rowIdx = sr; rowIdx <= er; rowIdx++) {
+                        for (let colIdx = sc; colIdx <= ec; colIdx++) {
                             vals.push(resolveCellValue(tableId, colIdx, rowIdx));
+                        }
+                    }
                     return vals;
                 },
                 getCellRangeTypes: (sc, sr, ec, er): CellDataType[] => {
                     const types: CellDataType[] = [];
-                    for (let rowIdx = sr; rowIdx <= er; rowIdx++)
+                    for (let rowIdx = sr; rowIdx <= er; rowIdx++) {
                         for (let colIdx = sc; colIdx <= ec; colIdx++) {
                             const refCell = findCellGlobal(tableId, colIdx, rowIdx);
                             if (refCell === null) {
@@ -117,6 +117,7 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                                 types.push(refCell.cellType);
                             }
                         }
+                    }
                     return types;
                 },
                 resolveExternalCellValue: (canvasName, tableName, c, r): CellValue => {
@@ -139,16 +140,18 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                     const table = deps.findTableByName(tableName, { canvasName, sourceCanvasId });
                     if (table === null) return ['#REF!'];
                     const vals: CellValue[] = [];
-                    for (let rowIdx = sr; rowIdx <= er; rowIdx++)
-                        for (let colIdx = sc; colIdx <= ec; colIdx++)
+                    for (let rowIdx = sr; rowIdx <= er; rowIdx++) {
+                        for (let colIdx = sc; colIdx <= ec; colIdx++) {
                             vals.push(resolveCellValue(table.id, colIdx, rowIdx));
+                        }
+                    }
                     return vals;
                 },
                 resolveExternalCellRangeTypes: (canvasName, tableName, sc, sr, ec, er): CellDataType[] => {
                     const table = deps.findTableByName(tableName, { canvasName, sourceCanvasId });
                     if (table === null) return ['text'];
                     const types: CellDataType[] = [];
-                    for (let rowIdx = sr; rowIdx <= er; rowIdx++)
+                    for (let rowIdx = sr; rowIdx <= er; rowIdx++) {
                         for (let colIdx = sc; colIdx <= ec; colIdx++) {
                             const cell = findCellGlobal(table.id, colIdx, rowIdx);
                             if (cell === null) {
@@ -162,6 +165,7 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
                                 types.push(cell.cellType);
                             }
                         }
+                    }
                     return types;
                 },
             };
@@ -170,9 +174,7 @@ export function createFormulaEngine(state: SpreadsheetCoreState, deps: FormulaEn
         function resolveFormulasIn(table: SpreadsheetTable): void {
             for (const [rowIdx, row] of table.rows.entries()) {
                 for (let colIdx = 0; colIdx < table.columns.length; colIdx++) {
-                    if (row[colIdx]?.formula !== undefined) {
-                        resolveCellValue(table.id, colIdx, rowIdx);
-                    }
+                    if (row[colIdx]?.formula !== undefined) resolveCellValue(table.id, colIdx, rowIdx);
                 }
             }
         }

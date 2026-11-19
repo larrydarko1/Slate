@@ -168,9 +168,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
             }
         } else if (mode.startsWith('series:')) {
             const idx = parseInt(mode.split(':')[1] ?? '', 10);
-            while (ds.seriesRefs.length <= idx) {
-                ds.seriesRefs.push({ refString: '' });
-            }
+            while (ds.seriesRefs.length <= idx) ds.seriesRefs.push({ refString: '' });
             const series = ds.seriesRefs[idx];
             if (series === undefined) return;
             const existing = series.refString;
@@ -203,9 +201,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
         const isSingleCell = startCol === endCol && startRow === endRow;
         const cellRef = isSingleCell ? startRef : `${startRef}:${indexToColumnLetter(endCol)}${endRow + 1}`;
 
-        if (info.canvas.id === state.activeCanvasId.value) {
-            return `${quoteIfNeeded(tableName)}::${cellRef}`;
-        }
+        if (info.canvas.id === state.activeCanvasId.value) return `${quoteIfNeeded(tableName)}::${cellRef}`;
 
         const canvasName = info.canvas.name;
         return `${quoteIfNeeded(canvasName)}::${quoteIfNeeded(tableName)}::${cellRef}`;
@@ -375,9 +371,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
         const ds = { ...chart.dataSource, seriesRefs: [...chart.dataSource.seriesRefs] };
         ds.seriesRefs.splice(index, 1);
         updateChart(chart.id, { dataSource: ds });
-        if (state.chartSelectionMode.value === `series:${index}`) {
-            stopChartDataSelection();
-        }
+        if (state.chartSelectionMode.value === `series:${index}`) stopChartDataSelection();
     }
 
     function setChartDataRef(mode: string, refString: string): void {
@@ -397,9 +391,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
             ds.labelRef = refString !== '' ? { refString } : null;
         } else if (mode.startsWith('series:')) {
             const idx = parseInt(mode.split(':')[1] ?? '', 10);
-            while (ds.seriesRefs.length <= idx) {
-                ds.seriesRefs.push({ refString: '' });
-            }
+            while (ds.seriesRefs.length <= idx) ds.seriesRefs.push({ refString: '' });
             ds.seriesRefs[idx] = { refString };
         }
 
@@ -409,9 +401,7 @@ export function createCharts(state: SpreadsheetCoreState, deps: ChartsDeps): Spr
     function getAllTables(): { canvasId: string; canvasName: string; table: SpreadsheetTable }[] {
         const result: { canvasId: string; canvasName: string; table: SpreadsheetTable }[] = [];
         for (const cv of state.canvases.value) {
-            for (const table of cv.tables) {
-                result.push({ canvasId: cv.id, canvasName: cv.name, table });
-            }
+            for (const table of cv.tables) result.push({ canvasId: cv.id, canvasName: cv.name, table });
         }
         return result;
     }

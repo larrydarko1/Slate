@@ -138,11 +138,8 @@ function onCellMouseDown(ci: number, ri: number, e: MouseEvent): void {
         return;
     }
 
-    if (e.shiftKey) {
-        ss.extendSelection(props.table.id, ci, ri);
-    } else if (!pressSelection(ci, ri)) {
-        startSelectionDrag(ci, ri);
-    }
+    if (e.shiftKey) ss.extendSelection(props.table.id, ci, ri);
+    else if (!pressSelection(ci, ri)) startSelectionDrag(ci, ri);
     void nextTick((): void => tableEl.value?.focus());
 }
 
@@ -156,9 +153,7 @@ function onCellMouseOver(ci: number, ri: number): void {
         return;
     }
     if (hoverCell(ci, ri)) return;
-    if (isDragging) {
-        ss.extendSelection(props.table.id, ci, ri);
-    }
+    if (isDragging) ss.extendSelection(props.table.id, ci, ri);
 }
 
 function onChartDragEnd(): void {
@@ -300,9 +295,7 @@ function onKeyDown(e: KeyboardEvent): void {
 watch(
     (): { tableId: string; col: number; row: number } | null => ss.activeCell.value,
     (ac): void => {
-        if (ac?.tableId === props.table.id && !ss.isEditing.value) {
-            void nextTick((): void => tableEl.value?.focus());
-        }
+        if (ac?.tableId === props.table.id && !ss.isEditing.value) void nextTick((): void => tableEl.value?.focus());
     },
 );
 </script>

@@ -8,9 +8,7 @@ describe('colorPalette', () => {
     });
 
     it('every entry is a valid hex color', () => {
-        for (const c of colorPalette) {
-            expect(c).toMatch(/^#[0-9A-Fa-f]{6}$/);
-        }
+        for (const c of colorPalette) expect(c).toMatch(/^#[0-9A-Fa-f]{6}$/);
     });
 
     it('starts with black and includes white', () => {

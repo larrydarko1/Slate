@@ -51,17 +51,11 @@ export function createTableSort(deps: SortDeps): TableSort {
             .map((row, i): { row: Cell[]; origIdx: number } => ({ row, origIdx: i + headerCount }));
         indexed.sort((a, b): number => compareValues(getSortValue(a.row), getSortValue(b.row)));
 
-        for (const [i, entry] of indexed.entries()) {
-            table.rows[headerCount + i] = entry.row;
-        }
+        for (const [i, entry] of indexed.entries()) table.rows[headerCount + i] = entry.row;
 
         const rowMap = new Map<number, number>();
-        for (const [i, entry] of indexed.entries()) {
-            rowMap.set(entry.origIdx, headerCount + i);
-        }
-        for (let i = 0; i < headerCount; i++) {
-            rowMap.set(i, i);
-        }
+        for (const [i, entry] of indexed.entries()) rowMap.set(entry.origIdx, headerCount + i);
+        for (let i = 0; i < headerCount; i++) rowMap.set(i, i);
 
         table.mergedRegions = table.mergedRegions
             .map((m): MergedRegion | null => {

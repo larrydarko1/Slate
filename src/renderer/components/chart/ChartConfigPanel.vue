@@ -46,9 +46,7 @@ function onRefInput(mode: string, e: Event): void {
 
 function clearRef(mode: string): void {
     ss.setChartDataRef(mode, '');
-    if (ss.chartSelectionMode.value === mode) {
-        ss.stopChartDataSelection();
-    }
+    if (ss.chartSelectionMode.value === mode) ss.stopChartDataSelection();
 }
 
 function onHeaderToggle(e: Event): void {
