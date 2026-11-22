@@ -205,9 +205,7 @@ if (!gotLock) {
         // An open-file landing between `ready` and this callback has already made one.
         if (mainWindow === null) createWindow();
         app.on('activate', () => {
-            if (BrowserWindow.getAllWindows().length === 0) {
-                createWindow();
-            }
+            if (BrowserWindow.getAllWindows().length === 0) createWindow();
         });
     });
 }
@@ -215,9 +213,7 @@ if (!gotLock) {
 // ─── App lifecycle ───────────────────────────────────────────────────────────
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+    if (process.platform !== 'darwin') app.quit();
 });
 
 // ─── IPC Registration ────────────────────────────────────────────────────────

@@ -22,8 +22,6 @@ describe('logger', () => {
     });
 
     it('offers a method for every severity the renderer can send', () => {
-        for (const level of ['error', 'warn', 'info', 'debug'] as const) {
-            expect(typeof log[level]).toBe('function');
-        }
+        for (const level of ['error', 'warn', 'info', 'debug'] as const) expect(typeof log[level]).toBe('function');
     });
 });

@@ -91,11 +91,8 @@ export function useTableNotes(table: Ref<SpreadsheetTable>, ss: SpreadsheetState
 
     function saveNoteFromEditor(): void {
         const { col, row, text } = noteEditor.value;
-        if (text.trim() !== '') {
-            ss.setCellNote(table.value.id, col, row, text.trim());
-        } else {
-            ss.removeCellNote(table.value.id, col, row);
-        }
+        if (text.trim() !== '') ss.setCellNote(table.value.id, col, row, text.trim());
+        else ss.removeCellNote(table.value.id, col, row);
         noteEditor.value.visible = false;
     }
 

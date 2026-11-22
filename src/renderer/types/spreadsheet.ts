@@ -214,9 +214,7 @@ export function indexToColumnLetter(index: number): string {
 
 export function columnLetterToIndex(letter: string): number {
     let result = 0;
-    for (let i = 0; i < letter.length; i++) {
-        result = result * 26 + (letter.charCodeAt(i) - 64);
-    }
+    for (let i = 0; i < letter.length; i++) result = result * 26 + (letter.charCodeAt(i) - 64);
     return result - 1;
 }
 

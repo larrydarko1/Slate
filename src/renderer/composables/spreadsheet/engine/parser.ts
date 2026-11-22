@@ -207,9 +207,7 @@ export class Parser {
                 this.advance();
                 // Check if this CELL_REF-looking token is actually a table name
                 // followed by :: (e.g. Table1::A1)
-                if (this.peek().type === 'DOUBLE_COLON') {
-                    return this.parseExternalRef(tok.value);
-                }
+                if (this.peek().type === 'DOUBLE_COLON') return this.parseExternalRef(tok.value);
                 const { col, row } = parseCellRef(tok.value);
                 if (this.peek().type === 'COLON') {
                     this.advance();
@@ -222,9 +220,7 @@ export class Parser {
             case 'QUOTED_NAME': {
                 this.advance();
                 // Must be followed by :: for a cross-table/cross-canvas reference
-                if (this.peek().type === 'DOUBLE_COLON') {
-                    return this.parseExternalRef(tok.value);
-                }
+                if (this.peek().type === 'DOUBLE_COLON') return this.parseExternalRef(tok.value);
                 throw new Error(`Unexpected quoted name: '${tok.value}' (expected ::)`);
             }
 
@@ -232,9 +228,7 @@ export class Parser {
                 this.advance();
                 const name = tok.value;
                 // Check if this is a table name prefix (e.g. Sales::A1)
-                if (this.peek().type === 'DOUBLE_COLON') {
-                    return this.parseExternalRef(name);
-                }
+                if (this.peek().type === 'DOUBLE_COLON') return this.parseExternalRef(name);
                 this.expect('LPAREN');
                 const args: ASTNode[] = [];
                 if (this.peek().type !== 'RPAREN') {

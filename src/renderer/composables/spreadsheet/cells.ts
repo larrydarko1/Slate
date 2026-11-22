@@ -51,8 +51,9 @@ type CellsDeps = {
 export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): SpreadsheetCells {
     function findCell(tableId: string, col: number, row: number): Cell | null {
         const table = deps.findTable(tableId);
-        if (table === null || row < 0 || row >= table.rows.length || col < 0 || col >= table.columns.length)
+        if (table === null || row < 0 || row >= table.rows.length || col < 0 || col >= table.columns.length) {
             return null;
+        }
         // The bounds above are the table's; a row loaded short of them is still ragged.
         return table.rows[row]?.[col] ?? null;
     }
@@ -94,15 +95,10 @@ export function createCells(state: SpreadsheetCoreState, deps: CellsDeps): Sprea
                 const detected = detectType(raw);
                 cell.cellType = detected.type;
 
-                if (detected.numericValue !== null && detected.type !== 'text') {
-                    cell.value = detected.numericValue;
-                } else if (detected.type === 'boolean') {
-                    cell.value = detected.rawInput.toLowerCase() === 'true';
-                } else if (detected.type === 'text') {
-                    cell.value = detected.rawInput;
-                } else {
-                    cell.value = raw;
-                }
+                if (detected.numericValue !== null && detected.type !== 'text') cell.value = detected.numericValue;
+                else if (detected.type === 'boolean') cell.value = detected.rawInput.toLowerCase() === 'true';
+                else if (detected.type === 'text') cell.value = detected.rawInput;
+                else cell.value = raw;
             }
         }
 
@@ -278,14 +274,9 @@ function retype(cell: Cell, newType: CellDataType): void {
 
     if (typeof cell.value === 'string' && newType !== 'text') {
         const detected = detectType(cell.value);
-        if (detected.numericValue !== null && isNumericType(detected.type)) {
-            cell.value = detected.numericValue;
-        } else if (isNumericType(newType)) {
-            return;
-        }
+        if (detected.numericValue !== null && isNumericType(detected.type)) cell.value = detected.numericValue;
+        else if (isNumericType(newType)) return;
     }
-    if (typeof cell.value === 'number' && newType === 'integer') {
-        cell.value = Math.round(cell.value);
-    }
+    if (typeof cell.value === 'number' && newType === 'integer') cell.value = Math.round(cell.value);
     cell.cellType = newType;
 }

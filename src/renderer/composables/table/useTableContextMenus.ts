@@ -112,9 +112,7 @@ export function useTableContextMenus(
                 },
             });
         }
-        if (hasSelection || mergeAtCell !== null) {
-            items.push({ label: '', separator: true });
-        }
+        if (hasSelection || mergeAtCell !== null) items.push({ label: '', separator: true });
 
         items.push(
             { label: 'Insert row above', action: (): void => ss.insertRowAt(table.value.id, ri) },

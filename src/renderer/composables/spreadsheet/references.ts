@@ -272,9 +272,7 @@ export function createReferenceRewriter(
      */
     function remapIndex(idx: number, fromStart: number, fromEnd: number, insertAt: number): number {
         const count = fromEnd - fromStart + 1;
-        if (idx >= fromStart && idx <= fromEnd) {
-            return insertAt + (idx - fromStart);
-        }
+        if (idx >= fromStart && idx <= fromEnd) return insertAt + (idx - fromStart);
         if (fromStart < insertAt) {
             if (idx > fromEnd && idx < insertAt + count) return idx - count;
         } else {

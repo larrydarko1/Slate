@@ -90,9 +90,7 @@ const showRichOverlay = computed((): boolean => {
         return true;
     }
     // Show overlay for selected formula cells (not editing)
-    if (!ss.isEditing.value && hasFormula.value && formulaTokens.value.some((t): boolean => t.isRef)) {
-        return true;
-    }
+    if (!ss.isEditing.value && hasFormula.value && formulaTokens.value.some((t): boolean => t.isRef)) return true;
     return false;
 });
 
@@ -107,13 +105,9 @@ function onInput(e: Event): void {
     ss.editValue.value = val;
     if (!ss.isEditing.value) ss.isEditing.value = true;
     // Auto-activate formula mode when user starts typing a formula
-    if (val.startsWith('=') && !ss.formulaMode.value) {
-        ss.formulaMode.value = true;
-    }
+    if (val.startsWith('=') && !ss.formulaMode.value) ss.formulaMode.value = true;
     // Deactivate if formula prefix removed
-    if (!val.startsWith('=') && ss.formulaMode.value) {
-        ss.formulaMode.value = false;
-    }
+    if (!val.startsWith('=') && ss.formulaMode.value) ss.formulaMode.value = false;
 }
 
 function onEnter(): void {

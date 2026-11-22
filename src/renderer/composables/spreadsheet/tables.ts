@@ -305,9 +305,7 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
         const count = sr.endRow - sr.startRow + 1;
         if (count >= table.rows.length) return;
         deps.pushUndo();
-        for (let rowIdx = sr.endRow; rowIdx >= sr.startRow; rowIdx--) {
-            deleteRow(sr.tableId, rowIdx);
-        }
+        for (let rowIdx = sr.endRow; rowIdx >= sr.startRow; rowIdx--) deleteRow(sr.tableId, rowIdx);
         if (state.activeCell.value !== null && state.activeCell.value.tableId === sr.tableId) {
             state.activeCell.value.row = Math.min(sr.startRow, table.rows.length - 1);
             state.activeCell.value.col = 0;
@@ -324,9 +322,7 @@ export function createTables(state: SpreadsheetCoreState, deps: TablesDeps): Spr
         const count = sr.endCol - sr.startCol + 1;
         if (count >= table.columns.length) return;
         deps.pushUndo();
-        for (let colIdx = sr.endCol; colIdx >= sr.startCol; colIdx--) {
-            deleteColumn(sr.tableId, colIdx);
-        }
+        for (let colIdx = sr.endCol; colIdx >= sr.startCol; colIdx--) deleteColumn(sr.tableId, colIdx);
         if (state.activeCell.value !== null && state.activeCell.value.tableId === sr.tableId) {
             state.activeCell.value.col = Math.min(sr.startCol, table.columns.length - 1);
             state.activeCell.value.row = 0;

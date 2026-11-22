@@ -119,9 +119,7 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
         // Expand table if necessary
         const neededRows = startRow + data.length;
         const neededCols = startCol + Math.max(...data.map((r): number => r.length));
-        while (table.rows.length < neededRows) {
-            table.rows.push(table.columns.map((): Cell => createEmptyCell()));
-        }
+        while (table.rows.length < neededRows) table.rows.push(table.columns.map((): Cell => createEmptyCell()));
         while (table.columns.length < neededCols) {
             table.columns.push({ id: generateId('col'), width: 120 });
             for (const row of table.rows) row.push(createEmptyCell());
@@ -196,9 +194,7 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
 
         const neededRows = target.endRow + 1;
         const neededCols = target.endCol + 1;
-        while (table.rows.length < neededRows) {
-            table.rows.push(table.columns.map((): Cell => createEmptyCell()));
-        }
+        while (table.rows.length < neededRows) table.rows.push(table.columns.map((): Cell => createEmptyCell()));
         while (table.columns.length < neededCols) {
             table.columns.push({ id: generateId('col'), width: 120 });
             for (const row of table.rows) row.push(createEmptyCell());
@@ -247,9 +243,7 @@ export function createClipboard(state: SpreadsheetCoreState, deps: ClipboardDeps
                 setCellLimits(tableId, colIdx, rowIdx, srcCell.limits);
                 deps.setCellType(tableId, colIdx, rowIdx, srcCell.cellType);
             }
-            if (srcCell.format !== undefined) {
-                deps.setCellFormat(tableId, colIdx, rowIdx, { ...srcCell.format });
-            }
+            if (srcCell.format !== undefined) deps.setCellFormat(tableId, colIdx, rowIdx, { ...srcCell.format });
         }
 
         const inSource = (colIdx: number, rowIdx: number): boolean =>
@@ -360,8 +354,9 @@ function findSeries(cells: (Cell | null)[]): Series | null {
     if (type === undefined || !isNumericType(type)) return null;
     const values: number[] = [];
     for (const cell of cells) {
-        if (cell === null || cell.formula !== undefined || cell.cellType !== type || typeof cell.value !== 'number')
+        if (cell === null || cell.formula !== undefined || cell.cellType !== type || typeof cell.value !== 'number') {
             return null;
+        }
         values.push(cell.value);
     }
     const [start = 0, second] = values;
